@@ -1,8 +1,0 @@
-/opt/clausy_development/logs/20250531-0000-01-access.log
-/opt/clausy_development/logs/20250601-0000-01-access.log
-/opt/clausy_development/logs/20250602-0000-01-access.log
-/opt/clausy_development/logs/20250605-0000-01-access.log
-/opt/clausy_development/logs/20250607-0000-01-access.log
-/opt/clausy_development/logs/20250608-0000-01-access.log
-/opt/clausy_development/logs/20250609-0000-01-access.log
-/opt/clausy_development/logs/20250610-0000-01-access.log
