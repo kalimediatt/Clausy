@@ -1,0 +1,11 @@
+# Configurações do Banco de Dados
+DB_HOST=138.197.27.151
+DB_USER=clausy_root
+DB_PASSWORD=@N4td55k7%+[
+DB_NAME=clausy
+PORT=5000
+CORS_ORIGIN=http://138.197.27.151:3000
+ALLOWED_ORIGINS=http://138.197.27.151:3000,http://localhost:3000,http://127.0.0.1:3000
+JWT_SECRET=clausy_secret_key_for_development
+NODE_ENV=development
+API_KEY=sk-3lvu8Ld1LvgmzT7KCHTombq1VSsluOJi4mSTHjvGwBuvm2t-S4kblgx-nUxm5fyqS12WdSIWRQ0jZXEpi4Z_49FDft-f

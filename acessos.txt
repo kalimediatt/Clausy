@@ -1,0 +1,17 @@
+email	name	role	plan_name	max_queries_per_hour	max_tokens_per_hour
+user1@alfa.com.br	Usuário 1 ALFA	user	Standard	1000	100000
+user1@beta.com.br	Usuário 1 BETA	user	Profissional	200	1057
+user1@roma.com.br	Usuário 1 ROMA	user	Profissional	200	1057
+user2@alfa.com.br	Usuário 2 ALFA	user	Standard	1000	100000
+user2@beta.com.br	Usuário 2 BETA	user	Profissional	200	1057
+user2@roma.com.br	Usuário 2 ROMA	user	Profissional	200	1057
+user3@beta.com.br	Usuário 3 BETA	user	Profissional	200	1057
+user3@roma.com.br	Usuário 3 ROMA	user	Profissional	200	1057
+user4@roma.com.br	Usuário 4 ROMA	user	Profissional	200	1057
+admin1@beta.com.br	Administrador 1 BETA	admin	Profissional	200	1057
+admin1@roma.com.br	Administrador 1 ROMA	admin	Profissional	200	1057
+admin2@beta.com.br	Administrador 2 BETA	admin	Profissional	200	1057
+admin2@roma.com.br	Administrador 2 ROMA	admin	Profissional	200	1057
+admin3@roma.com.br	Administrador 3 ROMA	admin	Profissional	200	1057
+admin@alfa.com.br	Administrador ALFA	admin	Standard	1000	100000
+superadmin@clausy.com.br	Super Administrador	superadmin	Profissional	200	1057

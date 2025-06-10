@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import { RouterProvider } from 'react-router-dom';
+import router from './router';
 import { createGlobalStyle } from 'styled-components';
+import { SetupProvider } from './contexts/SetupContext';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -23,6 +25,15 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <GlobalStyle />
-    <App />
+    <SetupProvider>
+      <RouterProvider 
+        router={router}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+          v7_normalizeFormMethod: true
+        }}
+      />
+    </SetupProvider>
   </React.StrictMode>
 ); 

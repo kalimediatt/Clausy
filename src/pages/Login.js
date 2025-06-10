@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaRobot } from 'react-icons/fa';
+import { FaUser, FaLock, FaRobot, FaEnvelope } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import Particles from 'react-tsparticles';
 import { loadSlim } from 'tsparticles-slim';
@@ -14,7 +14,7 @@ const LoginContainer = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: #2B2B2B;
   position: relative;
   overflow: hidden;
 `;
@@ -29,23 +29,25 @@ const ParticlesContainer = styled.div`
 `;
 
 const LoginForm = styled(motion.form)`
-  background: rgba(255, 255, 255, 0.1);
+  background: #DFDFDF;
   backdrop-filter: blur(10px);
   padding: 2.5rem;
   border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
   z-index: 2;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid #ADADAD;
 `;
 
 const Title = styled(motion.h1)`
   text-align: center;
-  color: #fff;
+  color: #2B2B2B;
   margin-bottom: 2rem;
   font-size: 2.5rem;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(45deg, #8C4B35, #2B2B2B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 `;
 
 const InputContainer = styled.div`
@@ -56,20 +58,21 @@ const InputContainer = styled.div`
 const Input = styled.input`
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
+  background: #DFDFDF;
+  border: 1px solid #ADADAD;
   border-radius: 10px;
-  color: #fff;
+  color: #2B2B2B;
   font-size: 1rem;
   transition: all 0.3s ease;
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: #ADADAD;
   }
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 0 2px rgba(140, 75, 53, 0.3);
+    background: #DFDFDF;
   }
 `;
 
@@ -78,13 +81,13 @@ const Icon = styled.div`
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.7);
+  color: #8C4B35;
 `;
 
 const Button = styled(motion.button)`
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(45deg, #00b4db, #0083b0);
+  background: #8C4B35;
   color: white;
   border: none;
   border-radius: 10px;
@@ -95,7 +98,7 @@ const Button = styled(motion.button)`
   overflow: hidden;
 
   &:hover {
-    background: linear-gradient(45deg, #0083b0, #00b4db);
+    background: #2B2B2B;
   }
 
   &::before {
@@ -119,37 +122,123 @@ const Button = styled(motion.button)`
   }
 `;
 
+const InfoText = styled.div`
+  margin-top: 2rem;
+  color: #ADADAD;
+  font-size: 0.875rem;
+  text-align: center;
+  
+  p {
+    margin-bottom: 0.5rem;
+  }
+  
+  strong {
+    color: #8C4B35;
+  }
+`;
+
 const RobotIcon = styled(motion.div)`
   font-size: 3rem;
-  color: #fff;
+  color: #8C4B35;
   text-align: center;
   margin-bottom: 1rem;
 `;
 
+const NewPasswordContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+`;
+
+const NewPasswordTitle = styled.h2`
+  color: #8C4B35;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+`;
+
+const NewPasswordText = styled.p`
+  color: #2B2B2B;
+  text-align: center;
+  margin-bottom: 1rem;
+`;
+
+const NewPasswordValue = styled.div`
+  background: #2B2B2B;
+  color: #DFDFDF;
+  padding: 1rem;
+  border-radius: 10px;
+  font-family: monospace;
+  font-size: 1.2rem;
+  margin: 1rem 0;
+  width: 100%;
+  text-align: center;
+`;
+
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { login } = useAuth();
-
-  const particlesInit = useCallback(async (engine) => {
-    await loadSlim(engine);
-  }, []);
-
+  const location = useLocation();
+  
+  // Check if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const redirectUrl = sessionStorage.getItem('redirectUrl') || '/';
+      sessionStorage.removeItem('redirectUrl');
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setNewPassword('');
+
     try {
-      const success = await login(username, password);
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.newPassword) {
+          // Se houver uma nova senha, exibir ela
+          setNewPassword(data.newPassword);
+          toast.success(data.message);
+        } else {
+          // Login normal
+      const success = await login(email, password);
       if (success) {
-        toast.success('Login realizado com sucesso!');
-        setTimeout(() => navigate('/'), 1000);
+        const redirectUrl = location.state?.from?.pathname || '/';
+        navigate(redirectUrl);
+          }
+        }
       } else {
-        toast.error('Credenciais inválidas!');
+        setError(data.message || 'Erro ao fazer login');
+        toast.error(data.message || 'Erro ao fazer login');
       }
-    } catch (error) {
-      toast.error('Erro ao tentar fazer login. Tente novamente.');
-      console.error('Login error:', error);
+    } catch (err) {
+      setError(err.message || 'Erro ao fazer login');
+      toast.error(err.message || 'Erro ao fazer login');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const particlesInit = async (engine) => {
+    await loadSlim(engine);
   };
 
   return (
@@ -159,60 +248,73 @@ const Login = () => {
           id="tsparticles"
           init={particlesInit}
           options={{
-            particles: {
-              number: {
-                value: 80,
-                density: {
-                  enable: true,
-                  value_area: 800,
-                },
-              },
+            background: {
               color: {
-                value: '#ffffff',
-              },
-              shape: {
-                type: 'circle',
-              },
-              opacity: {
-                value: 0.5,
-                random: false,
-              },
-              size: {
-                value: 3,
-                random: true,
-              },
-              line_linked: {
-                enable: true,
-                distance: 150,
-                color: '#ffffff',
-                opacity: 0.4,
-                width: 1,
-              },
-              move: {
-                enable: true,
-                speed: 2,
-                direction: 'none',
-                random: false,
-                straight: false,
-                out_mode: 'out',
-                bounce: false,
+                value: "#2B2B2B",
               },
             },
+            fpsLimit: 120,
             interactivity: {
-              detect_on: 'canvas',
               events: {
-                onhover: {
+                onClick: {
                   enable: true,
-                  mode: 'repulse',
+                  mode: "push",
                 },
-                onclick: {
+                onHover: {
                   enable: true,
-                  mode: 'push',
+                  mode: "repulse",
                 },
                 resize: true,
               },
+              modes: {
+                push: {
+                  quantity: 4,
+                },
+                repulse: {
+                  distance: 200,
+                  duration: 0.4,
+                },
+                },
+              },
+            particles: {
+              color: {
+                value: "#8C4B35",
+              },
+              links: {
+                color: "#8C4B35",
+                distance: 150,
+                enable: true,
+                opacity: 0.5,
+                width: 1,
+              },
+              move: {
+                direction: "none",
+                enable: true,
+                outModes: {
+                  default: "bounce",
+                },
+                random: false,
+                speed: 2,
+                straight: false,
             },
-            retina_detect: true,
+              number: {
+                density: {
+                  enable: true,
+                  area: 800,
+                },
+                value: 80,
+                },
+              opacity: {
+                value: 0.5,
+              },
+              shape: {
+                type: "circle",
+                },
+              size: {
+                value: { min: 1, max: 5 },
+              },
+            },
+            detectRetina: true,
           }}
         />
       </ParticlesContainer>
@@ -234,17 +336,37 @@ const Login = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          JudAI
+          Clausy
         </Title>
+        {newPassword ? (
+          <NewPasswordContainer>
+            <NewPasswordTitle>Sua senha foi atualizada</NewPasswordTitle>
+            <NewPasswordText>
+              Por questões de segurança, sua senha foi atualizada. Use a nova senha para fazer login:
+            </NewPasswordText>
+            <NewPasswordValue>{newPassword}</NewPasswordValue>
+            <Button
+              onClick={() => {
+                setNewPassword('');
+                setPassword('');
+              }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Fazer Login com Nova Senha
+            </Button>
+          </NewPasswordContainer>
+        ) : (
+          <>
         <InputContainer>
           <Icon>
-            <FaUser />
+            <FaEnvelope />
           </Icon>
           <Input
-            type="text"
+            type="email"
             placeholder="Email"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
         </InputContainer>
@@ -264,9 +386,16 @@ const Login = () => {
           type="submit"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
+          disabled={loading}
         >
-          Entrar
+          {loading ? 'Entrando...' : 'Entrar'}
         </Button>
+        
+        <InfoText>
+          <p>Use suas credenciais para acessar o sistema</p>
+        </InfoText>
+          </>
+        )}
       </LoginForm>
       <ToastContainer
         position="top-right"

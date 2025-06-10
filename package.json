@@ -1,36 +1,87 @@
 {
-  "name": "judai",
+  "name": "clausy",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://138.197.27.151:5000",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "react-scripts": "5.0.1",
-    "styled-components": "^6.1.8",
-    "web-vitals": "^2.1.4",
-    "framer-motion": "^10.16.4",
-    "react-icons": "^4.12.0",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "axios": "^1.6.2",
+    "axios-retry": "^3.9.1",
+    "bcrypt": "^5.1.1",
+    "bootstrap": "^5.3.2",
+    "bull": "^4.12.2",
     "chart.js": "^4.4.1",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "framer-motion": "^10.16.16",
+    "gpt-3-encoder": "^1.1.4",
+    "heapdump": "^0.3.15",
+    "helmet": "^7.1.0",
+    "hpp": "^0.2.3",
+    "http-proxy-middleware": "^3.0.5",
+    "ioredis": "^5.6.1",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.6.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.0-rc.1",
+    "mysql2": "^3.14.1",
+    "pdf-parse": "^1.1.1",
+    "pg": "^8.16.0",
+    "react": "^18.2.0",
+    "react-bootstrap": "^2.9.1",
     "react-chartjs-2": "^5.2.0",
-    "tsparticles": "^2.12.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3",
+    "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.0.1",
+    "react-router-dom": "^6.21.1",
+    "react-scripts": "^5.0.1",
+    "react-toastify": "^11.0.5",
     "react-tsparticles": "^2.12.2",
-    "react-toastify": "^9.1.3"
+    "redis": "^4.6.11",
+    "rotating-file-stream": "^3.2.6",
+    "sanitize-html": "^2.11.0",
+    "styled-components": "^6.1.8",
+    "tsparticles": "^3.8.1",
+    "tsparticles-slim": "^2.12.0",
+    "validator": "^13.11.0",
+    "web-vitals": "^2.1.4",
+    "worker-threads": "^1.0.0",
+    "xss-clean": "^0.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "WDS_SOCKET_HOST=138.197.27.151 WDS_SOCKET_PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true HOST=138.197.27.151 PORT=3000 react-app-rewired start",
+    "build": "react-app-rewired build",
+    "test": "react-app-rewired test",
+    "eject": "react-scripts eject",
+    "server": "nodemon server.js",
+    "start:all": "concurrently \"npm run server\" \"npm start\"",
+    "security-check": "npm audit && npm outdated"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "plugins": [
+      "security"
+    ],
+    "rules": {
+      "security/detect-object-injection": "warn",
+      "security/detect-non-literal-regexp": "warn",
+      "security/detect-unsafe-regex": "warn",
+      "security/detect-buffer-noassert": "warn",
+      "security/detect-eval-with-expression": "warn",
+      "security/detect-no-csrf-before-method-override": "warn",
+      "security/detect-possible-timing-attacks": "warn"
+    }
   },
   "browserslist": {
     "production": [
@@ -43,5 +94,22 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.18.6",
+    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "concurrently": "^8.2.2",
+    "customize-cra": "^1.0.0",
+    "eslint-plugin-security": "^1.7.1",
+    "nodemon": "^3.0.2",
+    "react-app-rewired": "^2.2.1"
+  },
+  "resolutions": {
+    "postcss": "^8.4.31",
+    "nth-check": "^2.0.1",
+    "svgo": "^3.0.2",
+    "@svgr/plugin-svgo": "^8.1.0",
+    "@svgr/webpack": "^8.1.0",
+    "resolve-url-loader": "^5.0.0"
   }
 }
