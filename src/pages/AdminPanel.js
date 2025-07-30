@@ -1116,6 +1116,11 @@ const AdminPanel = () => {
         
 
         
+        console.log('DEBUG: Enviando atualização do usuário:', {
+          ...updates,
+          credits: Number(updates.credits)
+        });
+        
         const result = await updateUser(selectedUser.email, {
           ...updates,
           credits: Number(updates.credits)

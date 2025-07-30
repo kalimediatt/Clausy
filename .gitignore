@@ -6,6 +6,7 @@
 heapdump-*
 bkp_snapshots/*
 digitalocean/*
+00_BKP/*
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 

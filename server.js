@@ -58,7 +58,7 @@ console.log('API_KEY disponível:', process.env.API_KEY ? 'Sim' : 'Não');
 console.log('PORT do .env:', process.env.PORT);
 
 // Definir chave JWT com fallback para desenvolvimento
-const JWT_SECRET = process.env.JWT_SECRET || 'clausy_secret_key_for_development';
+const JWT_SECRET = process.env.JWT_SECRET || 'IkttY9U89HmcwVu42HO7GSTv8QzxWcTG1ClGLjQ66HFrEeKjSp';
 
 // Importar serviços
 const authService = require('./src/services/authService');
@@ -901,6 +901,9 @@ app.post('/api/users/:userId/add-credits', authenticateToken, async (req, res) =
       });
     }
     
+    console.log('DEBUG: Comparando company_id (add-credits) - req.user.company_id:', req.user.company_id, 'targetUser.company_id:', targetUser.company_id);
+    console.log('DEBUG: Tipos (add-credits) - req.user.company_id:', typeof req.user.company_id, 'targetUser.company_id:', typeof targetUser.company_id);
+    
     if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
       return res.status(403).json({ 
         success: false, 
@@ -959,6 +962,9 @@ app.post('/api/users/:userId', authenticateToken, async (req, res) => {
     }
     
     // Admin pode atualizar usuários da própria empresa, superadmin pode atualizar qualquer usuário
+    console.log('DEBUG: Comparando company_id - req.user.company_id:', req.user.company_id, 'targetUser.company_id:', targetUser.company_id);
+    console.log('DEBUG: Tipos - req.user.company_id:', typeof req.user.company_id, 'targetUser.company_id:', typeof targetUser.company_id);
+    
     if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
       return res.status(403).json({ 
         success: false, 
@@ -971,6 +977,14 @@ app.post('/api/users/:userId', authenticateToken, async (req, res) => {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied: Only admins can change user roles' 
+      });
+    }
+    
+    // Permitir que superadmin altere a empresa do usuário
+    if (updates.company_id && req.user.role !== 'superadmin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Only superadmin can change user company' 
       });
     }
     
@@ -1017,6 +1031,9 @@ app.post('/api/users/:userId/delete', authenticateToken, async (req, res) => {
     }
     
     // Admin pode deletar usuários da própria empresa, superadmin pode deletar qualquer usuário
+    console.log('DEBUG: Comparando company_id (delete) - req.user.company_id:', req.user.company_id, 'targetUser.company_id:', targetUser.company_id);
+    console.log('DEBUG: Tipos (delete) - req.user.company_id:', typeof req.user.company_id, 'targetUser.company_id:', typeof targetUser.company_id);
+    
     if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
       return res.status(403).json({ 
         success: false, 
@@ -1071,7 +1088,7 @@ app.post('/api/users/:userId/change-plan', authenticateToken, async (req, res) =
     }
     
     // Verificar se o usuário tem permissão para alterar plano
-    const targetUser = await userService.getUserByEmail(userId);
+    const targetUser = await userService.getUserByEmailNoIsolation(userId);
     
     console.log('targetUser:', targetUser);
     
@@ -1083,6 +1100,9 @@ app.post('/api/users/:userId/change-plan', authenticateToken, async (req, res) =
     }
     
     // Admin pode alterar plano de usuários da própria empresa, superadmin pode alterar qualquer usuário
+    console.log('DEBUG: Comparando company_id (change-plan) - req.user.company_id:', req.user.company_id, 'targetUser.company_id:', targetUser.company_id);
+    console.log('DEBUG: Tipos (change-plan) - req.user.company_id:', typeof req.user.company_id, 'targetUser.company_id:', typeof targetUser.company_id);
+    
     if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
       return res.status(403).json({ 
         success: false, 
