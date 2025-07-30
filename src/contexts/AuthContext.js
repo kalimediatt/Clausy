@@ -212,8 +212,19 @@ const api = {
       
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.indexOf('application/json') !== -1) {
-        const data = await response.json();
-        return data;
+        const responseData = await response.json();
+        
+        // Se a resposta não foi bem-sucedida (status 2xx), tratar como erro
+        if (!response.ok) {
+          throw new Error(responseData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return responseData;
+      }
+      
+      // Se não for JSON, verificar se houve erro HTTP
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       throw new Error('Invalid response format');
@@ -223,6 +234,8 @@ const api = {
     }
   }
 };
+
+
 
 // Helper function to simulate users for development/demo
 function simulateUsers() {
@@ -282,6 +295,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Limpar cache quando company_id mudar
+  useEffect(() => {
+    if (currentUser?.company_id) {
+      console.log('DEBUG: Company ID mudou, limpando cache');
+      setUsersCache([]);
+      setLastUsersLoad(null);
+    }
+  }, [currentUser?.company_id]);
   
   const checkAuth = async () => {
     try {
@@ -363,6 +385,12 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Limpar session_id do usuário atual antes de fazer logout
+      if (currentUser?.user_id) {
+        const sessionKey = `user:${currentUser.user_id}:current_session`;
+        sessionStorage.removeItem(sessionKey);
+      }
+      
       removeStoredToken();
       setIsAuthenticated(false);
       setCurrentUser(null);
@@ -383,14 +411,20 @@ export const AuthProvider = ({ children }) => {
         const logs = Array.isArray(response.data) ? response.data : [];
         
         // Transform the logs to ensure they have the correct structure
-        const transformedLogs = logs.map(log => ({
-          id: log.id || log.log_id,
-          username: log.username || 'N/A',
-          ip_address: log.ip_address || 'N/A',
-          status: Number(log.success) === 1 ? 'success' : 'failed',
-          success: log.success, // manter para debug
-          timestamp: log.timestamp || new Date().toISOString()
-        }));
+        const transformedLogs = logs.map(log => {
+          // O backend já retorna status como 'success' ou 'failed'
+          // mas vamos garantir que está correto baseado no campo success
+          const isSuccess = log.status === 'success' || log.success === 1 || log.success === true;
+          
+          return {
+            id: log.id || log.log_id,
+            username: log.username || 'N/A',
+            ip_address: log.ip_address || 'N/A',
+            status: isSuccess ? 'success' : 'failed',
+            success: isSuccess ? 1 : 0,
+            timestamp: log.timestamp || new Date().toISOString()
+          };
+        });
         
         setAuthLogs(transformedLogs);
         if (response.pagination) {
@@ -413,32 +447,42 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loadUsers = useCallback(async (forceRefresh = false) => {
+    console.log('DEBUG: loadUsers chamado com forceRefresh:', forceRefresh);
+    console.log('DEBUG: currentUser?.company_id:', currentUser?.company_id);
+    
     if (!currentUser?.company_id) {
+      console.log('DEBUG: Sem company_id, limpando usuários');
       setUsers([]);
       setUsersCache([]);
+      setLastUsersLoad(null);
       return null;
     }
 
-    // Verificar se podemos usar o cache
+    // Verificar se podemos usar o cache (apenas se não for forceRefresh)
     const now = Date.now();
     if (!forceRefresh && 
         usersCache.length > 0 && 
         lastUsersLoad && 
         (now - lastUsersLoad) < CACHE_DURATION) {
+      console.log('DEBUG: Usando cache, usuários em cache:', usersCache.length);
       setUsers(usersCache);
       return usersCache;
     }
     
+    console.log('DEBUG: Fazendo requisição para carregar usuários');
     setIsLoadingUsers(true);
     try {
       const response = await api.get(`/company/${currentUser.company_id}/users`);
+      console.log('DEBUG: Resposta da API:', response);
       
       if (response?.data) {
+        console.log('DEBUG: Usuários carregados:', response.data.length);
         setUsers(response.data);
         setUsersCache(response.data);
         setLastUsersLoad(now);
         return response.data;
       }
+      console.log('DEBUG: Nenhum usuário encontrado');
       setUsers([]);
       setUsersCache([]);
       return null;
@@ -450,7 +494,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setIsLoadingUsers(false);
     }
-  }, [currentUser?.company_id, usersCache, lastUsersLoad]);
+  }, [currentUser?.company_id]);
 
   const addUser = async (userData) => {
     try {
@@ -462,7 +506,27 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: response.message || 'Failed to add user' };
     } catch (error) {
       console.error('Error adding user:', error);
-      return { success: false, message: 'Error adding user: ' + (error.message || 'Unknown error') };
+      console.log('Error message:', error.message);
+      // Extrair a mensagem de erro mais específica
+      let errorMessage = 'Erro ao adicionar usuário';
+      
+      if (error.message) {
+        if (error.message.includes('Invalid email format')) {
+          errorMessage = 'Formato de email inválido';
+        } else if (error.message.includes('Password must be at least 6 characters')) {
+          errorMessage = 'A senha deve ter pelo menos 6 caracteres';
+        } else if (error.message.includes('already exists')) {
+          errorMessage = 'Um usuário com este email já existe';
+        } else if (error.message.includes('Email, password and name are required')) {
+          errorMessage = 'Email, senha e nome são obrigatórios';
+        } else if (error.message.includes('Access denied')) {
+          errorMessage = 'Acesso negado: apenas administradores podem criar usuários';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -842,6 +906,59 @@ export const AuthProvider = ({ children }) => {
     return currentUser.role === 'admin' || currentUser.role === 'superadmin';
   };
 
+  // Funções para gerenciar configurações do sistema
+  const getSystemSettings = async () => {
+    try {
+      const response = await api.get('/admin/settings');
+      if (response.success) {
+        return { success: true, data: response.data };
+      }
+      return { success: false, message: response.message || 'Failed to get settings' };
+    } catch (error) {
+      console.error('Error getting system settings:', error);
+      return { success: false, message: 'Error getting system settings: ' + (error.message || 'Unknown error') };
+    }
+  };
+
+  const saveSystemSettings = async (settings) => {
+    try {
+      const response = await api.post('/admin/settings', { settings });
+      if (response.success) {
+        return { success: true };
+      }
+      return { success: false, message: response.message || 'Failed to save settings' };
+    } catch (error) {
+      console.error('Error saving system settings:', error);
+      return { success: false, message: 'Error saving system settings: ' + (error.message || 'Unknown error') };
+    }
+  };
+
+  const resetSystemSettings = async () => {
+    try {
+      const response = await api.post('/admin/settings/reset');
+      if (response.success) {
+        return { success: true };
+      }
+      return { success: false, message: response.message || 'Failed to reset settings' };
+    } catch (error) {
+      console.error('Error resetting system settings:', error);
+      return { success: false, message: 'Error resetting system settings: ' + (error.message || 'Unknown error') };
+    }
+  };
+
+  const getSettingsHistory = async () => {
+    try {
+      const response = await api.get('/admin/settings/history');
+      if (response.success) {
+        return { success: true, data: response.data };
+      }
+      return { success: false, message: response.message || 'Failed to get settings history' };
+    } catch (error) {
+      console.error('Error getting settings history:', error);
+      return { success: false, message: 'Error getting settings history: ' + (error.message || 'Unknown error') };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       isAuthenticated,
@@ -871,9 +988,14 @@ export const AuthProvider = ({ children }) => {
       getCurrentPlanData,
       hasAccess,
       hasAdminAccess,
+      getSystemSettings,
+      saveSystemSettings,
+      resetSystemSettings,
+      getSettingsHistory,
       currentPage,
       totalPages,
-      totalItems
+      totalItems,
+      api
     }}>
       {children}
     </AuthContext.Provider>

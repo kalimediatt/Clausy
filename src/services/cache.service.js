@@ -2,6 +2,10 @@ const Redis = require('ioredis');
 const os = require('os');
 const zlib = require('zlib');
 const { promisify } = require('util');
+const path = require('path');
+
+// Carregar variáveis de ambiente
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Funções promisificadas
 const gzip = promisify(zlib.gzip);
@@ -11,6 +15,8 @@ const gunzip = promisify(zlib.gunzip);
 const redisConfig = {
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD,
+    maxRetriesPerRequest: 3,
     maxRetriesPerRequest: 3,
     enableReadyCheck: true,
     retryStrategy: (times) => {

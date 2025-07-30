@@ -5,7 +5,7 @@ const os = require('os');
 
 // Configurações
 const LOG_DIR = path.join(__dirname, '../../logs');
-const MAX_LOG_SIZE = '20m';
+const MAX_LOG_SIZE = '20M';
 const MAX_LOG_FILES = 14;
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
@@ -56,6 +56,12 @@ const streams = {
         maxSize: MAX_LOG_SIZE,
         maxFiles: MAX_LOG_FILES,
         compress: true
+    }),
+    request: createStream('requests.log', {
+        interval: '1d',
+        path: LOG_DIR,
+        maxSize: '20M',
+        maxFiles: 14
     })
 };
 

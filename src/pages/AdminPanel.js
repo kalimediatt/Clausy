@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -41,6 +41,11 @@ const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
   }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 // Componentes estilizados
@@ -51,38 +56,6 @@ const Container = styled.div`
   color: #DFDFDF;
   width: 100%;
   font-family: 'Inter', sans-serif;
-`;
-
-const Sidebar = styled(motion.div).withConfig({
-  shouldForwardProp: (prop) => prop !== 'isOpen'
-})`
-  width: ${({ isOpen }) => (isOpen ? '250px' : '80px')};
-  background: #2B2B2B;
-  padding: 1rem;
-  transition: width 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  border-right: 1px solid #ADADAD;
-`;
-
-const MenuItem = styled(motion.div).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active'
-})`
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  color: ${({ active }) => (active ? '#8C4B35' : '#ADADAD')};
-
-  &:hover {
-    background: rgba(140, 75, 53, 0.1);
-    color: #8C4B35;
-  }
 `;
 
 const Card = styled.div`
@@ -342,31 +315,7 @@ const ModalContent = styled(motion.div)`
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 `;
 
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-`;
 
-const ModalTitle = styled.h2`
-  font-size: 1.5rem;
-  color: #334155;
-`;
-
-const CloseButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => !['active', 'color'].includes(prop)
-})`
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #64748b;
-  
-  &:hover {
-    color: #ef4444;
-  }
-`;
 
 const ModalActions = styled.div`
   display: flex;
@@ -556,68 +505,6 @@ const SelectInput = styled.select`
   }
 `;
 
-// Novos componentes para gerenciamento de planos de assinatura
-const PlanCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border-left: 4px solid ${props => props.color || '#3b82f6'};
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const PlanTitle = styled.h3`
-  margin: 0 0 0.5rem;
-  color: ${props => props.color || '#3b82f6'};
-  font-size: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const PlanFeatures = styled.ul`
-  margin: 1rem 0;
-  padding-left: 1.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-  
-  li {
-    margin-bottom: 0.5rem;
-  }
-`;
-
-const PlanPrice = styled.div`
-  font-weight: bold;
-  font-size: 1.5rem;
-  color: ${props => props.color || '#3b82f6'};
-  margin: 1rem 0;
-`;
-
-const UsageStatsSection = styled.div`
-  margin-top: 2rem;
-`;
-
-const UsageBarContainer = styled.div`
-  background: #e2e8f0;
-  height: 8px;
-  border-radius: 4px;
-  margin: 0.5rem 0 1rem;
-  position: relative;
-  overflow: hidden;
-`;
-
-const UsageBar = styled.div`
-  position: absolute;
-  height: 100%;
-  width: ${props => `${props.percentage || 0}%`};
-  background: ${props => 
-    props.percentage > 90 ? '#ef4444' : 
-    props.percentage > 70 ? '#f59e0b' : 
-    '#3b82f6'};
-  border-radius: 4px;
-  transition: width 0.5s ease;
-`;
-
 const UserListItem = styled.div`
   display: flex;
   justify-content: space-between;
@@ -630,16 +517,142 @@ const UserName = styled.span`
   font-size: ${props => props.style?.fontSize || 'inherit'};
 `;
 
-const IconAction = styled(IconButton)`
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  margin-left: 0.5rem;
-`;
-
 const Content = styled.div`
   margin-top: 2rem;
   padding: 0 1rem;
+`;
+
+// Componentes para paginação e filtragem
+const SearchContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const SearchInput = styled.input`
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+`;
+
+const SortableTh = styled.th`
+  text-align: left;
+  padding: 1rem;
+  color: #64748b;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  
+  &:hover {
+    background: rgba(59, 130, 246, 0.05);
+  }
+  
+  &::after {
+    content: '↕';
+    position: absolute;
+    right: 0.5rem;
+    opacity: 0.5;
+    font-size: 0.75rem;
+  }
+  
+  &.sorted-asc::after {
+    content: '↑';
+    opacity: 1;
+    color: #3b82f6;
+  }
+  
+  &.sorted-desc::after {
+    content: '↓';
+    opacity: 1;
+    color: #3b82f6;
+  }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+`;
+
+const PaginationInfo = styled.span`
+  color: #64748b;
+  font-size: 0.875rem;
+`;
+
+const PaginationButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const PaginationButton = styled.button`
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+`;
+
+const ItemsPerPageSelect = styled.select`
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+`;
+
+const ItemsPerPageContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
 `;
 
 const AdminPanel = () => {
@@ -655,7 +668,12 @@ const AdminPanel = () => {
     changePlan, 
     loadUsers,
     hasAdminAccess,
-    getCurrentPlanData
+    getCurrentPlanData,
+    getSystemSettings,
+    saveSystemSettings,
+    resetSystemSettings,
+    getSettingsHistory,
+    api
   } = useAuth();
   
   const [modalOpen, setModalOpen] = useState(false);
@@ -664,24 +682,154 @@ const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState('users');
   const [isInitialized, setIsInitialized] = useState(false);
   
+  // Estados para paginação, ordenação e filtragem
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortField, setSortField] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  
+  // Funções para filtragem, ordenação e paginação
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1); // Reset para primeira página ao ordenar
+  };
+
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset para primeira página ao pesquisar
+  };
+
+  const handleItemsPerPageChange = (value) => {
+    setItemsPerPage(parseInt(value));
+    setCurrentPage(1); // Reset para primeira página ao mudar itens por página
+  };
+
+  const filterAndSortUsers = useCallback(() => {
+    if (!users || users.length === 0) {
+      setFilteredUsers([]);
+      return;
+    }
+
+    let filtered = users;
+
+    // Aplicar filtro de pesquisa
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(user => 
+        (user.name && user.name.toLowerCase().includes(term)) ||
+        (user.email && user.email.toLowerCase().includes(term)) ||
+        (user.role && user.role.toLowerCase().includes(term)) ||
+        (user.plan_id && subscriptionPlans[user.plan_id]?.name.toLowerCase().includes(term)) ||
+        (user.plan && subscriptionPlans[user.plan]?.name.toLowerCase().includes(term)) ||
+        (user.credits && user.credits.toString().includes(term))
+      );
+    }
+
+    // Aplicar ordenação
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortField) {
+        case 'name':
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+          break;
+        case 'email':
+          aValue = (a.email || '').toLowerCase();
+          bValue = (b.email || '').toLowerCase();
+          break;
+        case 'role':
+          aValue = (a.role || '').toLowerCase();
+          bValue = (b.role || '').toLowerCase();
+          break;
+        case 'plan':
+          aValue = (subscriptionPlans[a.plan_id || a.plan]?.name || '').toLowerCase();
+          bValue = (subscriptionPlans[b.plan_id || b.plan]?.name || '').toLowerCase();
+          break;
+        case 'credits':
+          aValue = parseInt(a.credits || 0);
+          bValue = parseInt(b.credits || 0);
+          break;
+        default:
+          aValue = (a.name || '').toLowerCase();
+          bValue = (b.name || '').toLowerCase();
+      }
+
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredUsers(filtered);
+  }, [users, searchTerm, sortField, sortDirection]);
+
+  // Calcular dados de paginação
+  const totalItems = filteredUsers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Atualizar usuários filtrados quando mudar os filtros
+  useEffect(() => {
+    filterAndSortUsers();
+  }, [filterAndSortUsers]);
+
+  // Reset para primeira página quando mudar de aba
+  useEffect(() => {
+    if (activeTab === 'users') {
+      setCurrentPage(1);
+      setSearchTerm('');
+      // Não resetar a ordenação aqui para manter a consistência
+    }
+  }, [activeTab]);
+
   // Load users only once when component mounts or when tab changes to users
   useEffect(() => {
     const initializeAdmin = async () => {
       if (!isInitialized && currentUser) {
-        await loadUsers(false); // Usa cache se disponível
+        await loadUsers(true); // Força refresh na inicialização
         setIsInitialized(true);
+        // Reset ordenação apenas na primeira carga
+        if (isFirstLoad) {
+          setSortField('name');
+          setSortDirection('asc');
+          setIsFirstLoad(false);
+        }
       }
     };
     
     initializeAdmin();
-  }, [currentUser, isInitialized, loadUsers]);
+  }, [currentUser, isInitialized, loadUsers, isFirstLoad]);
 
   // Recarregar usuários quando mudar para a aba de usuários
   useEffect(() => {
-    if (activeTab === 'users' && isInitialized) {
-      loadUsers(false); // Usa cache se disponível
+    if (activeTab === 'users' && isInitialized && (!users || users.length === 0)) {
+      loadUsers(true); // Força refresh para garantir dados corretos
     }
-  }, [activeTab, isInitialized, loadUsers]);
+  }, [activeTab, isInitialized, loadUsers, users]);
+  
+  // Monitorar mudanças no estado users
+  useEffect(() => {
+    console.log('DEBUG: Estado users mudou:', users.length, 'usuários');
+  }, [users]);
+  
+  // Carregar configurações quando mudar para a aba de configurações
+  useEffect(() => {
+    if (activeTab === 'settings' && isInitialized) {
+      loadSystemSettings();
+    }
+  }, [activeTab, isInitialized]);
   
   // Check admin access after initialization
   useEffect(() => {
@@ -697,13 +845,22 @@ const AdminPanel = () => {
     name: '',
     role: 'user',
     credits: 0,
-    plan: 'FREE_TRIAL'
+    plan: 'FREE_TRIAL',
+    company_id: ''
   });
   
   const [creditsAmount, setCreditsAmount] = useState(100);
   const [selectedPlan, setSelectedPlan] = useState('');
+  
+  // Estados de validação
+  const [validationErrors, setValidationErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Estado para empresas (apenas para superadmin)
+  const [companies, setCompanies] = useState([]);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
-  // Configurações do sistema (simuladas)
+  // Configurações do sistema
   const [systemSettings, setSystemSettings] = useState({
     newUserNotifications: true,
     requireEmailVerification: false,
@@ -711,8 +868,13 @@ const AdminPanel = () => {
     defaultCredits: 100,
     maintenanceMode: false,
     backupFrequency: 'daily',
-    dataPurgePolicy: '90days'
+    dataPurgePolicy: '90days',
+    auditLogs: true,
+    loginAttempts: 5,
+    sessionTimeout: 30
   });
+  
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
   
   // Dados simulados para gráficos
   const usageData = {
@@ -750,6 +912,60 @@ const AdminPanel = () => {
     }
   };
   
+  // Função para carregar empresas (apenas para superadmin)
+  const loadCompanies = async () => {
+    if (currentUser?.role !== 'superadmin') return;
+    
+    setIsLoadingCompanies(true);
+    try {
+      const response = await api.get('/companies');
+      if (response.success && response.data) {
+        setCompanies(response.data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar empresas:', error);
+      toast.error('Erro ao carregar lista de empresas');
+    } finally {
+      setIsLoadingCompanies(false);
+    }
+  };
+
+  // Carregar empresas quando o componente inicializar (apenas para superadmin)
+  useEffect(() => {
+    if (currentUser?.role === 'superadmin') {
+      loadCompanies();
+    }
+  }, [currentUser?.role]);
+
+  // Função para verificar se o usuário pode editar/excluir outro usuário
+  const canEditUser = (targetUser) => {
+    if (!currentUser || !targetUser) return false;
+    
+    // Superadmin pode editar qualquer usuário
+    if (currentUser.role === 'superadmin') return true;
+    
+    // Admin pode editar usuários da mesma empresa
+    if (currentUser.role === 'admin' && targetUser.company_id === currentUser.company_id) return true;
+    
+    return false;
+  };
+
+  // Função para verificar se o usuário pode excluir outro usuário
+  const canDeleteUser = (targetUser) => {
+    if (!currentUser || !targetUser) return false;
+    
+    // Não pode deletar a si mesmo
+    if (currentUser.email === targetUser.email) return false;
+    
+    // Superadmin pode deletar qualquer usuário (exceto a si mesmo)
+    if (currentUser.role === 'superadmin') return true;
+    
+    // Admin pode deletar usuários da mesma empresa (exceto a si mesmo)
+    if (currentUser.role === 'admin' && targetUser.company_id === currentUser.company_id) return true;
+    
+    return false;
+  };
+
   const openAddModal = () => {
     setModalType('add');
     setFormData({
@@ -758,8 +974,11 @@ const AdminPanel = () => {
       name: '',
       role: 'user',
       credits: 0,
-      plan: 'FREE_TRIAL'
+      plan: 'FREE_TRIAL',
+      company_id: currentUser?.role === 'superadmin' ? '' : currentUser?.company_id || ''
     });
+    setValidationErrors({});
+    setIsSubmitting(false);
     setModalOpen(true);
   };
   
@@ -772,7 +991,8 @@ const AdminPanel = () => {
       name: user.name,
       role: user.role || 'user',
       credits: user.credits || 0,
-      plan: user.plan_id || user.plan || 'FREE_TRIAL'
+      plan: user.plan_id || user.plan || 'FREE_TRIAL',
+      company_id: user.company_id || ''
     });
     setModalOpen(true);
   };
@@ -797,68 +1017,164 @@ const AdminPanel = () => {
       ...formData,
       [name]: value
     });
+    
+    // Limpar erro de validação quando o usuário começar a digitar
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: undefined
+      }));
+    }
   };
   
   const handleSubmit = async () => {
     if (modalType === 'add') {
+      // Limpar erros anteriores
+      setValidationErrors({});
+      
       // Validações básicas
-      if (!formData.email || !formData.password || !formData.name) {
-        toast.error('Todos os campos são obrigatórios');
+      const errors = {};
+      
+      if (!formData.email) {
+        errors.email = 'Email é obrigatório';
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+          errors.email = 'Formato de email inválido';
+        }
+      }
+      
+      if (!formData.password) {
+        errors.password = 'Senha é obrigatória';
+      } else if (formData.password.length < (systemSettings.minPasswordLength || 6)) {
+        errors.password = `A senha deve ter pelo menos ${systemSettings.minPasswordLength || 6} caracteres`;
+      }
+      
+      if (!formData.name) {
+        errors.name = 'Nome é obrigatório';
+      } else if (formData.name.trim().length < 2) {
+        errors.name = 'O nome deve ter pelo menos 2 caracteres';
+      }
+      
+      // Validação para empresa (apenas para superadmin)
+      if (currentUser?.role === 'superadmin' && !formData.company_id) {
+        errors.company_id = 'Empresa é obrigatória';
+      }
+      
+      // Se há erros de validação, exibir e parar
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
         return;
       }
       
-      const result = await addUser({
-        ...formData,
-        credits: Number(formData.credits)
-      });
+      setIsSubmitting(true);
       
-      if (result.success) {
-        toast.success('Usuário adicionado com sucesso');
-        setModalOpen(false);
-        loadUsers(); // Recarregar a lista após adicionar
-      } else {
-        toast.error(result.message || 'Não foi possível adicionar o usuário');
+      try {
+        const result = await addUser({
+          ...formData,
+          credits: Number(formData.credits)
+        });
+        
+        if (result.success) {
+          toast.success('Usuário adicionado com sucesso!');
+          setModalOpen(false);
+          // Limpar o formulário e erros
+          setFormData({
+            email: '',
+            password: '',
+            name: '',
+            role: 'user',
+            credits: 0,
+            plan: 'FREE_TRIAL',
+            company_id: ''
+          });
+          setValidationErrors({});
+          console.log('DEBUG: Chamando loadUsers após adicionar usuário');
+          await loadUsers(true); // Recarregar a lista após adicionar
+          console.log('DEBUG: loadUsers concluído');
+        } else {
+          toast.error(result.message || 'Não foi possível adicionar o usuário');
+        }
+      } catch (error) {
+        toast.error('Erro inesperado ao adicionar usuário');
+      } finally {
+        setIsSubmitting(false);
       }
     } else if (modalType === 'edit') {
-      // Tratamos o caso da senha vazia (não modificar)
-      const updates = { ...formData };
-      if (!updates.password) delete updates.password;
+      setIsSubmitting(true);
       
-      const result = await updateUser(selectedUser.email, {
-        ...updates,
-        credits: Number(updates.credits)
-      });
-      
-      if (result.success) {
-        toast.success('Usuário atualizado com sucesso');
-        setModalOpen(false);
-        loadUsers(); // Recarregar a lista após atualizar
-      } else {
-        toast.error(result.message || 'Não foi possível atualizar o usuário');
+      try {
+        // Tratamos o caso da senha vazia (não modificar)
+        const updates = { ...formData };
+        if (!updates.password) delete updates.password;
+        
+        // Mapear 'plan' para 'plan_id' para compatibilidade com o backend
+        if (updates.plan) {
+          updates.plan_id = updates.plan;
+          delete updates.plan;
+        }
+        
+
+        
+        const result = await updateUser(selectedUser.email, {
+          ...updates,
+          credits: Number(updates.credits)
+        });
+        
+        if (result.success) {
+          toast.success('Usuário atualizado com sucesso');
+          setModalOpen(false);
+          loadUsers(true); // Recarregar a lista após atualizar
+        } else {
+          toast.error(result.message || 'Não foi possível atualizar o usuário');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar usuário:', error);
+        toast.error('Erro inesperado ao atualizar usuário');
+      } finally {
+        setIsSubmitting(false);
       }
     } else if (modalType === 'credits') {
-      const result = await addCredits(selectedUser.email, Number(creditsAmount));
+      setIsSubmitting(true);
       
-      if (result.success) {
-        toast.success(`${creditsAmount} créditos adicionados com sucesso para ${selectedUser.name}`);
-        setModalOpen(false);
-        loadUsers(); // Recarregar a lista após adicionar créditos
-      } else {
-        toast.error(result.message || 'Não foi possível adicionar créditos');
+      try {
+        const result = await addCredits(selectedUser.email, Number(creditsAmount));
+        
+        if (result.success) {
+          toast.success(`${creditsAmount} créditos adicionados com sucesso para ${selectedUser.name}`);
+          setModalOpen(false);
+          loadUsers(true); // Recarregar a lista após adicionar créditos
+        } else {
+          toast.error(result.message || 'Não foi possível adicionar créditos');
+        }
+      } catch (error) {
+        console.error('Erro ao adicionar créditos:', error);
+        toast.error('Erro inesperado ao adicionar créditos');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
   
   const handleChangePlan = async () => {
     if (selectedUser && selectedPlan) {
-      const result = await changePlan(selectedUser.email, selectedPlan);
+      setIsSubmitting(true);
       
-      if (result.success) {
-        toast.success(`Plano alterado para ${subscriptionPlans[selectedPlan]?.name || selectedPlan}`);
-        setModalOpen(false);
-        loadUsers(); // Recarregar a lista após alterar o plano
-      } else {
-        toast.error(result.message || 'Não foi possível alterar o plano');
+      try {
+        const result = await changePlan(selectedUser.email, selectedPlan);
+        
+        if (result.success) {
+          toast.success(`Plano alterado para ${subscriptionPlans[selectedPlan]?.name || selectedPlan}`);
+          setModalOpen(false);
+          loadUsers(true); // Recarregar a lista após alterar o plano
+        } else {
+          toast.error(result.message || 'Não foi possível alterar o plano');
+        }
+      } catch (error) {
+        console.error('Erro ao alterar plano:', error);
+        toast.error('Erro inesperado ao alterar plano');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -869,7 +1185,7 @@ const AdminPanel = () => {
       
       if (result.success) {
         toast.success('Usuário removido com sucesso');
-        loadUsers(); // Recarregar a lista após remover
+        loadUsers(true); // Recarregar a lista após remover
       } else {
         toast.error(result.message || 'Não foi possível remover o usuário');
       }
@@ -881,18 +1197,83 @@ const AdminPanel = () => {
     navigate('/login');
   };
   
-  const handleSettingToggle = (setting) => {
-    setSystemSettings({
-      ...systemSettings,
-      [setting]: !systemSettings[setting]
-    });
+  const handleSettingToggle = async (setting) => {
+    const newValue = !systemSettings[setting];
+    
+    try {
+      const result = await saveSystemSettings({ [setting]: newValue });
+      
+      if (result.success) {
+        setSystemSettings(prev => ({
+          ...prev,
+          [setting]: newValue
+        }));
+        
+        // Mostrar feedback ao usuário
+        const settingNames = {
+          newUserNotifications: 'Notificações de novos usuários',
+          requireEmailVerification: 'Verificação de email',
+          maintenanceMode: 'Modo de manutenção',
+          backupFrequency: 'Frequência de backup',
+          auditLogs: 'Logs de auditoria'
+        };
+        
+        toast.success(`${settingNames[setting] || setting} ${newValue ? 'ativado' : 'desativado'} com sucesso`);
+      } else {
+        toast.error(result.message || 'Erro ao salvar configuração');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar configuração');
+      console.error('Error saving setting:', error);
+    }
   };
   
-  const handleSettingChange = (setting, value) => {
-    setSystemSettings({
-      ...systemSettings,
-      [setting]: value
-    });
+  const loadSystemSettings = async () => {
+    if (isLoadingSettings) return;
+    
+    setIsLoadingSettings(true);
+    try {
+      const result = await getSystemSettings();
+      if (result.success) {
+        setSystemSettings(result.data);
+      } else {
+        toast.error('Erro ao carregar configurações');
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast.error('Erro ao carregar configurações');
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const handleSettingChange = async (setting, value) => {
+    try {
+      const result = await saveSystemSettings({ [setting]: value });
+      
+      if (result.success) {
+        setSystemSettings(prev => ({
+          ...prev,
+          [setting]: value
+        }));
+        
+        // Mostrar feedback ao usuário
+        const settingNames = {
+          minPasswordLength: 'Comprimento mínimo de senha',
+          backupFrequency: 'Frequência de backup',
+          dataPurgePolicy: 'Política de limpeza de dados',
+          loginAttempts: 'Limite de tentativas de login',
+          sessionTimeout: 'Timeout de sessão'
+        };
+        
+        toast.success(`${settingNames[setting] || setting} atualizado para: ${value}`);
+      } else {
+        toast.error(result.message || 'Erro ao salvar configuração');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar configuração');
+      console.error('Error saving setting:', error);
+    }
   };
   
   const renderModal = () => {
@@ -945,7 +1326,19 @@ const AdminPanel = () => {
                   value={formData.email}
                   onChange={handleChange}
                   readOnly={modalType === 'edit'}
+                  style={{ 
+                    borderColor: validationErrors.email ? '#ef4444' : undefined 
+                  }}
                 />
+                {validationErrors.email && (
+                  <div style={{ 
+                    color: '#ef4444', 
+                    fontSize: '0.875rem', 
+                    marginTop: '0.25rem' 
+                  }}>
+                    {validationErrors.email}
+                  </div>
+                )}
               </FormGroup>
               
               <FormGroup>
@@ -959,7 +1352,19 @@ const AdminPanel = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required={modalType === 'add'}
+                  style={{ 
+                    borderColor: validationErrors.password ? '#ef4444' : undefined 
+                  }}
                 />
+                {validationErrors.password && (
+                  <div style={{ 
+                    color: '#ef4444', 
+                    fontSize: '0.875rem', 
+                    marginTop: '0.25rem' 
+                  }}>
+                    {validationErrors.password}
+                  </div>
+                )}
               </FormGroup>
               
               <FormGroup>
@@ -970,7 +1375,19 @@ const AdminPanel = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  style={{ 
+                    borderColor: validationErrors.name ? '#ef4444' : undefined 
+                  }}
                 />
+                {validationErrors.name && (
+                  <div style={{ 
+                    color: '#ef4444', 
+                    fontSize: '0.875rem', 
+                    marginTop: '0.25rem' 
+                  }}>
+                    {validationErrors.name}
+                  </div>
+                )}
               </FormGroup>
               
               <FormGroup>
@@ -985,6 +1402,61 @@ const AdminPanel = () => {
                   <option value="admin">Administrador</option>
                 </Select>
               </FormGroup>
+              
+              {/* Campo de empresa - apenas para superadmin ou editável para admin */}
+              {currentUser?.role === 'superadmin' ? (
+                <FormGroup>
+                  <Label htmlFor="company_id">Empresa</Label>
+                  <Select
+                    id="company_id"
+                    name="company_id"
+                    value={formData.company_id}
+                    onChange={handleChange}
+                    required
+                    disabled={isLoadingCompanies}
+                    style={{ 
+                      borderColor: validationErrors.company_id ? '#ef4444' : undefined 
+                    }}
+                  >
+                    <option value="">Selecione uma empresa</option>
+                    {companies.map(company => (
+                      <option key={company.company_id} value={company.company_id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </Select>
+                  {validationErrors.company_id && (
+                    <div style={{ 
+                      color: '#ef4444', 
+                      fontSize: '0.875rem', 
+                      marginTop: '0.25rem' 
+                    }}>
+                      {validationErrors.company_id}
+                    </div>
+                  )}
+                  {isLoadingCompanies && (
+                    <div style={{ 
+                      color: '#64748b', 
+                      fontSize: '0.875rem', 
+                      marginTop: '0.25rem' 
+                    }}>
+                      Carregando empresas...
+                    </div>
+                  )}
+                </FormGroup>
+              ) : (
+                <FormGroup>
+                  <Label htmlFor="company_id">Empresa</Label>
+                  <Input
+                    type="text"
+                    id="company_id"
+                    name="company_id"
+                    value={currentUser?.company_name || 'Sua empresa'}
+                    disabled
+                    style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
+                  />
+                </FormGroup>
+              )}
               
               <FormGroup>
                 <Label htmlFor="plan">Plano</Label>
@@ -1017,7 +1489,12 @@ const AdminPanel = () => {
           )}
           
           <ModalActions>
-            <Button onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button 
+              onClick={() => setModalOpen(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
             <Button 
               variant="primary" 
               onClick={
@@ -1025,11 +1502,31 @@ const AdminPanel = () => {
                   ? handleChangePlan 
                   : handleSubmit
               }
+              disabled={isSubmitting}
             >
-              {modalType === 'add' ? 'Adicionar' : 
-               modalType === 'edit' ? 'Salvar' : 
-               modalType === 'credits' ? 'Adicionar Créditos' :
-               'Alterar Plano'}
+              {isSubmitting ? (
+                <>
+                  <div style={{ 
+                    display: 'inline-block', 
+                    width: '16px', 
+                    height: '16px', 
+                    border: '2px solid transparent', 
+                    borderTop: '2px solid currentColor', 
+                    borderRadius: '50%', 
+                    animation: 'spin 1s linear infinite',
+                    marginRight: '8px'
+                  }} />
+                  {modalType === 'add' ? 'Adicionando...' : 
+                   modalType === 'edit' ? 'Salvando...' : 
+                   modalType === 'credits' ? 'Adicionando...' :
+                   'Alterando...'}
+                </>
+              ) : (
+                modalType === 'add' ? 'Adicionar' : 
+                modalType === 'edit' ? 'Salvar' : 
+                modalType === 'credits' ? 'Adicionar Créditos' :
+                'Alterar Plano'
+              )}
             </Button>
           </ModalActions>
         </ModalContent>
@@ -1047,24 +1544,61 @@ const AdminPanel = () => {
               Lista de Usuários
             </CardTitle>
             
+            <SearchContainer>
+              <FaSearch style={{ color: '#64748b' }} />
+              <SearchInput
+                type="text"
+                placeholder="Pesquisar usuários por nome, email, função, plano ou créditos..."
+                value={searchTerm}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </SearchContainer>
+            
             <Table>
               <thead>
                 <tr>
-                  <Th>Nome</Th>
-                  <Th>Email</Th>
-                  <Th>Função</Th>
-                  <Th>Plano</Th>
-                  <Th>Créditos</Th>
+                  <SortableTh 
+                    onClick={() => handleSort('name')}
+                    className={sortField === 'name' ? `sorted-${sortDirection}` : ''}
+                  >
+                    Nome
+                  </SortableTh>
+                  <SortableTh 
+                    onClick={() => handleSort('email')}
+                    className={sortField === 'email' ? `sorted-${sortDirection}` : ''}
+                  >
+                    Email
+                  </SortableTh>
+                  <SortableTh 
+                    onClick={() => handleSort('role')}
+                    className={sortField === 'role' ? `sorted-${sortDirection}` : ''}
+                  >
+                    Função
+                  </SortableTh>
+                  <SortableTh 
+                    onClick={() => handleSort('plan')}
+                    className={sortField === 'plan' ? `sorted-${sortDirection}` : ''}
+                  >
+                    Plano
+                  </SortableTh>
+                  <SortableTh 
+                    onClick={() => handleSort('credits')}
+                    className={sortField === 'credits' ? `sorted-${sortDirection}` : ''}
+                  >
+                    Créditos
+                  </SortableTh>
                   <Th>Ações</Th>
                 </tr>
               </thead>
               <tbody>
-                {!users || users.length === 0 ? (
+                {!currentUsers || currentUsers.length === 0 ? (
                   <tr>
-                    <Td colSpan="6" style={{ textAlign: 'center' }}>Nenhum usuário encontrado</Td>
+                    <Td colSpan="6" style={{ textAlign: 'center' }}>
+                      {searchTerm ? 'Nenhum usuário encontrado com os critérios de pesquisa' : 'Nenhum usuário encontrado'}
+                    </Td>
                   </tr>
                 ) : (
-                  users.map(user => (
+                  currentUsers.map(user => (
                     <Tr key={user.email || user.user_id}>
                       <Td>{user.name || 'N/A'}</Td>
                       <Td>{user.email || 'N/A'}</Td>
@@ -1086,30 +1620,36 @@ const AdminPanel = () => {
                       <Td>{user.credits || 0}</Td>
                       <Td>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <IconButton 
-                            variant="primary"
-                            onClick={() => openEditModal(user)}
-                          >
-                            <FaEdit />
-                          </IconButton>
-                          <IconButton 
-                            variant="primary"
-                            onClick={() => openCreditsModal(user)}
-                          >
-                            <FaCoins />
-                          </IconButton>
-                          <IconButton 
-                            variant="primary"
-                            onClick={() => openPlanModal(user)}
-                          >
-                            <FaUserShield />
-                          </IconButton>
-                          <IconButton 
-                            variant="danger"
-                            onClick={() => handleDeleteUser(user.email)}
-                          >
-                            <FaTrash />
-                          </IconButton>
+                          {canEditUser(user) && (
+                            <>
+                              <IconButton 
+                                variant="primary"
+                                onClick={() => openEditModal(user)}
+                              >
+                                <FaEdit />
+                              </IconButton>
+                              <IconButton 
+                                variant="primary"
+                                onClick={() => openCreditsModal(user)}
+                              >
+                                <FaCoins />
+                              </IconButton>
+                              <IconButton 
+                                variant="primary"
+                                onClick={() => openPlanModal(user)}
+                              >
+                                <FaUserShield />
+                              </IconButton>
+                            </>
+                          )}
+                          {canDeleteUser(user) && (
+                            <IconButton 
+                              variant="danger"
+                              onClick={() => handleDeleteUser(user.email)}
+                            >
+                              <FaTrash />
+                            </IconButton>
+                          )}
                         </div>
                       </Td>
                     </Tr>
@@ -1117,6 +1657,66 @@ const AdminPanel = () => {
                 )}
               </tbody>
             </Table>
+
+            <PaginationContainer>
+              <PaginationInfo>
+                {totalItems > 0 ? `${startIndex + 1} - ${Math.min(endIndex, totalItems)} de ${totalItems} usuários` : 'Nenhum usuário encontrado'}
+              </PaginationInfo>
+              {totalPages > 1 && (
+                <PaginationButtons>
+                  <PaginationButton 
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </PaginationButton>
+                  
+                  {/* Botões de página numerados */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <PaginationButton
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum ? 'active' : ''}
+                      >
+                        {pageNum}
+                      </PaginationButton>
+                    );
+                  })}
+                  
+                  <PaginationButton 
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                  </PaginationButton>
+                </PaginationButtons>
+              )}
+              <ItemsPerPageContainer>
+                <span>Mostrar:</span>
+                <ItemsPerPageSelect 
+                  value={itemsPerPage} 
+                  onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                >
+                  <option value="10">10 por página</option>
+                  <option value="20">20 por página</option>
+                  <option value="30">30 por página</option>
+                  <option value="40">40 por página</option>
+                  <option value="50">50 por página</option>
+                </ItemsPerPageSelect>
+              </ItemsPerPageContainer>
+            </PaginationContainer>
           </Card>
         );
       case 'stats':
@@ -1185,8 +1785,48 @@ const AdminPanel = () => {
       case 'settings':
         return (
           <>
-            <SettingSection>
-              <h2>Configurações de Usuários</h2>
+            {isLoadingSettings ? (
+              <div style={{ 
+                textAlign: 'center', 
+                padding: '2rem',
+                color: '#64748b'
+              }}>
+                Carregando configurações...
+              </div>
+            ) : (
+              <>
+                <SettingSection>
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: '1rem'
+                  }}>
+                    <h2>Configurações de Usuários</h2>
+                    {currentUser?.role === 'superadmin' && (
+                      <Button 
+                        variant="danger" 
+                        onClick={async () => {
+                          if (window.confirm('Tem certeza que deseja resetar todas as configurações para os valores padrão?')) {
+                            try {
+                              const result = await resetSystemSettings();
+                              if (result.success) {
+                                toast.success('Configurações resetadas com sucesso');
+                                loadSystemSettings();
+                              } else {
+                                toast.error(result.message || 'Erro ao resetar configurações');
+                              }
+                            } catch (error) {
+                              toast.error('Erro ao resetar configurações');
+                            }
+                          }
+                        }}
+                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
+                      >
+                        Resetar Configurações
+                      </Button>
+                    )}
+                  </div>
               
               <SettingRow>
                 <SettingInfo>
@@ -1227,7 +1867,7 @@ const AdminPanel = () => {
               </SettingRow>
             </SettingSection>
             
-            <SettingSection>
+            {/* <SettingSection>
               <h2>Configurações do Sistema</h2>
               
               <SettingRow>
@@ -1256,7 +1896,132 @@ const AdminPanel = () => {
                   <option value="monthly">Mensalmente</option>
                 </SelectInput>
               </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Política de Limpeza de Dados</SettingTitle>
+                  <SettingDescription>Período para limpeza automática de dados antigos</SettingDescription>
+                </SettingInfo>
+                <SelectInput 
+                  value={systemSettings.dataPurgePolicy}
+                  onChange={(e) => handleSettingChange('dataPurgePolicy', e.target.value)}
+                >
+                  <option value="30days">30 dias</option>
+                  <option value="60days">60 dias</option>
+                  <option value="90days">90 dias</option>
+                  <option value="180days">180 dias</option>
+                  <option value="never">Nunca</option>
+                </SelectInput>
+              </SettingRow>
+            </SettingSection> */}
+            
+            <SettingSection>
+              <h2>Configurações de Segurança</h2>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Logs de Auditoria</SettingTitle>
+                  <SettingDescription>Manter logs detalhados de todas as ações dos usuários</SettingDescription>
+                </SettingInfo>
+                <ToggleSwitch 
+                  data-active={systemSettings.auditLogs || true}
+                  onClick={() => handleSettingToggle('auditLogs')}
+                />
+              </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Limite de Tentativas de Login</SettingTitle>
+                  <SettingDescription>Número máximo de tentativas de login antes do bloqueio</SettingDescription>
+                </SettingInfo>
+                <SelectInput 
+                  value={systemSettings.loginAttempts || 5}
+                  onChange={(e) => handleSettingChange('loginAttempts', parseInt(e.target.value))}
+                >
+                  <option value="3">3 tentativas</option>
+                  <option value="5">5 tentativas</option>
+                  <option value="10">10 tentativas</option>
+                  <option value="unlimited">Ilimitado</option>
+                </SelectInput>
+              </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Timeout de Sessão</SettingTitle>
+                  <SettingDescription>Tempo de inatividade antes do logout automático</SettingDescription>
+                </SettingInfo>
+                <SelectInput 
+                  value={systemSettings.sessionTimeout || 30}
+                  onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
+                >
+                  <option value="15">15 minutos</option>
+                  <option value="30">30 minutos</option>
+                  <option value="60">1 hora</option>
+                  <option value="120">2 horas</option>
+                  <option value="never">Nunca</option>
+                </SelectInput>
+              </SettingRow>
             </SettingSection>
+            
+            <SettingSection>
+              <h2>Informações do Sistema</h2>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Versão do Sistema</SettingTitle>
+                  <SettingDescription>Versão atual da aplicação</SettingDescription>
+                </SettingInfo>
+                <div style={{ color: '#64748b', fontWeight: '500' }}>v1.0.0</div>
+              </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Última Atualização</SettingTitle>
+                  <SettingDescription>Data da última atualização do sistema</SettingDescription>
+                </SettingInfo>
+                <div style={{ color: '#64748b', fontWeight: '500' }}>15/01/2024</div>
+              </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Status do Servidor</SettingTitle>
+                  <SettingDescription>Status atual do servidor</SettingDescription>
+                </SettingInfo>
+                <div style={{ 
+                  color: '#10b981', 
+                  fontWeight: '500',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <div style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981'
+                  }} />
+                  Online
+                </div>
+              </SettingRow>
+              
+              {/* <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Uso de Memória</SettingTitle>
+                  <SettingDescription>Uso atual de memória do servidor</SettingDescription>
+                </SettingInfo>
+                <div style={{ color: '#64748b', fontWeight: '500' }}>45%</div>
+              </SettingRow>
+              
+              <SettingRow>
+                <SettingInfo>
+                  <SettingTitle>Uso de CPU</SettingTitle>
+                  <SettingDescription>Uso atual de CPU do servidor</SettingDescription>
+                </SettingInfo>
+                <div style={{ color: '#64748b', fontWeight: '500' }}>23%</div>
+              </SettingRow> */}
+                </SettingSection>
+              </>
+            )}
           </>
         );
       case 'plans':

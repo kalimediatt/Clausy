@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import AdminPanel from './pages/AdminPanel';
 import CompanyManagement from './pages/CompanyManagement';
+import Report from './pages/Report';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './App';
 
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
       {
         path: 'companies',
         element: <ProtectedRoute adminOnly={true}><CompanyManagement /></ProtectedRoute>
+      },
+      {
+        path: 'report',
+        element: <ProtectedRoute><Report /></ProtectedRoute>
       }
     ]
   }

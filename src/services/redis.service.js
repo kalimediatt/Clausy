@@ -1,6 +1,6 @@
 const Redis = require('ioredis');
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.new_env') });
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Configuração do Redis
 const redisConfig = {

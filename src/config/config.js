@@ -3,6 +3,9 @@ const fs = require('fs');
 const yaml = require('js-yaml');
 const logging = require('../utils/logger');
 
+// Carregar variáveis de ambiente
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
 // Configurações padrão
 const defaultConfig = {
     app: {

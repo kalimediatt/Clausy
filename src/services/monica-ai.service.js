@@ -14,17 +14,22 @@ const monicaAIService = {
    * @param {Object} user - Objeto do usuário para verificar o plano
    * @returns {Promise} - Promessa com a resposta da API
    */
-  async sendQuery(userMessage, maxTokens = 5000, user = null) {
+  async sendQuery(userMessage, maxTokens = 1024, user = null) {
     try {
+      // Limite máximo aceito pela Monica IA para gpt-4o
+      const MAX_TOKENS_GPT4O = 16384;
+      let model = "gpt-4o";
+      // Garante que maxTokens nunca ultrapasse o limite do modelo
+      let safeMaxTokens = Math.min(Number(maxTokens) || 1024, MAX_TOKENS_GPT4O);
       const response = await axios.post(
         `${BASE_URL}/chat/completions`,
         {
-          model: "gpt-4o",
+          model: model,
           messages: [
             { role: "user", content: userMessage }
           ],
           temperature: 0.7,
-          max_tokens: Number(maxTokens) || 64000
+          max_tokens: safeMaxTokens
         },
         {
           headers: {
@@ -59,16 +64,23 @@ const monicaAIService = {
       return {
         success: true,
         content: response.data.choices[0].message.content,
-        usage: response.data.usage || { total_tokens: Math.ceil(userMessage.length / 4) + maxTokens },
+        usage: response.data.usage || { total_tokens: Math.ceil(userMessage.length / 4) + safeMaxTokens },
         rateLimit: rateLimitInfo
       };
     } catch (error) {
       console.error('Erro ao conectar com Monica IA:', error);
+      console.error('Request details:', {
+        url: `${BASE_URL}/chat/completions`,
+        model: model,
+        messageLength: userMessage.length,
+        maxTokens: safeMaxTokens,
+        errorResponse: error.response?.data
+      });
       
       return {
         success: false,
         message: `Erro ao conectar com a IA: ${error.message}`,
-        error
+        error: error.response?.data || error.message
       };
     }
   }

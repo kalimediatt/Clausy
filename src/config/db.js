@@ -1,16 +1,17 @@
 const mysql = require('mysql2/promise');
 const { promisify } = require('util');
 const sleep = promisify(setTimeout);
+const path = require('path');
 
 // Tenta carregar as variáveis de ambiente
-require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Configurações
 const DB_CONFIG = {
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
+    user: process.env.DB_USER || 'clausy_root',
+    host: process.env.DB_HOST || '138.197.27.151',
+    database: process.env.DB_NAME || 'clausy',
+    password: process.env.DB_PASSWORD || '@N4td55k7%+[',
     port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 20,
@@ -60,6 +61,24 @@ const db = {
         return withRetry(async () => {
             const [rows] = await pool.execute(query, params);
             return rows;
+        });
+    },
+
+    // Obter conexão do pool
+    async getConnection() {
+        return withRetry(async () => {
+            const connection = await pool.getConnection();
+            return connection;
+        });
+    },
+
+    // Testar conexão
+    async testConnection() {
+        return withRetry(async () => {
+            const connection = await pool.getConnection();
+            await connection.ping();
+            connection.release();
+            return true;
         });
     },
 

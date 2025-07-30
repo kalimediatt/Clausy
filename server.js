@@ -1,4 +1,7 @@
 const path = require('path');
+const envPath = path.resolve(__dirname, '.env');
+require('dotenv').config({ path: envPath });
+
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -23,9 +26,11 @@ const { createStream } = require('rotating-file-stream');
 const aiRateLimiter = require('./src/middlewares/aiRateLimiter');
 const { logRequest } = require('./src/services/requestLogger.service');
 const logViewer = require('./src/services/logViewer.service');
-const { tokenLimiter, updateTokenUsage } = require('./src/middlewares/tokenLimiter');
+const { tokenLimiter } = require('./src/middlewares/tokenLimiter');
+const tokenUsageService = require('./src/services/tokenUsage.service');
 const redis = require('./src/services/redis.service');
 const { encode } = require('gpt-3-encoder');
+const settingsService = require('./src/services/settings.service');
 let heapdump;
 try {
     heapdump = require('heapdump');
@@ -38,10 +43,6 @@ try {
         }
     };
 }
-
-// Carregar variáveis de ambiente
-const envPath = path.resolve(__dirname, '.new_env');
-require('dotenv').config({ path: envPath });
 
 // Log de todas as variáveis de ambiente para debug
 console.log('Variáveis de ambiente carregadas:');
@@ -64,8 +65,7 @@ const authService = require('./src/services/authService');
 const dbService = require('./src/services/db.service');
 const userService = require('./src/services/user.service');
 const monicaAIService = require('./src/services/monica-ai.service');
-
-// Create Express app
+const labChatsRouter = require('./src/routes/labchats');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -157,13 +157,13 @@ app.get('/favicon.ico', (req, res) => {
 app.use(cors({
   credentials: true,
   origin: [
+    'http://138.197.27.151:5000',
+    'http://localhost:5000',
     'http://138.197.27.151:3000',
-    'https://138.197.27.151:3000',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000'
+    'http://localhost:3000'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Forwarded-For', 'X-Forwarded-Proto', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Forwarded-For', 'X-Forwarded-Proto', 'Accept', 'X-Current-Session-Id'],
   exposedHeaders: ['Authorization'],
   maxAge: 86400 // 24 horas
 }));
@@ -193,6 +193,7 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ success: false, message: 'Token inválido' });
     }
+    console.log('DEBUG: authenticateToken - User data:', user);
     req.user = user;
     next();
   });
@@ -255,8 +256,18 @@ const checkCompanyAccess = async (req, res, next) => {
       return next();
     }
     
-    // Se for a mesma empresa, permite acesso
-    if (requestUser.company_id === req.user.company_id) {
+    // Buscar o usuário alvo para verificar a empresa
+    const targetUser = await dbService.executeQuery(
+      'SELECT company_id FROM users WHERE user_id = ?',
+      [userId]
+    );
+    
+    if (targetUser.length === 0) {
+      return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+    }
+    
+    // Se for da mesma empresa, permite acesso
+    if (requestUser.company_id === targetUser[0].company_id) {
       return next();
     }
 
@@ -300,77 +311,25 @@ app.get('/test', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
-// Rota para servir o index.html para todas as rotas não-API (mover para o final)
-app.get('*', (req, res, next) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, 'build', 'index.html'));
-  } else {
-    next();
-  }
-});
+// Rota catch-all movida para o final do arquivo
 
 // Auth routes
 app.post('/api/auth/login', async (req, res) => {
-  console.log('Recebida requisição de login');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
-  
   const { email, password } = req.body;
   
   if (!email || !password) {
-    console.log('Credenciais incompletas:', { email: !!email, password: !!password });
     return res.status(400).json({ success: false, message: 'Email e senha são obrigatórios' });
   }
-  
-  console.log('Tentando login para:', email);
+
   const result = await authService.login(email, password, req);
-  console.log('Resultado do login:', result);
   
   if (result.success) {
-    // Se houver uma nova senha, retornar ela junto com o token
-    if (result.newPassword) {
-      const token = jwt.sign(
-        { 
-          user_id: result.user.user_id,
-          email: result.user.email,
-          role: result.user.role,
-          company_id: result.user.company_id
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      
-      res.setHeader('Content-Type', 'application/json');
-      res.json({
-        success: true,
-        message: result.message,
-        newPassword: result.newPassword,
-        token,
-        user: result.user
-      });
-    } else {
-      // Login normal
-      const token = jwt.sign(
-        { 
-          user_id: result.user.user_id,
-          email: result.user.email,
-          role: result.user.role,
-          company_id: result.user.company_id
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      
-      res.setHeader('Content-Type', 'application/json');
-      res.json({
-        success: true,
-        token,
-        user: result.user
-      });
-    }
+    res.json({
+      success: true,
+      token: result.token,
+      user: result.user
+    });
   } else {
-    console.log('Falha no login:', result.message);
-    res.setHeader('Content-Type', 'application/json');
     res.status(401).json(result);
   }
 });
@@ -395,19 +354,20 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
         al.log_id as id,
         al.username,
         al.ip_address,
+        al.success,
         al.success as status,
         al.timestamp,
         al.user_agent,
         al.additional_info,
         u.company_id
       FROM auth_logs al
-      LEFT JOIN users u ON al.username = u.email
+      INNER JOIN users u ON al.username = u.email
     `;
 
     let countQuery = `
       SELECT COUNT(*) as total
       FROM auth_logs al
-      LEFT JOIN users u ON al.username = u.email
+      INNER JOIN users u ON al.username = u.email
     `;
 
     const queryParams = [];
@@ -451,7 +411,8 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
       id: log.id,
       username: log.username,
       ip_address: log.ip_address,
-      status: log.status === 1 ? 'success' : 'failed',
+      success: log.success,
+      status: log.success === 1 ? 'success' : 'failed',
       timestamp: log.timestamp,
       user_agent: log.user_agent,
       additional_info: log.additional_info
@@ -707,6 +668,162 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para listar empresas (apenas para superadmin)
+app.get('/api/companies', authenticateToken, async (req, res) => {
+  try {
+    console.log('DEBUG /api/companies - Iniciando');
+    console.log('req.user:', req.user);
+    
+    // Apenas superadmin pode listar empresas
+    if (req.user.role !== 'superadmin') {
+      console.log('DEBUG /api/companies - Acesso negado, role:', req.user.role);
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Only superadmin can list companies' 
+      });
+    }
+    
+    console.log('DEBUG /api/companies - Executando query');
+    const companies = await dbService.executeQuery(
+      'SELECT company_id, name, document FROM companies ORDER BY name ASC'
+    );
+    
+    console.log('DEBUG /api/companies - Query executada, resultado:', companies);
+    console.log('DEBUG /api/companies - Número de empresas encontradas:', companies.length);
+    
+    res.json({ success: true, data: companies });
+  } catch (error) {
+    console.error('Erro ao listar empresas:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno no servidor'
+    });
+  }
+});
+
+// Rota para criar novo usuário
+app.post('/api/users', authenticateToken, async (req, res) => {
+  try {
+    console.log('DEBUG /api/users (POST)');
+    console.log('req.body:', req.body);
+    console.log('req.user:', req.user);
+    
+    // Verificar se o usuário tem permissão para criar usuários
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: Only admins can create users' 
+      });
+    }
+    
+    const { email, password, name, role = 'user', credits = 0, plan = 'FREE_TRIAL' } = req.body;
+    
+    // Validações básicas
+    if (!email || !password || !name) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email, password and name are required' 
+      });
+    }
+    
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid email format' 
+      });
+    }
+    
+    // Obter configuração de comprimento mínimo de senha
+    const minPasswordLength = await settingsService.getSetting('minPasswordLength');
+    
+    // Validar senha usando a configuração do sistema
+    if (password.length < minPasswordLength) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Password must be at least ${minPasswordLength} characters long` 
+      });
+    }
+    
+    // Verificar se o email já existe
+    const existingUser = await userService.getUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'User with this email already exists' 
+      });
+    }
+    
+    // Verificar se verificação de email é obrigatória
+    // const requireEmailVerification = await settingsService.getSetting('requireEmailVerification');
+    // if (requireEmailVerification) {
+    //   // Aqui você pode implementar a lógica de verificação de email
+    //   // Por enquanto, apenas simular que o usuário precisa verificar o email
+    //   return res.status(400).json({ 
+    //     success: false, 
+    //     message: 'Email verification is required for new users. Please contact an administrator.' 
+    //   });
+    // }
+    
+    // Determinar a empresa do novo usuário
+    let companyId = req.user.company_id;
+    
+    // Se for superadmin, pode criar usuário em qualquer empresa
+    if (req.user.role === 'superadmin' && req.body.company_id) {
+      companyId = req.body.company_id;
+    }
+    
+    // Criar o usuário
+    const userData = {
+      email,
+      password,
+      name,
+      role,
+      credits: parseInt(credits) || 0,
+      plan_id: plan,
+      company_id: companyId
+    };
+    
+    const result = await userService.createUser(userData);
+    
+    // Verificar se logs de auditoria estão ativados
+    const auditLogs = await settingsService.getSetting('auditLogs');
+    if (auditLogs) {
+      // Log da ação de criação de usuário
+      console.log(`[AUDIT LOG] User creation: Admin ${req.user.email} created user ${email} with role ${role}`);
+    }
+    
+    if (result.success) {
+      // Verificar se notificações de novos usuários estão ativadas
+      const newUserNotifications = await settingsService.getSetting('newUserNotifications');
+      if (newUserNotifications) {
+        // Aqui você pode implementar o envio de notificações
+        // Por exemplo, enviar email para administradores ou log no sistema
+        console.log(`[NOTIFICATION] New user created: ${email} by admin: ${req.user.email}`);
+      }
+      
+      res.status(201).json({ 
+        success: true, 
+        message: 'User created successfully',
+        userId: result.userId
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: result.error || 'Failed to create user' 
+      });
+    }
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error' 
+    });
+  }
+});
+
 // Rota para listar usuários por empresa
 app.get('/api/company/:companyId/users', authenticateToken, async (req, res) => {
   try {
@@ -732,10 +849,18 @@ app.get('/api/company/:companyId/users', authenticateToken, async (req, res) => 
     }
     
     // Se for superadmin, pode buscar qualquer empresa
-    const users = await userService.getAllUsers(
-      requestUser.role === 'superadmin' ? parseInt(companyId) : requestUser.company_id,
-      requestUser.role === 'superadmin'
-    );
+    console.log('DEBUG: Chamando userService.getAllUsers');
+    console.log('DEBUG: requestUser.role:', requestUser.role);
+    console.log('DEBUG: requestUser.company_id:', requestUser.company_id);
+    console.log('DEBUG: companyId param:', companyId);
+    
+    const targetCompanyId = requestUser.role === 'superadmin' ? parseInt(companyId) : requestUser.company_id;
+    const isSuperadmin = requestUser.role === 'superadmin';
+    
+    console.log('DEBUG: targetCompanyId:', targetCompanyId);
+    console.log('DEBUG: isSuperadmin:', isSuperadmin);
+    
+    const users = await userService.getAllUsers(targetCompanyId, isSuperadmin);
     
     console.log('Resultado da query users:', users);
     
@@ -744,6 +869,7 @@ app.get('/api/company/:companyId/users', authenticateToken, async (req, res) => 
       return res.status(500).json({ success: false, message: 'Error fetching users' });
     }
     
+    console.log('DEBUG: Enviando resposta com', users.length, 'usuários');
     res.json({ success: true, data: users });
   } catch (error) {
     console.error('Error fetching company users:', error);
@@ -869,6 +995,122 @@ app.post('/api/users/:userId', authenticateToken, async (req, res) => {
   }
 });
 
+// Rota para deletar usuário
+app.post('/api/users/:userId/delete', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log('DEBUG /api/users/:userId/delete');
+    console.log('userId:', userId);
+    console.log('req.user:', req.user);
+    
+    // Verificar se o usuário tem permissão para deletar
+    const targetUser = await userService.getUserByEmail(userId);
+    
+    console.log('targetUser:', targetUser);
+    
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    // Admin pode deletar usuários da própria empresa, superadmin pode deletar qualquer usuário
+    if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: You can only delete users from your own company' 
+      });
+    }
+    
+    // Impedir que o usuário delete a si mesmo
+    if (req.user.email === userId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You cannot delete your own account' 
+      });
+    }
+    
+    const result = await userService.removeUser(userId);
+    console.log('Delete result:', result);
+    
+    if (result.success) {
+      res.json({ 
+        success: true, 
+        message: 'User deleted successfully'
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: result.error || 'Failed to delete user' 
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Rota para alterar plano do usuário
+app.post('/api/users/:userId/change-plan', authenticateToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { plan_id } = req.body;
+    
+    console.log('DEBUG /api/users/:userId/change-plan');
+    console.log('userId:', userId);
+    console.log('plan_id:', plan_id);
+    console.log('req.user:', req.user);
+    
+    if (!plan_id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Plan ID is required' 
+      });
+    }
+    
+    // Verificar se o usuário tem permissão para alterar plano
+    const targetUser = await userService.getUserByEmail(userId);
+    
+    console.log('targetUser:', targetUser);
+    
+    if (!targetUser) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+    
+    // Admin pode alterar plano de usuários da própria empresa, superadmin pode alterar qualquer usuário
+    if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied: You can only change plans for users from your own company' 
+      });
+    }
+    
+    const result = await userService.changePlan(userId, plan_id);
+    console.log('Change plan result:', result);
+    
+    if (result.success) {
+      res.json({ 
+        success: true, 
+        message: 'User plan changed successfully',
+        user: { ...targetUser, plan_id }
+      });
+    } else {
+      res.status(500).json({ 
+        success: false, 
+        message: result.error || 'Failed to change user plan' 
+      });
+    }
+  } catch (error) {
+    console.error('Error changing user plan:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // Configuração do Multer
 const storage = multer.memoryStorage();
 
@@ -931,9 +1173,19 @@ app.post('/api/ai/query',
       size: req.file.size
     } : 'No file');
 
-    const { prompt, setup, maxTokens = 500 } = req.body;
+    const { prompt, maxTokens = 500 } = req.body;
+    let setup = req.body.setup;
     let fileContent = null;
     const isDevelopment = process.env.NODE_ENV !== 'production';
+
+    if (setup && typeof setup === 'string') {
+      try {
+        setup = JSON.parse(setup);
+      } catch (e) {
+        console.error('Erro ao fazer parse do JSON de setup:', e);
+        return res.status(400).json({ success: false, message: 'Formato de setup inválido.' });
+      }
+    }
 
     // Process file if it exists
     if (req.file) {
@@ -966,24 +1218,37 @@ app.post('/api/ai/query',
 
         console.log('File processed successfully. Content length:', fileContent.length);
 
+        // Validação de Tokens
+        const TOKEN_LIMIT = 64000;
+        const promptTokens = encode(prompt).length;
+        const fileTokens = encode(fileContent).length;
+        const setupTokens = setup ? encode(JSON.stringify(setup)).length : 0;
+        const totalInputTokens = promptTokens + fileTokens + setupTokens;
+
+        console.log(`Token estimation: prompt=${promptTokens}, file=${fileTokens}, setup=${setupTokens}, total=${totalInputTokens}`);
+
+        if (totalInputTokens > TOKEN_LIMIT) {
+          return res.status(400).json({
+            success: false,
+            message: `O arquivo é muito grande e excede o limite de ${TOKEN_LIMIT} tokens. (Estimativa: ${totalInputTokens} tokens)`,
+            code: 'TOKEN_LIMIT_EXCEEDED'
+          });
+        }
+
         // Get user for credit calculation
         const user = await userService.getUserById(req.user.user_id);
         if (!user) {
           throw new Error('User not found');
         }
-
-        // Update token estimation to include file content length
-        const promptTokens = encode(prompt).length;
-        const fileTokens = fileContent ? encode(fileContent).length : 0;
-        const setupTokens = setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0;
-        const estimatedTokens = promptTokens + fileTokens + setupTokens + Number(maxTokens);
         
         // Process the query with the file content and setup
-        const setupPrompt = setup ? `[Setup: ${setup.title}]\n${setup.prompt}\n\n` : '';
+        const setupPrompt = setup ? `[Setup: ${setup.title}]\\n${setup.prompt}\\n\\n` : '';
+        const requestTimestamp = Date.now();
         const aiResponse = await monicaAIService.sendQuery(
-          `${setupPrompt}Conteúdo do arquivo "${req.file.originalname}":\n\n${fileContent}\n\nPergunta do usuário: ${prompt}`,
+          `${setupPrompt}Conteúdo do arquivo "${req.file.originalname}":\\n${fileContent}\\n\\nPergunta do usuário: ${prompt}`,
           maxTokens
         );
+        const responseTimestamp = Date.now();
 
         if (!aiResponse.success) {
           return res.status(500).json({
@@ -993,19 +1258,37 @@ app.post('/api/ai/query',
         }
 
         // Atualizar uso de tokens
-        await updateTokenUsage(req.user.user_id, aiResponse.usage?.total_tokens || estimatedTokens);
+        const estimatedTokens = totalInputTokens + (aiResponse.usage?.completion_tokens || Number(maxTokens));
+        console.log('DEBUG: server.js - Antes de chamar updateTokenUsage', {
+          userId: req.user.user_id,
+          tokens: estimatedTokens,
+          companyId: req.user.company_id,
+          requestTimestamp,
+          responseTimestamp
+        });
+
+        await tokenUsageService.updateTokenUsage(
+          req.user.user_id, 
+          estimatedTokens,
+          req.user.company_id,
+          requestTimestamp,
+          responseTimestamp
+        );
+
+        console.log('DEBUG: server.js - Depois de chamar updateTokenUsage');
 
         // Return the response
         res.json({
           success: true,
           message: aiResponse.content,
           usage: {
-            tokens: aiResponse.usage?.total_tokens || estimatedTokens,
-            remaining_credits: isDevelopment ? 9999 : (user.credits - (aiResponse.usage?.total_tokens || estimatedTokens)),
+            tokens: estimatedTokens,
+            remaining_credits: isDevelopment ? 9999 : (user.credits - estimatedTokens),
             limit: req.tokenUsage.limit,
-            used: req.tokenUsage.current + (aiResponse.usage?.total_tokens || estimatedTokens),
-            //remaining: req.tokenUsage.limit - (req.tokenUsage.current + (aiResponse.usage?.total_tokens || estimatedTokens))
-          remaining: req.tokenUsage.limit === Infinity ? Infinity : req.tokenUsage.limit - (req.tokenUsage.current + (aiResponse.usage?.total_tokens || estimatedTokens))}});
+            used: req.tokenUsage.current + estimatedTokens,
+            remaining: req.tokenUsage.limit === Infinity ? Infinity : req.tokenUsage.limit - (req.tokenUsage.current + estimatedTokens)
+          }
+        });
 
       } catch (error) {
         console.error('Error processing file:', error);
@@ -1036,7 +1319,19 @@ app.post('/api/ai/query',
       }
 
       // Atualizar uso de tokens
-      await updateTokenUsage(req.user.user_id, aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)));
+      console.log('DEBUG: server.js - Antes de chamar updateTokenUsage (sem arquivo)', {
+        userId: req.user.user_id,
+        tokens: aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)),
+        companyId: req.user.company_id
+      });
+
+      await tokenUsageService.updateTokenUsage(
+        req.user.user_id, 
+        aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)), 
+        req.user.company_id
+      );
+
+      console.log('DEBUG: server.js - Depois de chamar updateTokenUsage (sem arquivo)');
 
       res.json({
         success: true,
@@ -1365,3 +1660,233 @@ app.delete('/api/admin/limits/:userId', authenticateToken, async (req, res) => {
         });
     }
 });
+
+// Rotas para configurações do sistema
+app.get('/api/admin/settings', authenticateToken, async (req, res) => {
+  try {
+    // Verificar se é admin ou superadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso não autorizado'
+      });
+    }
+
+    const settings = await settingsService.getAllSettings();
+    res.json({
+      success: true,
+      data: settings
+    });
+  } catch (error) {
+    console.error('Erro ao buscar configurações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar configurações'
+    });
+  }
+});
+
+app.post('/api/admin/settings', authenticateToken, async (req, res) => {
+  try {
+    // Verificar se é admin ou superadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso não autorizado'
+      });
+    }
+
+    const { settings } = req.body;
+    
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({
+        success: false,
+        message: 'Configurações inválidas'
+      });
+    }
+
+    const result = await settingsService.saveSettings(settings);
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Configurações salvas com sucesso'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao salvar configurações'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao salvar configurações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+app.post('/api/admin/settings/reset', authenticateToken, async (req, res) => {
+  try {
+    // Verificar se é superadmin
+    if (req.user.role !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas superadministradores podem resetar configurações'
+      });
+    }
+
+    const result = await settingsService.resetSettings();
+    
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Configurações resetadas para padrão'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erro ao resetar configurações'
+      });
+    }
+  } catch (error) {
+    console.error('Erro ao resetar configurações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
+});
+
+app.get('/api/admin/settings/history', authenticateToken, async (req, res) => {
+  try {
+    // Verificar se é admin ou superadmin
+    if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Acesso não autorizado'
+      });
+    }
+
+    const history = await settingsService.getSettingsHistory();
+    res.json({
+      success: true,
+      data: history
+    });
+  } catch (error) {
+    console.error('Erro ao buscar histórico de configurações:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar histórico'
+    });
+  }
+});
+
+// Rota para obter dados do dashboard de tokens
+app.get('/api/report/token-history', authenticateToken, async (req, res) => {
+  try {
+    const { user_id, role, company_id } = req.user;
+    let data = {};
+
+    // Função para normalizar a data
+    const normalizeDate = (entry) => {
+      if (entry.localRequestTime) {
+        // Formato brasileiro: "16/06/2025, 20:04:28"
+        const [datePart, timePart] = entry.localRequestTime.split(', ');
+        const [day, month, year] = datePart.split('/');
+        const [hour, minute, second] = timePart.split(':');
+        return new Date(year, month - 1, day, hour, minute, second).toISOString();
+      } else if (entry.requestTimestamp) {
+        return entry.requestTimestamp;
+      } else if (entry.timestamp) {
+        return entry.timestamp;
+      } else {
+        return new Date().toISOString(); // Fallback
+      }
+    };
+
+    // Buscar dados do Redis baseado no papel do usuário
+    if (role === 'superadmin') {
+      // Superadmin vê dados de todas as empresas
+      const companies = await dbService.executeQuery('SELECT company_id, name FROM companies');
+      
+      for (const company of companies) {
+        const users = await dbService.executeQuery(
+          'SELECT user_id, name, email FROM users WHERE company_id = ?',
+          [company.company_id]
+        );
+
+        data[company.name] = await Promise.all(users.map(async (user) => {
+          const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+          return {
+            userId: user.user_id,
+            name: user.name,
+            email: user.email,
+            data: history.map(h => ({
+              date: normalizeDate(h),
+              tokens: h.tokens
+            }))
+          };
+        }));
+      }
+    } else if (role === 'admin') {
+      // Admin vê dados da sua empresa
+      const company = await dbService.executeQuery(
+        'SELECT name FROM companies WHERE company_id = ?',
+        [company_id]
+      );
+
+      const users = await dbService.executeQuery(
+        'SELECT user_id, name, email FROM users WHERE company_id = ?',
+        [company_id]
+      );
+
+      data[company[0].name] = await Promise.all(users.map(async (user) => {
+        const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+        return {
+          userId: user.user_id,
+          name: user.name,
+          email: user.email,
+          data: history.map(h => ({
+            date: normalizeDate(h),
+            tokens: h.tokens
+          }))
+        };
+      }));
+    } else {
+      // Usuário comum vê apenas seus dados
+      const user = await dbService.executeQuery(
+        'SELECT u.name, c.name as company_name FROM users u JOIN companies c ON u.company_id = c.company_id WHERE u.user_id = ?',
+        [user_id]
+      );
+
+      const history = await tokenUsageService.getPermanentTokenHistory(user_id);
+      data[user[0].company_name] = [{
+        userId: user_id,
+        name: user[0].name,
+        data: history.map(h => ({
+          date: normalizeDate(h),
+          tokens: h.tokens
+        }))
+      }];
+    }
+
+    res.json({
+      success: true,
+      data: {
+        companies: data,
+        userRole: role
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao buscar histórico de tokens:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar histórico de tokens',
+      error: error.message
+    });
+  }
+});
+
+app.use('/api', labChatsRouter);

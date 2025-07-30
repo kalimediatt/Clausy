@@ -30,23 +30,11 @@ async function addLog(logData) {
   }
 }
 
-// Obter IP do cliente (simulado)
+// Obter o endereço IP do cliente
 async function getClientIP() {
-  // Em um ambiente real, isso viria do cabeçalho da requisição
-  // Aqui estamos apenas simulando um IP local
-  return '192.168.15.' + Math.floor(Math.random() * 255);
-}
-
-// Registrar tentativa de login
-async function logAuthAttempt(username, success, userAgent, additionalInfo = null) {
-  const ip = await getClientIP();
-  return await addLog({
-    username,
-    ip_address: ip,
-    success,
-    user_agent: userAgent,
-    additional_info: additionalInfo
-  });
+  // Esta função é um placeholder. No ambiente de produção, use um método mais robusto
+  // para obter o IP, considerando proxies e cabeçalhos como 'x-forwarded-for'.
+  return '127.0.0.1'; // IP de exemplo
 }
 
 // Limpar logs antigos (manter apenas os últimos X dias)
@@ -68,7 +56,6 @@ async function cleanOldLogs(daysToKeep = 30) {
 module.exports = {
   getAllLogs,
   addLog,
-  logAuthAttempt,
   getClientIP,
   cleanOldLogs
 }; 

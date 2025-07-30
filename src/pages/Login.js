@@ -197,41 +197,37 @@ const Login = () => {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (loading) return; // Prevenir cliques duplos
+
     setLoading(true);
     setError('');
     setNewPassword('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      // Usar a função de login do contexto, que é a fonte única da verdade
+      const result = await login(email, password);
 
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.newPassword) {
-          // Se houver uma nova senha, exibir ela
-          setNewPassword(data.newPassword);
-          toast.success(data.message);
+      if (result.success) {
+        if (result.newPassword) {
+          // Cenário de atualização de senha
+          setNewPassword(result.newPassword);
+          toast.success(result.message || 'Sua senha foi atualizada com sucesso!');
         } else {
-          // Login normal
-      const success = await login(email, password);
-      if (success) {
-        const redirectUrl = location.state?.from?.pathname || '/';
-        navigate(redirectUrl);
-          }
+          // Login bem-sucedido, AuthContext cuidará do estado
+          // A navegação já é tratada pelo useEffect
+          toast.success('Login realizado com sucesso!');
         }
       } else {
-        setError(data.message || 'Erro ao fazer login');
-        toast.error(data.message || 'Erro ao fazer login');
+        // Exibir erro retornado pelo contexto
+        setError(result.message || 'E-mail ou senha inválidos.');
+        toast.error(result.message || 'E-mail ou senha inválidos.');
       }
     } catch (err) {
-      setError(err.message || 'Erro ao fazer login');
-      toast.error(err.message || 'Erro ao fazer login');
+      // Erro inesperado na comunicação ou lógica
+      const errorMessage = err.message || 'Ocorreu um erro inesperado. Tente novamente.';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

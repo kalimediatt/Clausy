@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const db = require('../config/db');
 const jwt = require('jsonwebtoken');
 const Redis = require('ioredis');
+const settingsService = require('./settings.service');
 
 // Configurações de segurança
 const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 horas
@@ -15,6 +16,7 @@ const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\
 const redis = new Redis({
     host: process.env.REDIS_HOST || 'localhost',
     port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD,
     maxRetriesPerRequest: 3,
     retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);
@@ -86,10 +88,13 @@ function cleanupLoginAttempts() {
 setInterval(cleanupLoginAttempts, 5 * 60 * 1000);
 
 // Função para verificar tentativas de login
-function checkLoginAttempts(email, ip) {
+async function checkLoginAttempts(email, ip) {
     const key = `${email}:${ip}`;
     const now = Date.now();
     const attempt = loginAttempts.get(key) || { count: 0, timestamp: now };
+
+    // Obter configuração de tentativas de login do sistema
+    const maxLoginAttempts = await settingsService.getSetting('loginAttempts') || MAX_LOGIN_ATTEMPTS;
 
     // Limpar tentativas antigas
     if (now - attempt.timestamp > LOGIN_ATTEMPT_WINDOW) {
@@ -112,6 +117,10 @@ function recordLoginAttempt(email, ip, success) {
         attempt.timestamp = Date.now();
         loginAttempts.set(key, attempt);
     }
+
+    // A chamada abaixo foi comentada para evitar a duplicação de logs.
+    // A função login() agora é a única responsável por registrar os logs.
+    // logAuthAttempt(email, success, `IP: ${ip}`);
 }
 
 // Função para criar um hash de senha usando bcrypt
@@ -155,15 +164,19 @@ function generateStrongPassword() {
 // Função para fazer login
 async function login(email, password, req) {
     let connection;
-    
+    let success = false;
+    let user = null;
+    const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'] || 'Unknown';
+
     try {
         console.log('Iniciando processo de login para:', email);
-        
+
         // Verificar tentativas de login
-        const clientIP = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-        const attempt = checkLoginAttempts(email, clientIP);
+        const attempt = await checkLoginAttempts(email, clientIP);
+        const maxLoginAttempts = await settingsService.getSetting('loginAttempts') || MAX_LOGIN_ATTEMPTS;
         
-        if (attempt.count >= MAX_LOGIN_ATTEMPTS) {
+        if (attempt.count >= maxLoginAttempts) {
             const timeLeft = Math.ceil((LOGIN_ATTEMPT_WINDOW - (Date.now() - attempt.timestamp)) / 1000 / 60);
             return {
                 success: false,
@@ -172,8 +185,8 @@ async function login(email, password, req) {
         }
 
         connection = await db.getClient();
-        
-        // Buscar usuário pelo email incluindo informações da empresa
+
+        // Buscar usuário
         const [rows] = await connection.execute(
             `SELECT u.*, c.name as company_name, c.document as company_document, 
                     c.license_count as company_license_count,
@@ -185,171 +198,74 @@ async function login(email, password, req) {
              WHERE u.email = ?`,
             [email]
         );
-        
-        const userAgent = req.headers['user-agent'] || 'Unknown';
-        
+
         if (rows.length === 0) {
             recordLoginAttempt(email, clientIP, false);
-            await connection.execute(
-                'INSERT INTO auth_logs (username, ip_address, success, user_agent) VALUES (?, ?, ?, ?)',
-                [email, clientIP, false, userAgent]
-            );
             return { success: false, message: 'Credenciais inválidas' };
         }
-        
-        const user = rows[0];
-        
-        // Verificar se a senha está correta
+
+        user = rows[0];
         let passwordMatch = false;
-        
+
+        // Verificar senha
         try {
             if (user.password_hash.startsWith('$2')) {
-                // Senha já está em bcrypt
                 passwordMatch = await bcrypt.compare(password, user.password_hash);
             } else {
-                // Senha está em SHA-256
-                const hashedPassword = crypto
-                    .createHash('sha256')
-                    .update(password)
-                    .digest('hex');
-                
+                const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
                 passwordMatch = (hashedPassword === user.password_hash);
-                
+
                 if (passwordMatch) {
-                    // Migração segura de senha
-                    if (email === 'user1@roma.com.br') {
-                        // Para o usuário de teste, forçamos uma senha forte
-                        const newPassword = 'Teste123@' + Math.random().toString(36).slice(-4);
-                        const bcryptHash = await bcrypt.hash(newPassword, 12);
-                        
-                        await connection.execute(
-                            'UPDATE users SET password_hash = ? WHERE user_id = ?',
-                            [bcryptHash, user.user_id]
-                        );
-                        
-                        // Retornar a nova senha para o usuário
-                        return { 
-                            success: true, 
-                            message: 'Sua senha foi atualizada por questões de segurança. Use a nova senha para o próximo login.',
-                            newPassword: newPassword,
-                            user: {
-                                ...user,
-                                password_hash: bcryptHash
-                            }
-                        };
-                    } else {
-                        // Para outros usuários, mantemos o comportamento atual
-                        const bcryptHash = await bcrypt.hash(password, 12);
-                        await connection.execute(
-                            'UPDATE users SET password_hash = ? WHERE user_id = ?',
-                            [bcryptHash, user.user_id]
-                        );
-                    }
+                    const bcryptHash = await bcrypt.hash(password, 12);
+                    await connection.execute('UPDATE users SET password_hash = ? WHERE user_id = ?', [bcryptHash, user.user_id]);
                 }
             }
         } catch (error) {
             console.error('Erro ao verificar senha:', error);
             return { success: false, message: 'Erro ao verificar credenciais' };
         }
-        
+
         if (!passwordMatch) {
             recordLoginAttempt(email, clientIP, false);
-            await connection.execute(
-                'INSERT INTO auth_logs (username, ip_address, success, user_agent) VALUES (?, ?, ?, ?)',
-                [email, clientIP, false, userAgent]
-            );
             return { success: false, message: 'Credenciais inválidas' };
         }
-        
-        // Login bem-sucedido
-        recordLoginAttempt(email, clientIP, true);
-        
-        // Atualizar último login
-        await connection.execute(
-            'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?',
-            [user.user_id]
-        );
-        
-        // Registrar login bem-sucedido
-        await connection.execute(
-            'INSERT INTO auth_logs (username, ip_address, success, user_agent) VALUES (?, ?, ?, ?)',
-            [email, clientIP, true, userAgent]
-        );
-        
-        // Buscar ou criar estatísticas de uso
-        const [statRows] = await connection.execute(
-            'SELECT * FROM usage_stats WHERE user_id = ? AND company_id = ?',
-            [user.user_id, user.company_id]
-        );
-        
-        if (statRows.length === 0) {
-            await connection.execute(
-                'INSERT INTO usage_stats (user_id, company_id, queries_this_hour, tokens_this_hour) VALUES (?, ?, ?, ?)',
-                [user.user_id, user.company_id, 0, 0]
-            );
-        }
-        
-        // Salvar o plano do usuário no Redis
-        const userPlan = {
-            name: user.plan_id,
-            displayName: user.plan_name,
-            color: user.plan_color,
-            rateLimit: user.max_queries_per_hour,
-            tokenLimit: user.max_tokens_per_hour,
-            historyRetention: `${user.history_retention_hours}h`
-        };
 
-        await redis.setex(
-            `user:${user.user_id}:plan`,
-            24 * 60 * 60, // 24 horas
-            JSON.stringify(userPlan)
-        );
-        
-        // Gerar token JWT com expiração
+        // Se chegou aqui, o login foi bem-sucedido
+        success = true;
+        recordLoginAttempt(email, clientIP, true);
+
+        // Atualizar último login
+        await connection.execute('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?', [user.user_id]);
+
+        // Gerar token, etc.
         const token = jwt.sign(
-            {
-                user_id: user.user_id,
-                email: user.email,
-                role: user.role,
-                company_id: user.company_id
-            },
+            { user_id: user.user_id, email: user.email, role: user.role, company_id: user.company_id },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
-        
-        // Formatar dados do usuário
+
         const userData = {
-            user_id: user.user_id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            credits: user.credits,
-            plan_id: user.plan_id,
-            plan_name: user.plan_name,
-            plan_color: user.plan_color,
-            company_id: user.company_id,
-            company_name: user.company_name,
-            company_document: user.company_document,
-            company_license_count: user.company_license_count,
-            created_at: user.created_at,
-            updated_at: user.updated_at,
-            last_login: user.last_login,
-            maxQueriesPerHour: user.max_queries_per_hour,
-            maxTokensPerHour: user.max_tokens_per_hour,
+            user_id: user.user_id, email: user.email, name: user.name, role: user.role, credits: user.credits,
+            plan_id: user.plan_id, plan_name: user.plan_name, plan_color: user.plan_color,
+            company_id: user.company_id, company_name: user.company_name, company_document: user.company_document,
+            company_license_count: user.company_license_count, created_at: user.created_at,
+            updated_at: user.updated_at, last_login: user.last_login,
+            maxQueriesPerHour: user.max_queries_per_hour, maxTokensPerHour: user.max_tokens_per_hour,
             historyRetention: user.history_retention_hours
         };
-        
-        return {
-            success: true,
-            user: userData,
-            token,
-            expiresIn: SESSION_TIMEOUT
-        };
+
+        return { success: true, user: userData, token, expiresIn: SESSION_TIMEOUT };
+
     } catch (error) {
         console.error('Erro no processo de login:', error);
         return { success: false, message: 'Erro interno no servidor' };
     } finally {
+        // Registrar o log de autenticação uma única vez
         if (connection) {
+            await connection.execute(
+                'INSERT INTO auth_logs (username, ip_address, success, user_agent) VALUES (?, ?, ?, ?)',
+                [email, clientIP, success, userAgent]
+            );
             await connection.release();
         }
     }
@@ -478,18 +394,6 @@ async function refreshToken(refreshToken) {
 // Revogar token
 async function revokeToken(refreshToken) {
     await redis.del(`refresh_token:${refreshToken}`);
-}
-
-// Verificar tentativas de login
-async function checkLoginAttempts(email) {
-    const attempts = loginAttempts.get(email) || { count: 0, timestamp: Date.now() };
-    
-    if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
-        const timeLeft = LOGIN_ATTEMPT_WINDOW - (Date.now() - attempts.timestamp);
-        if (timeLeft > 0) {
-            throw new Error(`Muitas tentativas de login. Tente novamente em ${Math.ceil(timeLeft / 1000 / 60)} minutos.`);
-        }
-    }
 }
 
 // Exportar todas as funções como um objeto

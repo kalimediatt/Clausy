@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const db = require('./db.service');
 
 // Função para hash de senha
@@ -7,6 +8,8 @@ function hashPassword(password) {
 
 // Obter todos os usuários de uma empresa (ou todos, se superadmin)
 async function getAllUsers(company_id = null, isSuperadmin = false) {
+  console.log('DEBUG: getAllUsers chamado com company_id:', company_id, 'isSuperadmin:', isSuperadmin);
+  
   let query = `
     SELECT 
       u.user_id, 
@@ -28,9 +31,24 @@ async function getAllUsers(company_id = null, isSuperadmin = false) {
   if (!isSuperadmin && company_id) {
     query += ' WHERE u.company_id = ?';
     params.push(company_id);
+    console.log('DEBUG: Adicionando filtro por company_id:', company_id);
+  } else {
+    console.log('DEBUG: Sem filtro por company_id - isSuperadmin:', isSuperadmin, 'company_id:', company_id);
   }
   query += ' ORDER BY u.name ASC';
-  return await db.executeQuery(query, params);
+  
+  console.log('DEBUG: Query final:', query);
+  console.log('DEBUG: Parâmetros:', params);
+  
+  const results = await db.executeQuery(query, params);
+  console.log('DEBUG: Resultados da query:', results.length, 'usuários');
+  
+  // Log dos primeiros 3 usuários para debug
+  if (results.length > 0) {
+    console.log('DEBUG: Primeiros usuários:', results.slice(0, 3).map(u => ({ email: u.email, company_id: u.company_id, name: u.name })));
+  }
+  
+  return results;
 }
 
 // Obter usuário por email (com isolamento opcional)
@@ -61,19 +79,19 @@ async function verifyCredentials(email, password) {
 
 // Criar usuário
 async function createUser(userData) {
-  const { email, password, name, role = 'user', credits = 0, plan_id = 'FREE_TRIAL' } = userData;
+  const { email, password, name, role = 'user', credits = 0, plan_id = 'FREE_TRIAL', company_id } = userData;
   const hashedPassword = hashPassword(password);
   
   const query = `
-    INSERT INTO users (email, password_hash, name, role, credits, plan_id)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO users (email, password_hash, name, role, credits, plan_id, company_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
   try {
     const result = await db.executeQuery(query, [
-      email, hashedPassword, name, role, credits, plan_id
+      email, hashedPassword, name, role, credits, plan_id, company_id
     ]);
-    return { success: true, id: result.insertId };
+    return { success: true, userId: result.insertId };
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     return { success: false, error: error.message };

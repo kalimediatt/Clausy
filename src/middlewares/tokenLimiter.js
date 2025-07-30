@@ -1,5 +1,6 @@
 const redis = require('../config/redis.config');
 const PLANS = require('../config/plans');
+const tokenUsageService = require('../services/tokenUsage.service');
 
 // Função para obter o plano do usuário
 async function getUserPlan(req) {
@@ -76,7 +77,7 @@ const tokenLimiter = async (req, res, next) => {
 };
 
 // Função para atualizar o uso de tokens
-const updateTokenUsage = async (userId, tokens) => {
+const updateTokenUsage = async (userId, tokens, companyId, requestTimestamp = Date.now(), responseTimestamp = Date.now()) => {
   try {
     const key = `user:${userId}:tokens`;
     const multi = redis.multi();
@@ -88,6 +89,9 @@ const updateTokenUsage = async (userId, tokens) => {
     multi.expire(key, 3600);
 
     await multi.exec();
+
+    // Armazenar no histórico permanente
+    await tokenUsageService.storePermanentTokenHistory(userId, companyId, tokens, requestTimestamp, responseTimestamp);
   } catch (error) {
     console.error('Erro ao atualizar uso de tokens:', error);
   }
