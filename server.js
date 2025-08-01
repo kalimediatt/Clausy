@@ -771,8 +771,8 @@ app.post('/api/users', authenticateToken, async (req, res) => {
     let companyId = req.user.company_id;
     
     // Se for superadmin, pode criar usuário em qualquer empresa
-    if (req.user.role === 'superadmin' && req.body.company_id) {
-      companyId = req.body.company_id;
+    if (req.user.role === 'superadmin' && req.body.company_id && req.body.company_id !== '') {
+      companyId = parseInt(req.body.company_id);
     }
     
     // Criar o usuário
@@ -981,11 +981,16 @@ app.post('/api/users/:userId', authenticateToken, async (req, res) => {
     }
     
     // Permitir que superadmin altere a empresa do usuário
-    if (updates.company_id && req.user.role !== 'superadmin') {
+    if (updates.company_id !== undefined && req.user.role !== 'superadmin') {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied: Only superadmin can change user company' 
       });
+    }
+    
+    // Converter company_id para número se fornecido
+    if (updates.company_id !== undefined && updates.company_id !== '') {
+      updates.company_id = parseInt(updates.company_id);
     }
     
     const result = await userService.updateUser(userId, updates);

@@ -82,15 +82,21 @@ async function createUser(userData) {
   const { email, password, name, role = 'user', credits = 0, plan_id = 'FREE_TRIAL', company_id } = userData;
   const hashedPassword = hashPassword(password);
   
+  // Garantir que company_id seja um número válido
+  const finalCompanyId = company_id && company_id !== '' ? parseInt(company_id) : 1;
+  
   const query = `
     INSERT INTO users (email, password_hash, name, role, credits, plan_id, company_id)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   
   try {
+    console.log('DEBUG: createUser - Query:', query);
+    console.log('DEBUG: createUser - Params:', [email, hashedPassword, name, role, credits, plan_id, finalCompanyId]);
     const result = await db.executeQuery(query, [
-      email, hashedPassword, name, role, credits, plan_id, company_id
+      email, hashedPassword, name, role, credits, plan_id, finalCompanyId
     ]);
+    console.log('DEBUG: createUser - Result:', result);
     return { success: true, userId: result.insertId };
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
@@ -100,15 +106,17 @@ async function createUser(userData) {
 
 // Atualizar usuário
 async function updateUser(email, updates) {
-  const allowedFields = ['name', 'role', 'credits', 'plan_id'];
+  const allowedFields = ['name', 'role', 'credits', 'plan_id', 'company_id'];
   const setValues = [];
   const params = [];
   
   // Construir a parte SET da query com os campos permitidos
   allowedFields.forEach(field => {
-    if (updates[field] !== undefined) {
+    if (updates[field] !== undefined && updates[field] !== '') {
       setValues.push(`${field} = ?`);
-      params.push(updates[field]);
+      // Converter company_id para número se necessário
+      const value = field === 'company_id' ? parseInt(updates[field]) : updates[field];
+      params.push(value);
     }
   });
   
@@ -129,7 +137,10 @@ async function updateUser(email, updates) {
   const query = `UPDATE users SET ${setValues.join(', ')} WHERE email = ?`;
   
   try {
+    console.log('DEBUG: updateUser - Query:', query);
+    console.log('DEBUG: updateUser - Params:', params);
     const result = await db.executeQuery(query, params);
+    console.log('DEBUG: updateUser - Result:', result);
     return { success: result.affectedRows > 0, affectedRows: result.affectedRows };
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);

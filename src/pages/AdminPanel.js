@@ -975,7 +975,7 @@ const AdminPanel = () => {
       role: 'user',
       credits: 0,
       plan: 'FREE_TRIAL',
-      company_id: currentUser?.role === 'superadmin' ? '' : currentUser?.company_id || ''
+      company_id: currentUser?.role === 'superadmin' ? '' : (currentUser?.company_id || 1)
     });
     setValidationErrors({});
     setIsSubmitting(false);
@@ -1070,10 +1070,18 @@ const AdminPanel = () => {
       setIsSubmitting(true);
       
       try {
-        const result = await addUser({
+        // Preparar dados para envio
+        const userData = {
           ...formData,
           credits: Number(formData.credits)
-        });
+        };
+        
+        // Tratar company_id - remover se estiver vazio para usar o padrão do backend
+        if (userData.company_id === '' || userData.company_id === undefined) {
+          delete userData.company_id;
+        }
+        
+        const result = await addUser(userData);
         
         if (result.success) {
           toast.success('Usuário adicionado com sucesso!');
@@ -1086,7 +1094,7 @@ const AdminPanel = () => {
             role: 'user',
             credits: 0,
             plan: 'FREE_TRIAL',
-            company_id: ''
+            company_id: currentUser?.role === 'superadmin' ? '' : (currentUser?.company_id || 1)
           });
           setValidationErrors({});
           console.log('DEBUG: Chamando loadUsers após adicionar usuário');
@@ -1114,7 +1122,10 @@ const AdminPanel = () => {
           delete updates.plan;
         }
         
-
+        // Tratar company_id - remover se estiver vazio para não alterar
+        if (updates.company_id === '' || updates.company_id === undefined) {
+          delete updates.company_id;
+        }
         
         console.log('DEBUG: Enviando atualização do usuário:', {
           ...updates,
