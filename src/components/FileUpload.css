@@ -74,10 +74,48 @@
 
 @media (max-width: 768px) {
     .dropzone {
-        padding: 15px;
+        padding: 1rem;
+        min-height: 80px;
     }
     
     .upload-info {
-        font-size: 0.8em;
+        font-size: 0.875rem;
+    }
+
+    .file-info {
+        gap: 0.75rem;
+    }
+
+    .file-info p {
+        font-size: 0.875rem;
+    }
+
+    .remove-button {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .dropzone {
+        padding: 0.75rem;
+        min-height: 70px;
+    }
+    
+    .upload-info {
+        font-size: 0.8rem;
+    }
+
+    .file-info {
+        gap: 0.5rem;
+    }
+
+    .file-info p {
+        font-size: 0.8rem;
+    }
+
+    .remove-button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
     }
 } 

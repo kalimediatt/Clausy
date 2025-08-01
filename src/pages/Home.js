@@ -68,6 +68,7 @@ import {
   validateMessage, 
   handleError, 
   showSuccessToast, 
+  showErrorToast,
   showInfoToast,
   useKeyboardShortcuts,
   LoadingSpinner,
@@ -96,22 +97,43 @@ const Container = styled.div`
 const AIContainer = styled.div`
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 6rem);
-  max-height: calc(100vh - 6rem);
+  height: calc(100vh - 4rem);
+  max-height: calc(100vh - 4rem);
   background: #f8fafc;
   padding: 1.5rem;
   gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    gap: 1rem;
+    height: calc(100vh - 3rem);
+    max-height: calc(100vh - 3rem);
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
 `;
 
 const AIContent = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'showSidebar'
 })`
   display: grid;
-  grid-template-columns: ${props => props.showSidebar ? '300px 1fr' : '1fr'};
-  gap: 1.5rem;
+  grid-template-columns: ${props => props.showSidebar ? '280px 1fr' : '1fr'};
+  gap: 2rem;
   height: 100%;
   overflow: hidden;
   transition: grid-template-columns 0.3s ease;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.75rem;
+  }
 `;
 
 const AISidebar = styled.div.withConfig({
@@ -119,13 +141,48 @@ const AISidebar = styled.div.withConfig({
 })`
   display: ${props => props.isVisible ? 'flex' : 'none'};
   flex-direction: column;
-  gap: 1rem;
-  background: white;
+  gap: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   height: 100%;
   overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  min-width: 280px;
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 1000;
+    border-radius: 0;
+    padding: 1rem;
+    min-width: auto;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+  }
+`;
+
+const SidebarOverlay = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== 'isVisible'
+})`
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: ${props => props.isVisible ? 'block' : 'none'};
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
 `;
 
 const AIChatSection = styled.div`
@@ -136,55 +193,177 @@ const AIChatSection = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   height: 100%;
   overflow: hidden;
+  border: 1px solid #e2e8f0;
+`;
+
+const ChatContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; // Importante para flexbox funcionar corretamente
+  gap: 0; // Remove gap para melhor controle do layout
 `;
 
 const SidebarTitle = styled.h3`
-  font-size: 1.1rem;
-  color: #334155;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+
+  @media (max-width: 768px) {
+    font-size: 1.125rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.875rem;
+  }
+`;
+
+const MobileCloseButton = styled.button`
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: #334155;
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const SidebarSection = styled.div`
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const ConversationItem = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'selected'
 })`
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  background: ${props => props.selected ? '#f1f5f9' : '#ffffff'};
-  border: 1px solid ${props => props.selected ? '#3b82f6' : '#e2e8f0'};
-  border-radius: 8px;
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  background: ${props => props.selected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#ffffff'};
+  border: 2px solid ${props => props.selected ? '#3b82f6' : '#e2e8f0'};
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  box-shadow: ${props => props.selected ? '0 2px 4px rgba(59, 130, 246, 0.1)' : '0 1px 3px rgba(0, 0, 0, 0.05)'};
+  position: relative;
   
   &:hover {
-    background: #f8fafc;
+    background: ${props => props.selected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#f8fafc'};
     border-color: #3b82f6;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.875rem;
+    margin-bottom: 0.5rem;
+  }
+`;
+
+const ConversationDeleteButton = styled.button`
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: none;
+  border-radius: 6px;
+  padding: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+    transform: scale(1.1);
+  }
+
+  ${ConversationItem}:hover & {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 480px) {
+    top: 0.375rem;
+    right: 0.375rem;
+    padding: 0.25rem;
+    font-size: 0.65rem;
   }
 `;
 
 const ConversationTitle = styled.div`
   font-weight: 600;
   color: #1e293b;
-  margin-bottom: 0.25rem;
-  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
+  padding-right: 2rem; // Espaço para o botão de lixeira
+
+  @media (max-width: 768px) {
+    font-size: 0.95rem;
+    padding-right: 1.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.9rem;
+    padding-right: 1.5rem;
+  }
 `;
 
 const ConversationDate = styled.div`
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   color: #64748b;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const ConversationPreview = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #475569;
   line-height: 1.4;
   display: -webkit-box;
@@ -192,6 +371,99 @@ const ConversationPreview = styled.div`
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 400;
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
+`;
+
+const ActiveIndicator = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  color: white;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  margin-left: 0.5rem;
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+  }
+`;
+
+const EmptyHistoryState = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #64748b;
+`;
+
+const EmptyHistoryIcon = styled.div`
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+`;
+
+const EmptyHistoryTitle = styled.h4`
+  font-size: 1.125rem;
+  color: #475569;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+`;
+
+const EmptyHistoryDescription = styled.p`
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+  max-width: 250px;
+`;
+
+const EmptyHistoryButton = styled.button`
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+
+  &:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  }
 `;
 
 const Sidebar = styled(motion.div).withConfig({
@@ -576,21 +848,58 @@ const PromptButton = styled.button`
   }
 `;
 
-const ChatContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  height: 600px; // Altura fixa
-`;
+
 
 const ChatHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px 12px 0 0;
+  flex-shrink: 0; // Impede que o header encolha
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    padding: 1rem 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.875rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+`;
+
+const ChatTitle = styled.h3`
+  font-size: 1.25rem;
+  color: #1e293b;
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  @media (max-width: 768px) {
+    font-size: 1.125rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1rem;
+  }
+`;
+
+const ChatHeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  @media (max-width: 480px) {
+    gap: 0.5rem;
+  }
 `;
 
 const HeaderLeft = styled.div`
@@ -623,33 +932,55 @@ const ClearChatButton = styled.button`
     background: #e2e8f0;
     color: #334155;
   }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+    min-height: 44px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
 `;
 
 const ChatMessages = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 1.5rem;
+  min-height: 0; // Importante para flexbox funcionar corretamente
   
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
   }
   
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: #f1f5f9;
+    border-radius: 4px;
   }
   
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 3px;
+    border-radius: 4px;
   }
   
   &::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+  }
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    gap: 1rem;
   }
 `;
 
@@ -676,6 +1007,18 @@ const MessageActionButton = styled.button`
   &:hover {
     background: rgba(0, 0, 0, 0.05);
     color: #334155;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.375rem;
+    font-size: 0.8rem;
+    min-height: 36px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    min-height: 40px;
   }
 `;
 
@@ -710,58 +1053,130 @@ const MessageBubble = styled.div.withConfig({
     background: #fee2e2;
     color: #dc2626;
   `}
+
+  @media (max-width: 768px) {
+    max-width: 90%;
+    padding: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    max-width: 95%;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
 `;
 
 const ChatInputContainer = styled.form`
   display: flex;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1.5rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-top: auto;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   flex-shrink: 0; // Impede que o input encolha
+  border-top: 1px solid #e2e8f0;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    gap: 0.5rem;
+  }
 `;
 
 const ChatInput = styled.textarea`
   flex: 1;
-  border: 1px solid #ADADAD;
-  border-radius: 8px;
-  padding: 0.75rem;
-  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.95rem;
   resize: none;
-  min-height: 40px;
+  min-height: 48px;
   max-height: 120px;
   line-height: 1.5;
-  background: #DFDFDF;
-  color: #2B2B2B;
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: inherit;
+  transition: all 0.2s ease;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
 
   &:focus {
     outline: none;
-    border-color: #E1663D;
-    box-shadow: 0 0 0 2px rgba(225, 102, 61, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    background: white;
+  }
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+    font-size: 0.875rem;
+    min-height: 48px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    min-height: 52px;
   }
 `;
 
 const SendButton = styled.button`
-  background: #E1663D;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem;
+  border-radius: 10px;
+  padding: 1rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
 
   &:hover:not(:disabled) {
-    background: #8C4B35;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
   }
 
   &:disabled {
-    background: #ADADAD;
+    background: #cbd5e1;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+    min-width: 48px;
+    min-height: 48px;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 1rem;
+    min-width: 52px;
+    min-height: 52px;
+    font-size: 0.875rem;
   }
 `;
 
@@ -800,6 +1215,15 @@ const MessageTimeWrapper = styled.div.withConfig({
   margin-top: 0.5rem;
   text-align: ${props => props.isUser ? 'right' : 'left'};
   color: ${props => props.isUser ? 'rgba(255, 255, 255, 0.8)' : '#64748b'};
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+    margin-top: 0.375rem;
+  }
 `;
 
 const TypingIndicator = styled.div`
@@ -1766,6 +2190,7 @@ const ToastContainer = styled.div`
 
 const SetupModal = styled(Modal)`
   background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
 `;
 
 const SetupModalContent = styled(ModalContent)`
@@ -1776,6 +2201,7 @@ const SetupModalContent = styled(ModalContent)`
   background: #f8fafc;
   border-radius: 12px;
   padding: 2rem;
+  z-index: 1001;
 `;
 
 const SetupHeader = styled.div`
@@ -1863,18 +2289,262 @@ const SetupButton = styled.button`
   &:hover {
     background: ${props => props.primary ? '#2563eb' : '#cbd5e1'};
   }
+
+  @media (max-width: 768px) {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
 `;
 
 const CurrentSetup = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f1f5f9;
-  border-radius: 8px;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   color: #334155;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 768px) {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.875rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+    gap: 0.5rem;
+  }
+`;
+
+const SetupInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+`;
+
+const SetupIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  font-size: 1.2rem;
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+`;
+
+const SetupDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const SetupLabel = styled.span`
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+`;
+
+const SetupName = styled.span`
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const FileAttachmentToggle = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 768px) {
+    padding: 0.875rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+`;
+
+const ToggleLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
+const ToggleIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #f1f5f9;
+  color: #64748b;
+  border-radius: 6px;
+  font-size: 0.875rem;
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+`;
+
+const ToggleText = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+`;
+
+const ToggleTitle = styled.span`
+  font-size: 0.95rem;
+  color: #334155;
+  font-weight: 500;
+
+  @media (max-width: 768px) {
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const ToggleDescription = styled.span`
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.3;
+
+  @media (max-width: 768px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.7rem;
+  }
+`;
+
+const NewConversationButton = styled.button`
+  width: 100%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+
+  &:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+`;
+
+const NewConversationButtonSmall = styled.button`
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #2563eb;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(1);
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.375rem;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.25rem;
+    font-size: 0.65rem;
+  }
 `;
 
 const ToggleSwitchStyled = styled.button.withConfig({
@@ -2161,6 +2831,10 @@ const Home = () => {
     changePlan, 
     processAiQuery, 
     getQueryHistory,
+    getChatHistory,
+    saveChatConversation,
+    updateChatConversation,
+    removeChatConversation,
     getDashboardStats, 
     getUserTasks, 
     getTeamMembers, 
@@ -2356,6 +3030,35 @@ const Home = () => {
     }
   }, [chatMessages]);
 
+  // Efeito para garantir que o input permaneça visível e o scroll funcione corretamente
+  useEffect(() => {
+    const chatMessages = document.querySelector('.chat-messages');
+    if (chatMessages) {
+      const scrollToBottom = () => {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      };
+      
+      // Scroll inicial
+      scrollToBottom();
+      
+      // Observer para mudanças no conteúdo
+      const resizeObserver = new ResizeObserver(scrollToBottom);
+      resizeObserver.observe(chatMessages);
+      
+      // Observer para mudanças nas mensagens
+      const mutationObserver = new MutationObserver(scrollToBottom);
+      mutationObserver.observe(chatMessages, {
+        childList: true,
+        subtree: true
+      });
+      
+      return () => {
+        resizeObserver.disconnect();
+        mutationObserver.disconnect();
+      };
+    }
+  }, [messages]);
+
   // Efeito para rolar o chat do laboratório para baixo quando novas mensagens são adicionadas
   useEffect(() => {
     if (labChatEndRef.current) {
@@ -2374,6 +3077,27 @@ const Home = () => {
     }
     // eslint-disable-next-line
   }, [activeItem, currentUser]);
+
+  // Função para carregar histórico de conversas
+  const loadChatHistory = useCallback(async () => {
+    try {
+      setHistoryLoading(true);
+      const history = await getChatHistory();
+      setChatHistory(history || []);
+    } catch (error) {
+      handleError(error, 'carregamento de histórico de conversas');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [getChatHistory]);
+
+  // Efeito para carregar histórico de conversas da IA
+  useEffect(() => {
+    if (activeItem === 'ai') {
+      // Carregar do Redis
+      loadChatHistory();
+    }
+  }, [activeItem, loadChatHistory]);
 
   // Efeito para recarregar mensagens quando o chat selecionado mudar
   useEffect(() => {
@@ -2416,46 +3140,106 @@ const Home = () => {
     }
   }, [currentUser, loadTasks, loadTeamMembers, loadQueryDistribution]);
 
-  // Função para carregar histórico de conversas
-  const loadChatHistory = useCallback(async () => {
+  // Função para salvar conversa atual no histórico
+  const saveCurrentConversation = useCallback(async () => {
+    if (!messages.length) return;
+    
     try {
-      setHistoryLoading(true);
-      const history = await getQueryHistory();
-      setChatHistory(history || []);
+      // Criar nova conversa (apenas para novos chats)
+      const conversation = {
+        id: Date.now().toString(),
+        title: messages[0]?.content?.substring(0, 50) + "..." || `Conversa ${new Date().toLocaleDateString('pt-BR')}`,
+        timestamp: new Date().toISOString(),
+        preview: messages[messages.length - 1]?.content?.substring(0, 100) || 'Sem preview',
+        messages: [...messages]
+      };
+      
+      // Salvar no Redis
+      const success = await saveChatConversation(conversation);
+      if (success) {
+        // Atualizar estado local
+        setChatHistory(prev => [conversation, ...prev.slice(0, 49)]); // Manter apenas 50 conversas
+        setSelectedConversation(conversation.id);
+      }
     } catch (error) {
-      handleError(error, 'carregamento de histórico de conversas');
-    } finally {
-      setHistoryLoading(false);
+      console.error('Erro ao salvar conversa:', error);
     }
-  }, [getQueryHistory]);
+  }, [messages, saveChatConversation]);
 
-  // Função para carregar uma conversa específica
+  // Função para carregar conversa do histórico
   const loadConversation = useCallback(async (conversationId) => {
     try {
-      // Aqui você implementaria a lógica para carregar uma conversa específica
-      // Por enquanto, vamos simular carregando a conversa atual
-      setSelectedConversation(conversationId);
-      // Limpar mensagens atuais e carregar as da conversa selecionada
-      setMessages([]);
+      const conversation = chatHistory.find(conv => conv.id === conversationId);
+      if (conversation) {
+        setSelectedConversation(conversationId);
+        setMessages(conversation.messages || []);
+        setChatInput('');
+        setSelectedFile(null);
+      }
     } catch (error) {
       handleError(error, 'carregamento de conversa');
     }
-  }, []);
+  }, [chatHistory]);
 
   // Função para criar nova conversa
-  const createNewConversation = useCallback(() => {
+  const createNewConversation = useCallback(async () => {
+    // Salvar conversa atual se houver mensagens e não estiver já salva
+    if (messages.length > 0 && !selectedConversation) {
+      await saveCurrentConversation();
+    }
+    
+    // Limpar estado para nova conversa
     setSelectedConversation(null);
     setMessages([]);
     setChatInput('');
     setSelectedFile(null);
-  }, []);
+  }, [messages, selectedConversation, saveCurrentConversation]);
 
-  // Carregar histórico quando entrar no painel de IA
-  useEffect(() => {
-    if (activeItem === 'ai') {
-      loadChatHistory();
+  // Função para remover conversa do histórico
+  const removeConversation = useCallback(async (conversationId, event) => {
+    event.stopPropagation(); // Evita que o clique propague para o card
+    
+    console.log('Tentando remover conversa:', conversationId);
+    
+    if (window.confirm('Tem certeza que deseja remover esta conversa do histórico?')) {
+      try {
+        console.log('Confirmado, removendo do Redis...');
+        // Remover do Redis
+        const success = await removeChatConversation(conversationId);
+        console.log('Resultado da remoção:', success);
+        
+        if (success) {
+          // Atualizar estado local
+          setChatHistory(prev => {
+            const filtered = prev.filter(conv => conv.id !== conversationId);
+            console.log('Estado local atualizado, conversas restantes:', filtered.length);
+            return filtered;
+          });
+          
+          // Se a conversa removida era a selecionada, limpar seleção
+          if (selectedConversation === conversationId) {
+            setSelectedConversation(null);
+            setMessages([]);
+            setChatInput('');
+            setSelectedFile(null);
+          }
+          
+          showSuccessToast('Conversa removida com sucesso');
+        } else {
+          showErrorToast('Erro ao remover conversa');
+        }
+      } catch (error) {
+        console.error('Erro ao remover conversa:', error);
+        handleError(error, 'remoção de conversa');
+      }
     }
-  }, [activeItem, loadChatHistory]);
+  }, [selectedConversation, removeChatConversation]);
+
+
+
+
+
+
 
   const formatChatTime = (isoDate) => {
     return formatTime(isoDate);
@@ -2963,6 +3747,14 @@ const Home = () => {
         };
 
         setMessages(prev => [...prev, aiResponse]);
+        
+        // Atualizar conversa existente se houver uma selecionada
+        if (selectedConversation) {
+          setTimeout(() => {
+            updateChatConversation(selectedConversation, [...messages, aiResponse]);
+          }, 1000);
+        }
+        
         } catch (error) {
       handleError(error, 'envio de mensagem da IA');
       const errorResponse = {
@@ -3871,19 +4663,35 @@ const Home = () => {
     return (
         <AIContainer>
         <CurrentSetup>
-          <FaCog />
-          Setup atual: {selectedSetup?.title || 'Não selecionado'}
+          <SetupInfo>
+            <SetupIcon>
+              <FaCog />
+            </SetupIcon>
+            <SetupDetails>
+              <SetupLabel>Setup Atual</SetupLabel>
+              <SetupName>{selectedSetup?.title || 'Não selecionado'}</SetupName>
+            </SetupDetails>
+          </SetupInfo>
           <SetupButton onClick={() => setShowSetupModal(true)}>
             Alterar Setup
           </SetupButton>
         </CurrentSetup>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-          <span style={{ fontSize: '0.95rem', color: '#334155' }}>Manter arquivo anexado após envio</span>
+        <FileAttachmentToggle>
+          <ToggleLabel>
+            <ToggleIcon>
+              <FaRegFileAlt />
+            </ToggleIcon>
+            <ToggleText>
+              <ToggleTitle>Manter arquivo anexado</ToggleTitle>
+              <ToggleDescription>Após enviar uma mensagem, o arquivo permanecerá selecionado</ToggleDescription>
+            </ToggleText>
+          </ToggleLabel>
           <ToggleSwitchStyled
             type="button"
             data-active={keepFileAttached}
             aria-pressed={keepFileAttached}
             onClick={() => setKeepFileAttached(v => !v)}
+            title={keepFileAttached ? 'Desativar anexo persistente' : 'Ativar anexo persistente'}
           >
             {keepFileAttached ? (
               <SwitchLabel>ON</SwitchLabel>
@@ -3892,40 +4700,57 @@ const Home = () => {
             )}
             <SwitchCircle data-active={keepFileAttached} />
           </ToggleSwitchStyled>
-        </div>
+        </FileAttachmentToggle>
         <FileUpload onFileUpload={handleFileUpload} file={selectedFile} />
         
         <AIContent showSidebar={showHistorySidebar}>
+          {/* Overlay para mobile */}
+          <SidebarOverlay 
+            isVisible={showHistorySidebar} 
+            onClick={() => setShowHistorySidebar(false)}
+          />
+          
           {/* Sidebar com histórico de conversas */}
           <AISidebar isVisible={showHistorySidebar}>
             <SidebarTitle>
-              <FaHistory style={{ marginRight: '8px' }} />
-              Histórico de Conversas
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaHistory />
+                Histórico de Conversas
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {chatHistory.length > 0 && (
+                  <NewConversationButtonSmall onClick={createNewConversation} title="Nova conversa">
+                    <FaPlus />
+                  </NewConversationButtonSmall>
+                )}
+                <MobileCloseButton 
+                  onClick={() => setShowHistorySidebar(false)}
+                  style={{ display: 'none' }}
+                >
+                  <FaTimes />
+                </MobileCloseButton>
+              </div>
             </SidebarTitle>
             
-            <SidebarSection>
-              <button 
-                className="btn-primary hover-lift"
-                onClick={createNewConversation}
-                style={{ width: '100%', marginBottom: '1rem', padding: '0.75rem' }}
-              >
-                <FaPlus style={{ marginRight: '8px' }} />
-                Nova Conversa
-              </button>
-            </SidebarSection>
-
             <SidebarSection>
               {historyLoading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
                   <LoadingSpinner message="Carregando histórico..." />
                 </div>
               ) : chatHistory.length === 0 ? (
-                <div style={{ padding: '1rem' }}>
-                  <EmptyState 
-                    type="messages" 
-                    action={createNewConversation}
-                  />
-                </div>
+                <EmptyHistoryState>
+                  <EmptyHistoryIcon>
+                    <FaHistory />
+                  </EmptyHistoryIcon>
+                  <EmptyHistoryTitle>Nenhuma conversa encontrada</EmptyHistoryTitle>
+                  <EmptyHistoryDescription>
+                    Suas conversas com a IA aparecerão aqui. Envie sua primeira mensagem para começar.
+                  </EmptyHistoryDescription>
+                  <EmptyHistoryButton onClick={createNewConversation}>
+                    <FaPlus />
+                    Nova Conversa
+                  </EmptyHistoryButton>
+                </EmptyHistoryState>
               ) : (
                 <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
                   {chatHistory.map((conversation, index) => (
@@ -3934,8 +4759,19 @@ const Home = () => {
                       selected={selectedConversation === conversation.id}
                       onClick={() => loadConversation(conversation.id)}
                     >
+                      <ConversationDeleteButton
+                        onClick={(e) => removeConversation(conversation.id, e)}
+                        title="Remover conversa"
+                      >
+                        <FaTrash />
+                      </ConversationDeleteButton>
                       <ConversationTitle>
                         {conversation.title || `Conversa ${index + 1}`}
+                        {selectedConversation === conversation.id && (
+                          <ActiveIndicator>
+                            <FaCheck />
+                          </ActiveIndicator>
+                        )}
                       </ConversationTitle>
                       <ConversationDate>
                         {new Date(conversation.timestamp || Date.now()).toLocaleDateString('pt-BR')}
@@ -3954,19 +4790,28 @@ const Home = () => {
           <AIChatSection>
             <ChatContainer>
               <ChatHeader>
-                <h3>Chat</h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <ChatTitle>
+                  <FaRobot />
+                  Chat com IA
+                </ChatTitle>
+                <ChatHeaderActions>
                   <Button 
                     variant="secondary" 
                     onClick={() => setShowHistorySidebar(!showHistorySidebar)}
-                    style={{ fontSize: '0.8rem', padding: '0.5rem' }}
+                    style={{ 
+                      fontSize: '0.8rem', 
+                      padding: '0.5rem',
+                      minWidth: '44px',
+                      minHeight: '44px'
+                    }}
+                    title={showHistorySidebar ? 'Fechar histórico' : 'Abrir histórico'}
                   >
                     {showHistorySidebar ? <FaTimes /> : <FaHistory />}
                   </Button>
                   <ClearChatButton onClick={handleClearChat}>
                     <FaTrash /> Limpar Chat
                   </ClearChatButton>
-                </div>
+                </ChatHeaderActions>
               </ChatHeader>
                               <ChatMessages ref={aiScrollRef} className="chat-messages">
                     {messages.map((message, index) => (

@@ -66,6 +66,7 @@ const dbService = require('./src/services/db.service');
 const userService = require('./src/services/user.service');
 const monicaAIService = require('./src/services/monica-ai.service');
 const labChatsRouter = require('./src/routes/labchats');
+const chatHistoryRouter = require('./src/routes/chatHistory.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -1915,3 +1916,4 @@ app.get('/api/report/token-history', authenticateToken, async (req, res) => {
 });
 
 app.use('/api', labChatsRouter);
+app.use('/api', authenticateToken, chatHistoryRouter);

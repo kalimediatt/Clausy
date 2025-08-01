@@ -71,6 +71,19 @@ export const showInfoToast = (message) => {
   });
 };
 
+export const showErrorToast = (message) => {
+  toast.error(message, {
+    duration: 4000,
+    position: 'top-right',
+    style: {
+      background: '#ef4444',
+      color: 'white',
+      borderRadius: '8px',
+      padding: '12px 16px'
+    }
+  });
+};
+
 // 3. DEBOUNCE PARA PERFORMANCE
 export const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);

@@ -232,6 +232,123 @@ const api = {
       console.error(`Error in API call to ${endpoint}:`, error);
       throw error;
     }
+  },
+
+  put: async (endpoint, data, requireAuth = true) => {
+    try {
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+
+      if (requireAuth) {
+        const token = getStoredToken();
+        if (!token) {
+          throw new Error('No authentication token');
+        }
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const csrfToken = sessionStorage.getItem('csrf_token');
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+      
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      
+      if (response.status === 401) {
+        removeStoredToken();
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (response.status === 403) {
+        throw new Error('Access denied');
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.indexOf('application/json') !== -1) {
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(responseData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return responseData;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error(`Error in API call to ${endpoint}:`, error);
+      throw error;
+    }
+  },
+
+  delete: async (endpoint, requireAuth = true) => {
+    try {
+      const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      };
+
+      if (requireAuth) {
+        const token = getStoredToken();
+        if (!token) {
+          throw new Error('No authentication token');
+        }
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const csrfToken = sessionStorage.getItem('csrf_token');
+      if (csrfToken) {
+        headers['X-CSRF-Token'] = csrfToken;
+      }
+      
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers,
+        credentials: 'include'
+      });
+      
+      if (response.status === 401) {
+        removeStoredToken();
+        window.location.href = '/login';
+        return;
+      }
+      
+      if (response.status === 403) {
+        throw new Error('Access denied');
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.indexOf('application/json') !== -1) {
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(responseData.message || `HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return responseData;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error(`Error in API call to ${endpoint}:`, error);
+      throw error;
+    }
   }
 };
 
@@ -689,6 +806,70 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Obter histórico de chats
+  const getChatHistory = async () => {
+    if (!isAuthenticated || !currentUser) {
+      return [];
+    }
+    
+    try {
+      const response = await api.get(`/user/${currentUser.user_id}/chat-history`);
+      return response.success ? response.history : [];
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      return [];
+    }
+  };
+
+  // Salvar conversa no Redis
+  const saveChatConversation = async (conversation) => {
+    if (!isAuthenticated || !currentUser) {
+      return false;
+    }
+    
+    try {
+      const response = await api.post(`/user/${currentUser.user_id}/chat-history`, {
+        conversation
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error saving chat conversation:', error);
+      return false;
+    }
+  };
+
+  // Atualizar conversa existente
+  const updateChatConversation = async (conversationId, messages) => {
+    if (!isAuthenticated || !currentUser) {
+      return false;
+    }
+    
+    try {
+      const response = await api.put(`/user/${currentUser.user_id}/chat-history/${conversationId}`, {
+        messages
+      });
+      return response.success;
+    } catch (error) {
+      console.error('Error updating chat conversation:', error);
+      return false;
+    }
+  };
+
+  // Remover conversa
+  const removeChatConversation = async (conversationId) => {
+    if (!isAuthenticated || !currentUser) {
+      return false;
+    }
+    
+    try {
+      const response = await api.delete(`/user/${currentUser.user_id}/chat-history/${conversationId}`);
+      return response.success;
+    } catch (error) {
+      console.error('Error removing chat conversation:', error);
+      return false;
+    }
+  };
+
   // Obter dados para o dashboard
   const getDashboardStats = async () => {
     if (!isAuthenticated || !currentUser) {
@@ -981,6 +1162,10 @@ export const AuthProvider = ({ children }) => {
       changePlan,
       processAiQuery,
       getQueryHistory,
+    getChatHistory,
+    saveChatConversation,
+    updateChatConversation,
+    removeChatConversation,
       getDashboardStats,
       getUserTasks,
       getTeamMembers,
