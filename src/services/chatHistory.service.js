@@ -1,26 +1,50 @@
-const redis = require('../config/redis.config');
+const db = require('../config/db');
 
-// Função para salvar conversa no Redis
+// Função para salvar conversa no banco de dados
 const saveChatConversation = async (userId, conversation) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
-    const conversationData = {
-      ...conversation,
-      userId,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 dias
-    };
-
-    // Salvar conversa no Redis com expiração
-    await redis.hset(key, conversation.id, JSON.stringify(conversationData));
+    const connection = await db.getConnection();
     
-    // Definir expiração para a chave do usuário (7 dias)
-    await redis.expire(key, 7 * 24 * 60 * 60);
-
-    console.log(`Conversa ${conversation.id} salva para usuário ${userId}`);
-    return true;
+    try {
+      await connection.beginTransaction();
+      
+      // Calcular data de expiração (7 dias)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      // Inserir conversa
+      await connection.execute(
+        'INSERT INTO chat_conversations (id, user_id, title, preview, expires_at) VALUES (?, ?, ?, ?, ?)',
+        [
+          conversation.id,
+          userId,
+          conversation.title || null,
+          conversation.preview || null,
+          expiresAt
+        ]
+      );
+      
+      // Inserir mensagens uma por uma
+      if (conversation.messages && conversation.messages.length > 0) {
+        for (const msg of conversation.messages) {
+          await connection.execute(
+            'INSERT INTO chat_messages (id, conversation_id, role, content) VALUES (?, ?, ?, ?)',
+            [msg.id, conversation.id, msg.role, msg.content]
+          );
+        }
+      }
+      
+      await connection.commit();
+      console.log(`Conversa ${conversation.id} salva para usuário ${userId}`);
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
-    console.error('Erro ao salvar conversa no Redis:', error);
+    console.error('Erro ao salvar conversa no banco:', error);
     return false;
   }
 };
@@ -28,23 +52,39 @@ const saveChatConversation = async (userId, conversation) => {
 // Função para obter histórico de conversas do usuário
 const getChatHistory = async (userId) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
-    const conversations = await redis.hgetall(key);
+    // Limpar conversas expiradas primeiro
+    await cleanupExpiredConversations(userId);
     
-    if (!conversations || Object.keys(conversations).length === 0) {
-      return [];
-    }
-
-    // Converter e filtrar conversas válidas
-    const validConversations = Object.values(conversations)
-      .map(conv => JSON.parse(conv))
-      .filter(conv => {
-        // Verificar se não expirou
-        return conv.expiresAt > Date.now();
+    // Buscar conversas ativas
+    const conversations = await db.executeQuery(
+      `SELECT id, user_id, title, preview, created_at, updated_at, expires_at, is_active 
+       FROM chat_conversations 
+       WHERE user_id = ? AND is_active = TRUE 
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    // Para cada conversa, buscar as mensagens
+    const conversationsWithMessages = await Promise.all(
+      conversations.map(async (conv) => {
+        const messages = await db.executeQuery(
+          'SELECT id, role, content, created_at FROM chat_messages WHERE conversation_id = ? ORDER BY created_at ASC',
+          [conv.id]
+        );
+        
+        return {
+          ...conv,
+          messages: messages.map(msg => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.created_at
+          }))
+        };
       })
-      .sort((a, b) => b.createdAt - a.createdAt); // Ordenar por data de criação (mais recente primeiro)
-
-    return validConversations;
+    );
+    
+    return conversationsWithMessages;
   } catch (error) {
     console.error('Erro ao obter histórico de conversas:', error);
     return [];
@@ -54,28 +94,58 @@ const getChatHistory = async (userId) => {
 // Função para atualizar conversa existente
 const updateChatConversation = async (userId, conversationId, updatedMessages) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
+    const connection = await db.getConnection();
     
-    // Obter conversa existente
-    const existingConversation = await redis.hget(key, conversationId);
-    if (!existingConversation) {
-      return false;
+    try {
+      await connection.beginTransaction();
+      
+      // Verificar se a conversa existe e pertence ao usuário
+      const [conversation] = await connection.execute(
+        'SELECT id FROM chat_conversations WHERE id = ? AND user_id = ? AND is_active = TRUE',
+        [conversationId, userId]
+      );
+      
+      if (conversation.length === 0) {
+        await connection.rollback();
+        return false;
+      }
+      
+      // Remover mensagens antigas
+      await connection.execute(
+        'DELETE FROM chat_messages WHERE conversation_id = ?',
+        [conversationId]
+      );
+      
+      // Inserir novas mensagens uma por uma
+      if (updatedMessages && updatedMessages.length > 0) {
+        for (const msg of updatedMessages) {
+          await connection.execute(
+            'INSERT INTO chat_messages (id, conversation_id, role, content) VALUES (?, ?, ?, ?)',
+            [msg.id, conversationId, msg.role, msg.content]
+          );
+        }
+      }
+      
+      // Atualizar preview da conversa
+      const lastMessage = updatedMessages[updatedMessages.length - 1];
+      const preview = lastMessage ? lastMessage.content.substring(0, 100) : null;
+      
+      await connection.execute(
+        'UPDATE chat_conversations SET preview = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [preview, conversationId]
+      );
+      
+      await connection.commit();
+      console.log(`Conversa ${conversationId} atualizada para usuário ${userId}`);
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
-
-    const conversation = JSON.parse(existingConversation);
-    
-    // Atualizar mensagens e timestamp
-    conversation.messages = updatedMessages;
-    conversation.updatedAt = Date.now();
-    conversation.preview = updatedMessages[updatedMessages.length - 1]?.content?.substring(0, 100) || 'Sem preview';
-
-    // Salvar conversa atualizada
-    await redis.hset(key, conversationId, JSON.stringify(conversation));
-    
-    console.log(`Conversa ${conversationId} atualizada para usuário ${userId}`);
-    return true;
   } catch (error) {
-    console.error('Erro ao atualizar conversa no Redis:', error);
+    console.error('Erro ao atualizar conversa no banco:', error);
     return false;
   }
 };
@@ -83,16 +153,41 @@ const updateChatConversation = async (userId, conversationId, updatedMessages) =
 // Função para remover conversa
 const removeChatConversation = async (userId, conversationId) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
-    console.log('Removendo conversa do Redis:', { key, conversationId });
+    console.log('Removendo conversa do banco:', { userId, conversationId });
     
-    const result = await redis.hdel(key, conversationId);
-    console.log('Resultado do HDEL:', result);
+    const connection = await db.getConnection();
     
-    console.log(`Conversa ${conversationId} removida para usuário ${userId}`);
-    return true;
+    try {
+      await connection.beginTransaction();
+      
+      // Verificar se a conversa existe e pertence ao usuário
+      const [conversation] = await connection.execute(
+        'SELECT id FROM chat_conversations WHERE id = ? AND user_id = ? AND is_active = TRUE',
+        [conversationId, userId]
+      );
+      
+      if (conversation.length === 0) {
+        await connection.rollback();
+        return false;
+      }
+      
+      // Marcar como inativa (soft delete)
+      await connection.execute(
+        'UPDATE chat_conversations SET is_active = FALSE WHERE id = ?',
+        [conversationId]
+      );
+      
+      await connection.commit();
+      console.log(`Conversa ${conversationId} removida para usuário ${userId}`);
+      return true;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
-    console.error('Erro ao remover conversa do Redis:', error);
+    console.error('Erro ao remover conversa do banco:', error);
     return false;
   }
 };
@@ -100,28 +195,16 @@ const removeChatConversation = async (userId, conversationId) => {
 // Função para limpar conversas expiradas
 const cleanupExpiredConversations = async (userId) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
-    const conversations = await redis.hgetall(key);
+    const currentTime = new Date();
     
-    if (!conversations || Object.keys(conversations).length === 0) {
-      return;
-    }
-
-    const currentTime = Date.now();
-    const expiredIds = [];
-
-    // Verificar conversas expiradas
-    for (const [id, convData] of Object.entries(conversations)) {
-      const conversation = JSON.parse(convData);
-      if (conversation.expiresAt <= currentTime) {
-        expiredIds.push(id);
-      }
-    }
-
-    // Remover conversas expiradas
-    if (expiredIds.length > 0) {
-      await redis.hdel(key, ...expiredIds);
-      console.log(`${expiredIds.length} conversas expiradas removidas para usuário ${userId}`);
+    // Marcar conversas expiradas como inativas
+    const result = await db.executeQuery(
+      'UPDATE chat_conversations SET is_active = FALSE WHERE user_id = ? AND expires_at <= ? AND is_active = TRUE',
+      [userId, currentTime]
+    );
+    
+    if (result.affectedRows > 0) {
+      console.log(`${result.affectedRows} conversas expiradas removidas para usuário ${userId}`);
     }
   } catch (error) {
     console.error('Erro ao limpar conversas expiradas:', error);
@@ -131,22 +214,39 @@ const cleanupExpiredConversations = async (userId) => {
 // Função para obter conversa específica
 const getChatConversation = async (userId, conversationId) => {
   try {
-    const key = `chat:user:${userId}:conversations`;
-    const conversationData = await redis.hget(key, conversationId);
+    // Buscar conversa
+    const conversations = await db.executeQuery(
+      'SELECT id, user_id, title, preview, created_at, updated_at, expires_at, is_active FROM chat_conversations WHERE id = ? AND user_id = ? AND is_active = TRUE',
+      [conversationId, userId]
+    );
     
-    if (!conversationData) {
+    if (conversations.length === 0) {
       return null;
     }
-
-    const conversation = JSON.parse(conversationData);
+    
+    const conversation = conversations[0];
     
     // Verificar se não expirou
-    if (conversation.expiresAt <= Date.now()) {
-      await redis.hdel(key, conversationId);
+    if (conversation.expires_at <= new Date()) {
+      await cleanupExpiredConversations(userId);
       return null;
     }
-
-    return conversation;
+    
+    // Buscar mensagens
+    const messages = await db.executeQuery(
+      'SELECT id, role, content, created_at FROM chat_messages WHERE conversation_id = ? ORDER BY created_at ASC',
+      [conversationId]
+    );
+    
+    return {
+      ...conversation,
+      messages: messages.map(msg => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.created_at
+      }))
+    };
   } catch (error) {
     console.error('Erro ao obter conversa específica:', error);
     return null;

@@ -68,7 +68,10 @@
     "eject": "react-scripts eject",
     "server": "nodemon server.js",
     "start:all": "concurrently \"npm run server\" \"npm start\"",
-    "security-check": "npm audit && npm outdated"
+    "security-check": "npm audit && npm outdated",
+    "migrate:chat": "node scripts/migrate_chat_conversations.js",
+    "migrate:redis-to-db": "node scripts/migrate_redis_to_db.js",
+    "cleanup:redis-chat": "node scripts/cleanup_redis_chat.js"
   },
   "eslintConfig": {
     "extends": [
