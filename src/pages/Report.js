@@ -59,6 +59,7 @@ import { toast } from 'react-hot-toast';
 import FileUpload from '../components/FileUpload';
 import SetupSelector from '../components/SetupSelector';
 import TokenHistoryDashboard from '../components/TokenHistoryDashboard';
+import EnhancedReportsDashboard from '../components/EnhancedReportsDashboard';
 import axios from 'axios';
 
 ChartJS.register(
@@ -186,6 +187,8 @@ const Report = () => {
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [selectedSetupState, setSelectedSetupState] = useState(null);
   const [keepFileAttached, setKeepFileAttached] = useState(false);
+  // Estado para alternar entre dashboard básico (original) e avançado (novo) - COMENTADO
+  // const [useEnhancedDashboard, setUseEnhancedDashboard] = useState(true);
   
   const chatEndRef = useRef(null);
 
@@ -494,7 +497,75 @@ const Report = () => {
         </LogoutButton>
       </Sidebar>
       <Content>
-        {activeItem === 'reports' && <TokenHistoryDashboard />}
+        {/* Seção de Relatórios - Dashboard de métricas e análises */}
+        {activeItem === 'reports' && (
+          <div>
+            {/* Header com título - Toggle de dashboards comentado */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              marginBottom: '1rem',
+              padding: '1rem',
+              background: 'white',
+              borderRadius: '8px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <div>
+                <h2 style={{ margin: 0, color: '#1f2937' }}>Relatórios</h2>
+                <p style={{ margin: '0.5rem 0 0 0', color: '#6b7280', fontSize: '0.9rem' }}>
+                  Dashboard de métricas e análises de uso
+                </p>
+              </div>
+              {/* Toggle entre Dashboard Básico e Avançado - COMENTADO
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>Dashboard:</span>
+                <button
+                  onClick={() => setUseEnhancedDashboard(false)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: !useEnhancedDashboard ? '#3b82f6' : '#f3f4f6',
+                    color: !useEnhancedDashboard ? 'white' : '#374151',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}
+                >
+                  Básico
+                </button>
+                <button
+                  onClick={() => setUseEnhancedDashboard(true)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '6px',
+                    background: useEnhancedDashboard ? '#3b82f6' : '#f3f4f6',
+                    color: useEnhancedDashboard ? 'white' : '#374151',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}
+                >
+                  Avançado
+                </button>
+              </div>
+              */}
+            </div>
+            {/* Renderização condicional dos dashboards - COMENTADO */}
+            {/* {useEnhancedDashboard ? (
+              // Dashboard Avançado: Métricas completas, exportação PDF/Excel/CSV, filtros dinâmicos
+              <EnhancedReportsDashboard />
+            ) : (
+              // Dashboard Básico: Gráficos originais simples (consumo por hora, dia da semana, etc.)
+              <TokenHistoryDashboard />
+            )} */}
+            
+            {/* Dashboard Avançado - Padrão */}
+            <EnhancedReportsDashboard />
+          </div>
+        )}
         {activeItem === 'dashboard' && (
           <div>
             <h1>Dashboard</h1>

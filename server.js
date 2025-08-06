@@ -1837,25 +1837,41 @@ app.get('/api/report/token-history', authenticateToken, async (req, res) => {
       // Superadmin vê dados de todas as empresas
       const companies = await dbService.executeQuery('SELECT company_id, name FROM companies');
       
+      // Adicionar dados consolidados de todas as empresas
+      const allUsers = [];
+      let consolidatedData = [];
+      
       for (const company of companies) {
         const users = await dbService.executeQuery(
           'SELECT user_id, name, email FROM users WHERE company_id = ?',
           [company.company_id]
         );
 
-        data[company.name] = await Promise.all(users.map(async (user) => {
+        const companyUsers = await Promise.all(users.map(async (user) => {
           const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
           return {
             userId: user.user_id,
             name: user.name,
             email: user.email,
+            companyName: company.name,
             data: history.map(h => ({
               date: normalizeDate(h),
               tokens: h.tokens
             }))
           };
         }));
+
+        data[company.name] = companyUsers;
+        
+        // Adicionar dados para consolidação geral
+        companyUsers.forEach(user => {
+          allUsers.push(user);
+          consolidatedData = consolidatedData.concat(user.data);
+        });
       }
+      
+      // Adicionar visão geral consolidada
+      data['Geral'] = allUsers;
     } else if (role === 'admin') {
       // Admin vê dados da sua empresa
       const company = await dbService.executeQuery(
@@ -1910,6 +1926,343 @@ app.get('/api/report/token-history', authenticateToken, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erro ao buscar histórico de tokens',
+      error: error.message
+    });
+  }
+});
+
+// Rota para obter estatísticas gerais do dashboard
+app.get('/api/report/dashboard-stats', authenticateToken, async (req, res) => {
+  try {
+    const { user_id, role, company_id } = req.user;
+    let stats = {};
+
+    if (role === 'superadmin') {
+      // Superadmin vê estatísticas de todas as empresas
+      const companies = await dbService.executeQuery('SELECT company_id, name FROM companies');
+      
+      let generalStats = {
+        totalUsers: 0,
+        activeUsers: 0,
+        totalTokens: 0,
+        totalRequests: 0
+      };
+      
+      for (const company of companies) {
+        const users = await dbService.executeQuery(
+          'SELECT user_id, name, email FROM users WHERE company_id = ?',
+          [company.company_id]
+        );
+
+        let totalTokens = 0;
+        let totalRequests = 0;
+        let activeUsers = 0;
+
+        for (const user of users) {
+          const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+          const userTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+          totalTokens += userTokens;
+          totalRequests += history.length;
+          if (history.length > 0) activeUsers++;
+        }
+
+        stats[company.name] = {
+          totalUsers: users.length,
+          activeUsers,
+          totalTokens,
+          totalRequests,
+          averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0,
+          averageTokensPerUser: users.length > 0 ? totalTokens / users.length : 0
+        };
+        
+        // Acumular estatísticas gerais
+        generalStats.totalUsers += users.length;
+        generalStats.activeUsers += activeUsers;
+        generalStats.totalTokens += totalTokens;
+        generalStats.totalRequests += totalRequests;
+      }
+      
+      // Adicionar estatísticas gerais consolidadas
+      stats['Geral'] = {
+        totalUsers: generalStats.totalUsers,
+        activeUsers: generalStats.activeUsers,
+        totalTokens: generalStats.totalTokens,
+        totalRequests: generalStats.totalRequests,
+        averageTokensPerRequest: generalStats.totalRequests > 0 ? generalStats.totalTokens / generalStats.totalRequests : 0,
+        averageTokensPerUser: generalStats.totalUsers > 0 ? generalStats.totalTokens / generalStats.totalUsers : 0
+      };
+    } else if (role === 'admin') {
+      // Admin vê estatísticas da sua empresa
+      const company = await dbService.executeQuery(
+        'SELECT name FROM companies WHERE company_id = ?',
+        [company_id]
+      );
+
+      const users = await dbService.executeQuery(
+        'SELECT user_id, name, email FROM users WHERE company_id = ?',
+        [company_id]
+      );
+
+      let totalTokens = 0;
+      let totalRequests = 0;
+      let activeUsers = 0;
+
+      for (const user of users) {
+        const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+        const userTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+        totalTokens += userTokens;
+        totalRequests += history.length;
+        if (history.length > 0) activeUsers++;
+      }
+
+      stats[company[0].name] = {
+        totalUsers: users.length,
+        activeUsers,
+        totalTokens,
+        totalRequests,
+        averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0,
+        averageTokensPerUser: users.length > 0 ? totalTokens / users.length : 0
+      };
+    } else {
+      // Usuário comum vê apenas suas estatísticas
+      const user = await dbService.executeQuery(
+        'SELECT u.name, c.name as company_name FROM users u JOIN companies c ON u.company_id = c.company_id WHERE u.user_id = ?',
+        [user_id]
+      );
+
+      const history = await tokenUsageService.getPermanentTokenHistory(user_id);
+      const totalTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+
+      stats[user[0].company_name] = {
+        totalUsers: 1,
+        activeUsers: history.length > 0 ? 1 : 0,
+        totalTokens,
+        totalRequests: history.length,
+        averageTokensPerRequest: history.length > 0 ? totalTokens / history.length : 0,
+        averageTokensPerUser: totalTokens
+      };
+    }
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas do dashboard:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar estatísticas do dashboard',
+      error: error.message
+    });
+  }
+});
+
+// Rota para obter dados de uso por período
+app.get('/api/report/usage-by-period', authenticateToken, async (req, res) => {
+  try {
+    const { user_id, role, company_id } = req.user;
+    const { period = 'monthly' } = req.query; // daily, weekly, monthly
+    let data = {};
+
+    const getPeriodData = (history, period) => {
+      const now = new Date();
+      const periods = {};
+      
+      history.forEach(entry => {
+        const date = new Date(entry.date || entry.requestTimestamp || entry.timestamp);
+        let key;
+        
+        if (period === 'daily') {
+          key = date.toISOString().split('T')[0];
+        } else if (period === 'weekly') {
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          key = weekStart.toISOString().split('T')[0];
+        } else { // monthly
+          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        }
+        
+        if (!periods[key]) {
+          periods[key] = { tokens: 0, requests: 0 };
+        }
+        periods[key].tokens += entry.tokens;
+        periods[key].requests += 1;
+      });
+      
+      return periods;
+    };
+
+    if (role === 'superadmin') {
+      const companies = await dbService.executeQuery('SELECT company_id, name FROM companies');
+      
+      let generalHistory = [];
+      
+      for (const company of companies) {
+        const users = await dbService.executeQuery(
+          'SELECT user_id, name, email FROM users WHERE company_id = ?',
+          [company.company_id]
+        );
+
+        let allHistory = [];
+        for (const user of users) {
+          const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+          allHistory = allHistory.concat(history);
+          generalHistory = generalHistory.concat(history);
+        }
+
+        data[company.name] = getPeriodData(allHistory, period);
+      }
+      
+      // Adicionar dados consolidados gerais
+      data['Geral'] = getPeriodData(generalHistory, period);
+    } else if (role === 'admin') {
+      const company = await dbService.executeQuery(
+        'SELECT name FROM companies WHERE company_id = ?',
+        [company_id]
+      );
+
+      const users = await dbService.executeQuery(
+        'SELECT user_id, name, email FROM users WHERE company_id = ?',
+        [company_id]
+      );
+
+      let allHistory = [];
+      for (const user of users) {
+        const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+        allHistory = allHistory.concat(history);
+      }
+
+      data[company[0].name] = getPeriodData(allHistory, period);
+    } else {
+      const user = await dbService.executeQuery(
+        'SELECT u.name, c.name as company_name FROM users u JOIN companies c ON u.company_id = c.company_id WHERE u.user_id = ?',
+        [user_id]
+      );
+
+      const history = await tokenUsageService.getPermanentTokenHistory(user_id);
+      data[user[0].company_name] = getPeriodData(history, period);
+    }
+
+    res.json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dados de uso por período:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar dados de uso por período',
+      error: error.message
+    });
+  }
+});
+
+// Rota para obter dados de usuários mais ativos
+app.get('/api/report/top-users', authenticateToken, async (req, res) => {
+  try {
+    const { user_id, role, company_id } = req.user;
+    const { limit = 10 } = req.query;
+    let data = {};
+
+    if (role === 'superadmin') {
+      const companies = await dbService.executeQuery('SELECT company_id, name FROM companies');
+      
+      let allUsers = [];
+      
+      for (const company of companies) {
+        const users = await dbService.executeQuery(
+          'SELECT user_id, name, email FROM users WHERE company_id = ?',
+          [company.company_id]
+        );
+
+        const userStats = await Promise.all(users.map(async (user) => {
+          const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+          const totalTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+          const totalRequests = history.length;
+          
+          return {
+            userId: user.user_id,
+            name: user.name,
+            email: user.email,
+            companyName: company.name,
+            totalTokens,
+            totalRequests,
+            averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0
+          };
+        }));
+
+        data[company.name] = userStats
+          .filter(user => user.totalTokens > 0)
+          .sort((a, b) => b.totalTokens - a.totalTokens)
+          .slice(0, parseInt(limit));
+          
+        // Adicionar usuários para ranking geral
+        allUsers = allUsers.concat(userStats.filter(user => user.totalTokens > 0));
+      }
+      
+      // Adicionar ranking geral consolidado
+      data['Geral'] = allUsers
+        .sort((a, b) => b.totalTokens - a.totalTokens)
+        .slice(0, parseInt(limit));
+    } else if (role === 'admin') {
+      const company = await dbService.executeQuery(
+        'SELECT name FROM companies WHERE company_id = ?',
+        [company_id]
+      );
+
+      const users = await dbService.executeQuery(
+        'SELECT user_id, name, email FROM users WHERE company_id = ?',
+        [company_id]
+      );
+
+      const userStats = await Promise.all(users.map(async (user) => {
+        const history = await tokenUsageService.getPermanentTokenHistory(user.user_id);
+        const totalTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+        const totalRequests = history.length;
+        
+        return {
+          userId: user.user_id,
+          name: user.name,
+          email: user.email,
+          totalTokens,
+          totalRequests,
+          averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0
+        };
+      }));
+
+      data[company[0].name] = userStats
+        .filter(user => user.totalTokens > 0)
+        .sort((a, b) => b.totalTokens - a.totalTokens)
+        .slice(0, parseInt(limit));
+    } else {
+      const user = await dbService.executeQuery(
+        'SELECT u.name, c.name as company_name FROM users u JOIN companies c ON u.company_id = c.company_id WHERE u.user_id = ?',
+        [user_id]
+      );
+
+      const history = await tokenUsageService.getPermanentTokenHistory(user_id);
+      const totalTokens = history.reduce((sum, h) => sum + h.tokens, 0);
+      const totalRequests = history.length;
+
+      data[user[0].company_name] = [{
+        userId: user_id,
+        name: user[0].name,
+        email: user[0].email || '',
+        totalTokens,
+        totalRequests,
+        averageTokensPerRequest: totalRequests > 0 ? totalTokens / totalRequests : 0
+      }];
+    }
+
+    res.json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    console.error('Erro ao buscar dados dos usuários mais ativos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro ao buscar dados dos usuários mais ativos',
       error: error.message
     });
   }
