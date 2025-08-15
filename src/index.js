@@ -4,7 +4,7 @@ import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import { createGlobalStyle } from 'styled-components';
 import { SetupProvider } from './contexts/SetupContext';
-
+import './index.css';
 const GlobalStyle = createGlobalStyle`
   * {
     margin: 0;

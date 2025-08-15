@@ -1,193 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import styled from 'styled-components';
-import { motion } from 'framer-motion';
-import { FaUser, FaLock, FaRobot, FaEnvelope } from 'react-icons/fa';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FaSun, FaMoon } from "react-icons/fa";
+import { GoogleIcon, GitHubIcon } from "./icons";
+import WhiteLogo from '../logos/white.png';
+import BlackLogo from '../logos/black.png';
 import { useAuth } from '../contexts/AuthContext';
-import Particles from 'react-tsparticles';
-import { loadSlim } from 'tsparticles-slim';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const LoginContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: #2B2B2B;
-  position: relative;
-  overflow: hidden;
-`;
 
-const ParticlesContainer = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-`;
-
-const LoginForm = styled(motion.form)`
-  background: #DFDFDF;
-  backdrop-filter: blur(10px);
-  padding: 2.5rem;
-  border-radius: 20px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-  width: 100%;
-  max-width: 400px;
-  z-index: 2;
-  border: 1px solid #ADADAD;
-`;
-
-const Title = styled(motion.h1)`
-  text-align: center;
-  color: #2B2B2B;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  background: linear-gradient(45deg, #8C4B35, #2B2B2B);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const InputContainer = styled.div`
-  position: relative;
-  margin-bottom: 1.5rem;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
-  background: #DFDFDF;
-  border: 1px solid #ADADAD;
-  border-radius: 10px;
-  color: #2B2B2B;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-
-  &::placeholder {
-    color: #ADADAD;
-  }
-
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(140, 75, 53, 0.3);
-    background: #DFDFDF;
-  }
-`;
-
-const Icon = styled.div`
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #8C4B35;
-`;
-
-const Button = styled(motion.button)`
-  width: 100%;
-  padding: 1rem;
-  background: #8C4B35;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-top: 1rem;
-  position: relative;
-  overflow: hidden;
-
-  &:hover {
-    background: #2B2B2B;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.2),
-      transparent
-    );
-    transition: 0.5s;
-  }
-
-  &:hover::before {
-    left: 100%;
-  }
-`;
-
-const InfoText = styled.div`
-  margin-top: 2rem;
-  color: #ADADAD;
-  font-size: 0.875rem;
-  text-align: center;
-  
-  p {
-    margin-bottom: 0.5rem;
-  }
-  
-  strong {
-    color: #8C4B35;
-  }
-`;
-
-const RobotIcon = styled(motion.div)`
-  font-size: 3rem;
-  color: #8C4B35;
-  text-align: center;
-  margin-bottom: 1rem;
-`;
-
-const NewPasswordContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-`;
-
-const NewPasswordTitle = styled.h2`
-  color: #8C4B35;
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
-`;
-
-const NewPasswordText = styled.p`
-  color: #2B2B2B;
-  text-align: center;
-  margin-bottom: 1rem;
-`;
-
-const NewPasswordValue = styled.div`
-  background: #2B2B2B;
-  color: #DFDFDF;
-  padding: 1rem;
-  border-radius: 10px;
-  font-family: monospace;
-  font-size: 1.2rem;
-  margin: 1rem 0;
-  width: 100%;
-  text-align: center;
-`;
-
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+const LoginPremium = () => {
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [tab, setTab] = useState("password");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(false);
   const [error, setError] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Check if user is already authenticated
-  useEffect(() => {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const passwordStrength = password.length >= 12 ? 4 : password.length >= 8 ? 3 : password.length >= 5 ? 2 : 1;
+  const strengthColor = ["bg-red-400","bg-orange-400","bg-yellow-400","bg-green-400"][passwordStrength-1];
+  const strengthLabel = ["Fraca", "Média", "Forte", "Muito Forte"][passwordStrength-1];
+
+useEffect(() => {
     if (isAuthenticated) {
       const redirectUrl = sessionStorage.getItem('redirectUrl') || '/';
       sessionStorage.removeItem('redirectUrl');
@@ -223,6 +63,7 @@ const Login = () => {
         setError(result.message || 'E-mail ou senha inválidos.');
         toast.error(result.message || 'E-mail ou senha inválidos.');
       }
+      
     } catch (err) {
       // Erro inesperado na comunicação ou lógica
       const errorMessage = err.message || 'Ocorreu um erro inesperado. Tente novamente.';
@@ -231,182 +72,196 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+ };
+  const sso = (provider) => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      alert(`Login com ${provider}`);
+    }, 1000);
   };
 
-  const particlesInit = async (engine) => {
-    await loadSlim(engine);
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
   };
+
+  useEffect(() => {
+    if (theme === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [theme]);
 
   return (
-    <LoginContainer>
-      <ParticlesContainer>
-        <Particles
-          id="tsparticles"
-          init={particlesInit}
-          options={{
-            background: {
-              color: {
-                value: "#2B2B2B",
-              },
-            },
-            fpsLimit: 120,
-            interactivity: {
-              events: {
-                onClick: {
-                  enable: true,
-                  mode: "push",
-                },
-                onHover: {
-                  enable: true,
-                  mode: "repulse",
-                },
-                resize: true,
-              },
-              modes: {
-                push: {
-                  quantity: 4,
-                },
-                repulse: {
-                  distance: 200,
-                  duration: 0.4,
-                },
-                },
-              },
-            particles: {
-              color: {
-                value: "#8C4B35",
-              },
-              links: {
-                color: "#8C4B35",
-                distance: 150,
-                enable: true,
-                opacity: 0.5,
-                width: 1,
-              },
-              move: {
-                direction: "none",
-                enable: true,
-                outModes: {
-                  default: "bounce",
-                },
-                random: false,
-                speed: 2,
-                straight: false,
-            },
-              number: {
-                density: {
-                  enable: true,
-                  area: 800,
-                },
-                value: 80,
-                },
-              opacity: {
-                value: 0.5,
-              },
-              shape: {
-                type: "circle",
-                },
-              size: {
-                value: { min: 1, max: 5 },
-              },
-            },
-            detectRetina: true,
-          }}
-        />
-      </ParticlesContainer>
-      <LoginForm
-        onSubmit={handleSubmit}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <RobotIcon
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: 'spring' }}
-        >
-          <FaRobot />
-        </RobotIcon>
-        <Title
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
-          Clausy
-        </Title>
-        {newPassword ? (
-          <NewPasswordContainer>
-            <NewPasswordTitle>Sua senha foi atualizada</NewPasswordTitle>
-            <NewPasswordText>
-              Por questões de segurança, sua senha foi atualizada. Use a nova senha para fazer login:
-            </NewPasswordText>
-            <NewPasswordValue>{newPassword}</NewPasswordValue>
-            <Button
-              onClick={() => {
-                setNewPassword('');
-                setPassword('');
-              }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Fazer Login com Nova Senha
-            </Button>
-          </NewPasswordContainer>
-        ) : (
-          <>
-        <InputContainer>
-          <Icon>
-            <FaEnvelope />
-          </Icon>
-          <Input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </InputContainer>
-        <InputContainer>
-          <Icon>
-            <FaLock />
-          </Icon>
-          <Input
-            type="password"
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </InputContainer>
-        <Button
-          type="submit"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          disabled={loading}
-        >
-          {loading ? 'Entrando...' : 'Entrar'}
-        </Button>
-        
-        <InfoText>
-          <p>Use suas credenciais para acessar o sistema</p>
-        </InfoText>
-          </>
-        )}
-      </LoginForm>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-    </LoginContainer>
+    <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
+      bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+      
+      {/* Header */}
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-orange-600 to-brown-500 text-white shadow-lg shadow-orange-500/25">
+            
+          <div className="flex justify-center mb-6">
+            {/* Logo Light NAO ALTERAR*/}
+            <img src={BlackLogo} alt="Logo Black" className="h-10 w-auto dark:hidden" />
+
+            {/* Logo Dark NAO ALTERAR*/}
+            <img src={WhiteLogo} alt="Logo White" className="h-10 w-auto hidden dark:block" />
+          </div>
+          </div>
+          <div className="leading-tight">
+            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Clausy</p>
+            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">IA Jurídico</h1>
+          </div>
+        </div>
+
+        {/* Botão Dark Mode */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={toggleTheme}
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm backdrop-blur hover:bg-white dark:border-neutral-700 dark:bg-neutral-800/70 dark:text-neutral-200 transition-all duration-300"
+            aria-label="Alternar tema"
+          >
+            <span className="relative w-4 h-4">
+              {theme === "dark" ? (
+                <motion.div
+                  key="moon"
+                  initial={{ rotate: -45, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 45, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <FaMoon className="w-4 h-4 text-yellow-300" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="sun"
+                  initial={{ rotate: 45, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -45, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <FaSun className="w-4 h-4 text-orange-400" />
+                </motion.div>
+              )}
+            </span>
+            {theme === "dark" ? "Escuro" : "Claro"}
+          </button>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 px-6 pb-16 pt-2 md:grid-cols-2">
+        {/* Hero */}
+        <section className="order-2 hidden md:order-1 md:block">
+          <div className="mx-auto max-w-md">
+            <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+              Bem-vindo(a) à Clausy sua Central de IA Jurídica
+            </h2>
+            <p className="mb-6 text-neutral-600 dark:text-neutral-300">
+              Identifica riscos e automatiza tarefas repetitivas, aumentando eficiência e agilidade nos processos.
+            </p>
+            <ul className="space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
+              <li>✓ Criptografia em trânsito e em repouso</li>
+              <li>✓ Políticas de senha & 2FA (opcional)</li>
+              <li>✓ Login social (Google, GitHub)</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* Auth Card */}
+        <section className="order-1 md:order-2">
+          <motion.form
+            onSubmit={handleSubmit}
+            className="mx-auto w-full max-w-md rounded-2xl border border-neutral-200 bg-white/60 backdrop-blur-lg p-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-900/60 transition-colors duration-500"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="mb-6 text-center">
+              <h3 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mt-4">Acessar conta</h3>
+              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                Entre para continuar na plataforma
+              </p>
+            </div>
+
+            {/* Tabs */}
+            <div className="mb-6 grid grid-cols-2 rounded-xl bg-neutral-100 p-1 text-sm dark:bg-neutral-800">
+              <button type="button" onClick={() => setTab("password")}
+                className={`rounded-lg px-3 py-2 font-medium transition ${tab === "password" ? "bg-white shadow dark:bg-neutral-900 dark:text-white" : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"}`}>
+                Senha
+              </button>
+              <button type="button" onClick={() => setTab("magic")}
+                className={`rounded-lg px-3 py-2 font-medium transition ${tab === "magic" ? "bg-white shadow dark:bg-neutral-900 dark:text-white" : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"}`}>
+                Quick Link
+              </button>
+            </div>
+
+            {/* Status */}
+            {status && (
+              <div className={`mb-4 rounded-lg border px-3 py-2 text-sm ${status.type === "success" ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700/60 dark:bg-emerald-900/30 dark:text-emerald-300" : "border-red-300 bg-red-50 text-red-700 dark:border-red-700/60 dark:bg-red-900/30 dark:text-red-300"}`}>
+                {status.message}
+              </div>
+            )}
+
+            {/* Email */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Email</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@empresa.com" required
+                className="w-full rounded-xl border bg-white px-3 py-2 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 dark:bg-neutral-950 dark:text-neutral-100 border-neutral-200 focus:border-indigo-500 focus:ring-indigo-200/60 dark:border-neutral-800"/>
+            </div>
+
+            {/* Password */}
+            {tab === "password" && (
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-1">
+                  <label htmlFor="password" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Senha</label>
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-xs font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                    {showPassword ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
+                <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="mín. 8 caracteres" required
+                  className="w-full rounded-xl border bg-white px-3 py-2 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 dark:bg-neutral-950 dark:text-neutral-100 border-neutral-200 focus:border-indigo-500 focus:ring-indigo-200/60 dark:border-neutral-800"/>
+                
+                {/* Força da senha */}
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex-1 h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
+                    <div className={`h-2 rounded-full ${strengthColor}`} style={{width: `${(passwordStrength/4)*100}%`}}></div>
+                  </div>
+                  <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{strengthLabel}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Remember + Submit */}
+            <div className="flex justify-between items-center mt-4">
+              <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)}
+                  className="h-4 w-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 dark:border-neutral-700"/>
+                Lembrar-me
+              </label>
+            </div>
+
+            <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-gradient-to-br from-accent2 to-accent2 px-4 py-2.5 text-white shadow-lg hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60">
+              {loading ? "Processando..." : tab === "password" ? "Entrar" : "Enviar link"}
+            </button>
+
+            {/* Social login */}
+            <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mt-4 mb-2">ou continue com</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => sso("google")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:scale-105 transition-transform dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                <GoogleIcon /> Google
+              </button>
+              <button type="button" onClick={() => sso("github")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:scale-105 transition-transform dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
+                <GitHubIcon /> GitHub
+              </button>
+            </div>
+          </motion.form>
+        </section>
+      </main>
+
+    </div>
   );
 };
 
-export default Login; 
+export default LoginPremium;

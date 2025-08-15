@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import PremiumLoginScreen from "./pages/PremiumLoginScreen";
 
 // Componente para proteger rotas que exigem autenticação
 export const ProtectedRoute = ({ children, adminOnly = false }) => {
