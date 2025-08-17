@@ -86,6 +86,7 @@ const Sidebar = ({
         shadow-2xl
         border-r border-neutral-700/50
         min-h-screen
+        z-50
       `}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
@@ -96,7 +97,7 @@ const Sidebar = ({
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-10 shadow-lg transition-all duration-300"
+        className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
         aria-label="Alternar sidebar"
       >
         {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import { FaUser, FaBuilding, FaCrown, FaCoins } from "react-icons/fa";
 import WhiteLogo from '../logos/white.png';
@@ -8,6 +8,8 @@ import { useAuth } from '../contexts/AuthContext';
 const Profile = () => {
   const { 
     currentUser, 
+    isAuthenticated,
+    isLoading,
     checkAuth,
     getDashboardStats,
     getUserTasks,
@@ -15,10 +17,16 @@ const Profile = () => {
     getQueryDistribution,
     getCurrentPlanData
   } = useAuth();
+
+  // Estado local igual ao samples.js
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [theme] = useState(localStorage.getItem("theme") || "light");
   
   // Debug: verificar estrutura completa do currentUser
   console.log('=== PROFILE DEBUG DETALHADO ===');
   console.log('Profile - Token no localStorage:', localStorage.getItem('auth_token') ? 'EXISTE' : 'NÃO EXISTE');
+  console.log('Profile - isAuthenticated:', isAuthenticated);
+  console.log('Profile - isLoading:', isLoading);
   console.log('Profile - currentUser existe?:', !!currentUser);
   console.log('Profile - currentUser completo:', JSON.stringify(currentUser, null, 2));
   console.log('Profile - Todas as chaves do currentUser:', currentUser ? Object.keys(currentUser) : 'null');
@@ -70,26 +78,36 @@ const Profile = () => {
     }
   }, [currentUser, getDashboardStats, getUserTasks, getTeamMembers, getQueryDistribution]);
 
-  // Efeito único para carregar dados iniciais (como no samples.js)
+  // Efeito de inicialização igual ao samples.js
   useEffect(() => {
-    if (currentUser) {
+    console.log('Profile - useEffect inicial - isAuthenticated:', isAuthenticated, 'currentUser:', !!currentUser);
+    
+    if (isAuthenticated && currentUser && !isInitialized) {
+      console.log('Profile - Inicializando dados do usuário...');
+      setIsInitialized(true);
       loadInitialData();
     }
-  }, [currentUser, loadInitialData]);
+  }, [isAuthenticated, currentUser, isInitialized, loadInitialData]);
 
-  // Recarregar dados do usuário quando o componente for montado
+  // Efeito único para carregar dados iniciais quando currentUser mudar
   useEffect(() => {
-    console.log('Profile - useEffect checkAuth executado');
-    console.log('Profile - checkAuth disponível?:', typeof checkAuth);
-    if (checkAuth) {
-      console.log('Profile - Recarregando dados do usuário...');
+    if (currentUser && isAuthenticated) {
+      console.log('Profile - currentUser mudou, carregando dados...');
+      loadInitialData();
+    }
+  }, [currentUser, isAuthenticated, loadInitialData]);
+
+  // Verificação de autenticação na montagem do componente
+  useEffect(() => {
+    console.log('Profile - Montagem do componente, verificando autenticação...');
+    if (!isAuthenticated && checkAuth) {
       checkAuth().then(() => {
-        console.log('Profile - checkAuth concluído');
+        console.log('Profile - checkAuth concluído na montagem');
       }).catch(error => {
-        console.error('Profile - Erro no checkAuth:', error);
+        console.error('Profile - Erro no checkAuth na montagem:', error);
       });
     }
-  }, [checkAuth]);
+  }, [isAuthenticated, checkAuth]);
 
   // Função para obter o nome do usuário exatamente como no samples.js
   const getUserName = () => {
@@ -112,6 +130,42 @@ const Profile = () => {
 
 
 
+  // Verificações de estado igual ao samples.js
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
+        bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+        <div className="flex items-center justify-center min-h-screen">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600 mx-auto"></div>
+            <p className="mt-4 text-neutral-600 dark:text-neutral-400">Verificando autenticação...</p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
+        bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
+        <div className="flex items-center justify-center min-h-screen">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center"
+          >
+            <p className="text-neutral-600 dark:text-neutral-400">Você precisa estar logado para ver esta página.</p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
@@ -123,7 +177,7 @@ const Profile = () => {
             className="text-center"
           >
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600 mx-auto"></div>
-            <p className="mt-4 text-neutral-600 dark:text-neutral-400">Carregando perfil...</p>
+            <p className="mt-4 text-neutral-600 dark:text-neutral-400">Carregando dados do usuário...</p>
           </motion.div>
         </div>
       </div>
@@ -135,29 +189,61 @@ const Profile = () => {
       bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950">
       
       {/* Header */}
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-orange-600 to-brown-500 text-white shadow-lg shadow-orange-500/25">
-            <div className="flex justify-center mb-6">
-              {/* Logo Light */}
-              <img src={BlackLogo} alt="Logo Black" className="h-10 w-auto dark:hidden" />
-              {/* Logo Dark */}
-              <img src={WhiteLogo} alt="Logo White" className="h-10 w-auto hidden dark:block" />
-            </div>
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Clausy</p>
-            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-              {currentUser?.name || 'Usuário'}
-            </h1>
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="flex items-center space-x-3"
+            >
+              <img 
+                src={theme === "dark" ? WhiteLogo : BlackLogo}
+                alt="Clausy Logo" 
+                className="h-8 w-auto"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Meu Perfil
+                </h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Informações da conta e configurações
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex items-center space-x-3"
+            >
+              <div className="flex items-center px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-600 to-brown-500 flex items-center justify-center text-white text-sm font-bold mr-3">
+                  {getInitials(getUserName())}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                    {getUserName()}
+                  </p>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                    {currentUser?.role === 'superadmin' ? 'Super Admin' : 'Usuário'}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-
-
-      </header>
+      </motion.header>
 
       {/* Main */}
-      <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-6 pb-16 pt-2 lg:grid-cols-2">
+      <main className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-6 pb-16 pt-12 lg:grid-cols-2">
         
         {/* Profile Info Card */}
         <section className="order-1">
