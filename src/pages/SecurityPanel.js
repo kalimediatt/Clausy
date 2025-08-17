@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { FaShieldAlt, FaUser, FaClock, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaFilter, FaSearch, FaDownload, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaShieldAlt, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaFilter, FaDownload, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SecurityContainer = styled.div`
   padding: 20px;
@@ -358,11 +358,7 @@ const PaginationButton = styled.button`
   }
 `;
 
-const PaginationEllipsis = styled.span`
-  padding: 8px 12px;
-  color: #64748b;
-  font-size: 0.9rem;
-`;
+
 
 const EmptyState = styled.div`
   text-align: center;

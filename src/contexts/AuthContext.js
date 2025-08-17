@@ -1180,7 +1180,8 @@ export const AuthProvider = ({ children }) => {
       currentPage,
       totalPages,
       totalItems,
-      api
+      api,
+      checkAuth
     }}>
       {children}
     </AuthContext.Provider>

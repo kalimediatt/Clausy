@@ -64,6 +64,10 @@ import FileUpload from '../components/FileUpload';
 import SetupSelector from '../components/SetupSelector';
 import axios from 'axios';
 import SecurityPanel from './SecurityPanel';
+import Sidebar from '../components/Sidebar';
+import Config from './Config';
+import Profile from './Profile';
+import Reports from './Reports';
 import { 
   validateMessage, 
   handleError, 
@@ -87,12 +91,7 @@ ChartJS.register(
   Legend
 );
 
-const Container = styled.div`
-  display: flex;
-  height: 100vh;
-  background: #2B2B2B;
-  color: #DFDFDF;
-`;
+// Container convertido para Tailwind (flex h-screen bg-gray-800 text-gray-300)
 
 const AIContainer = styled.div`
   display: flex;
@@ -466,19 +465,7 @@ const EmptyHistoryButton = styled.button`
   }
 `;
 
-const Sidebar = styled(motion.div).withConfig({
-  shouldForwardProp: (prop) => prop !== 'isOpen'
-})`
-  width: ${({ isOpen }) => (isOpen ? '250px' : '80px')};
-  background: #2B2B2B;
-  padding: 1rem;
-  transition: width 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-  border-right: 1px solid #ADADAD;
-`;
+
 
 // Definindo Card antes de seu primeiro uso
 const Card = styled(motion.div)`
@@ -496,82 +483,11 @@ const CardTitle = styled.h3`
   font-size: 1.1rem;
 `;
 
-const ToggleButton = styled(motion.button)`
-  position: absolute;
-  right: -12px;
-  top: 20px;
-  background: #3b82f6;
-  border: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  cursor: pointer;
-  z-index: 10;
-`;
+// ToggleButton removido - não está sendo usado
 
-const Content = styled.div`
-  flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-`;
+// Content convertido para Tailwind (flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100)
 
-const MenuItem = styled(motion.div).withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-  color: ${({ 'data-active': active }) => (active ? '#8C4B35' : '#ADADAD')};
-
-  &:hover {
-    background: rgba(140, 75, 53, 0.1);
-    color: #8C4B35;
-  }
-`;
-
-const MenuIcon = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isOpen'
-})`
-  font-size: 1.2rem;
-  margin-right: ${({ isOpen }) => (isOpen ? '1rem' : '0')};
-  min-width: 24px;
-  text-align: center;
-`;
-
-const MenuText = styled.span.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isOpen'
-})`
-  opacity: ${({ isOpen }) => (isOpen ? 1 : 0)};
-  transition: opacity 0.3s ease;
-  white-space: nowrap;
-`;
-
-const LogoutButton = styled(motion.button)`
-  margin-top: auto;
-  padding: 1rem;
-  background: rgba(225, 102, 61, 0.1);
-  color: #E1663D;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(225, 102, 61, 0.2);
-  }
-`;
+// MenuItem, MenuIcon, MenuText, LogoutButton removidos - agora usados no componente Sidebar.js
 
 const WelcomeText = styled(motion.h1)`
   color: #DFDFDF;
@@ -1562,52 +1478,9 @@ const IconAction = styled.button`
   }
 `;
 
-const StatusBadge = styled.span`
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background-color: ${props => props.status === 'active' ? '#dcfce7' : '#fee2e2'};
-  color: ${props => props.status === 'active' ? '#166534' : '#991b1b'};
-`;
+// StatusBadge removido - não está sendo usado
 
-const SavedPrompt = styled.div`
-  background: #f8fafc;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  }
-`;
-
-const SavedPromptTitle = styled.div`
-  font-weight: 500;
-  color: #334155;
-  margin-bottom: 0.5rem;
-`;
-
-const SavedPromptText = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-`;
-
-const PromptTitle = styled.div`
-  font-weight: 500;
-  color: #334155;
-  margin-bottom: 0.5rem;
-`;
-
-const PromptText = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-`;
+// SavedPrompt, SavedPromptTitle, SavedPromptText, PromptTitle, PromptText removidos - não estão sendo usados
 
 const DoughnutChart = styled.div`
   position: relative;
@@ -2178,15 +2051,7 @@ const Button = styled.button`
   }
 `;
 
-const ToastContainer = styled.div`
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background-color: white;
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-`;
+
 
 const SetupModal = styled(Modal)`
   background: rgba(0, 0, 0, 0.8);
@@ -3768,7 +3633,53 @@ const Home = () => {
         setIsLoading(false);
         setIsAiTyping(false);
     }
-};
+};  {/* <SettingSection>
+  <h2>Configurações do Sistema</h2>
+  
+  <SettingRow>
+    <SettingInfo>
+      <SettingTitle>Modo de Manutenção</SettingTitle>
+      <SettingDescription>Desabilitar acesso para todos exceto administradores</SettingDescription>
+    </SettingInfo>
+    <ToggleSwitch 
+      data-active={systemSettings.maintenanceMode}
+      onClick={() => handleSettingToggle('maintenanceMode')}
+    />
+  </SettingRow>
+  
+  <SettingRow>
+    <SettingInfo>
+      <SettingTitle>Frequência de Backup</SettingTitle>
+      <SettingDescription>Frequência dos backups automáticos</SettingDescription>
+    </SettingInfo>
+    <SelectInput 
+      value={systemSettings.backupFrequency}
+      onChange={(e) => handleSettingChange('backupFrequency', e.target.value)}
+    >
+      <option value="hourly">A cada hora</option>
+      <option value="daily">Diariamente</option>
+      <option value="weekly">Semanalmente</option>
+      <option value="monthly">Mensalmente</option>
+    </SelectInput>
+  </SettingRow>
+  
+  <SettingRow>
+    <SettingInfo>
+      <SettingTitle>Política de Limpeza de Dados</SettingTitle>
+      <SettingDescription>Período para limpeza automática de dados antigos</SettingDescription>
+    </SettingInfo>
+    <SelectInput 
+      value={systemSettings.dataPurgePolicy}
+      onChange={(e) => handleSettingChange('dataPurgePolicy', e.target.value)}
+    >
+      <option value="30days">30 dias</option>
+      <option value="60days">60 dias</option>
+      <option value="90days">90 dias</option>
+      <option value="180days">180 dias</option>
+      <option value="never">Nunca</option>
+    </SelectInput>
+  </SettingRow>
+</SettingSection> */}
 
   const renderDashboard = () => {
     const planData = getCurrentPlanData() || {
@@ -4945,80 +4856,19 @@ const Home = () => {
     // eslint-disable-next-line
   }, [activeItem, securityPage, loadAuthLogs]);
 
-  const menuItems = [
-    { id: 'dashboard', icon: <FaHome />, text: 'Home' },
-    { id: 'ai', icon: <FaRobot />, text: 'Inteligência Artificial' },
-    { id: 'laboratory', icon: <FaFlask />, text: 'Laboratório' },
-    { id: 'security', icon: <FaLock />, text: 'Segurança' },
-    { id: 'profile', icon: <FaUser />, text: 'Perfil' },
-    { id: 'settings', icon: <FaCog />, text: 'Configurações' }
-  ];
+
 
 
 
   return (
-    <Container>
-      <Sidebar isOpen={isOpen}>
-        <ToggleButton
-          onClick={() => setIsOpen(!isOpen)}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          {isOpen ? <FaTimes /> : <FaBars />}
-        </ToggleButton>
-        {menuItems.map((item) => (
-          <MenuItem
-            key={item.id}
-            data-active={activeItem === item.id}
-            onClick={() => setActiveItem(item.id)}
-            whileHover={{ x: 5 }}
-          >
-            <MenuIcon isOpen={isOpen}>{item.icon}</MenuIcon>
-            <MenuText isOpen={isOpen}>{item.text}</MenuText>
-          </MenuItem>
-        ))}
-        {currentUser && currentUser.role === 'superadmin' && (
-          <MenuItem
-            key="companies"
-            data-active={activeItem === 'companies'}
-            onClick={() => { setActiveItem('companies'); navigate('/companies'); }}
-            whileHover={{ x: 5 }}
-          >
-            <MenuIcon isOpen={isOpen}><FaBuilding /></MenuIcon>
-            <MenuText isOpen={isOpen}>Empresas</MenuText>
-          </MenuItem>
-        )}
-        {hasAdminAccess() && (
-          <MenuItem
-            onClick={() => navigate('/admin')}
-            whileHover={{ x: 5 }}
-          >
-            <MenuIcon isOpen={isOpen}><FaUserShield /></MenuIcon>
-            <MenuText isOpen={isOpen}>Painel Admin</MenuText>
-          </MenuItem>
-        )}
-        <MenuItem
-          key="reports"
-          data-active={activeItem === 'reports'}
-          onClick={() => { setActiveItem('reports'); navigate('/report'); }}
-          whileHover={{ x: 5 }}
-        >
-          <MenuIcon isOpen={isOpen}><FaChartBar /></MenuIcon>
-          <MenuText isOpen={isOpen}>Relatórios</MenuText>
-        </MenuItem>
-
-        <LogoutButton
-          onClick={handleLogout}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <MenuIcon isOpen={isOpen}>
-            <FaSignOutAlt />
-          </MenuIcon>
-          <MenuText isOpen={isOpen}>Sair</MenuText>
-        </LogoutButton>
-      </Sidebar>
-      <Content>
+    <div className="flex h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-500">
+      <Sidebar 
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        activeItem={activeItem} 
+        setActiveItem={setActiveItem} 
+      />
+      <div className="flex-1  overflow-y-auto bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
         {activeItem === 'dashboard' && renderDashboard()}
         
         {activeItem === 'ai' && renderIAPanel()}
@@ -5048,96 +4898,12 @@ const Home = () => {
           </div>
         )}
         
-        {activeItem === 'settings' && (
-          <div>
-            <WelcomeText>Configurações</WelcomeText>
-            <SettingsCard>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Notificações</SettingTitle>
-                  <SettingDescription>Receber notificações sobre prazos e tarefas</SettingDescription>
-                </SettingText>
-                <ToggleSwitch data-active={notifications} onClick={() => setNotifications(!notifications)}>
-                  <SwitchCircle data-active={notifications} />
-                </ToggleSwitch>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Modo Escuro</SettingTitle>
-                  <SettingDescription>Usar tema escuro na interface</SettingDescription>
-                </SettingText>
-                <ToggleSwitch data-active={darkMode} onClick={() => setDarkMode(!darkMode)}>
-                  <SwitchCircle data-active={darkMode} />
-                </ToggleSwitch>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Salvamento Automático</SettingTitle>
-                  <SettingDescription>Salvar as consultas automaticamente</SettingDescription>
-                </SettingText>
-                <ToggleSwitch data-active={autoSave} onClick={() => setAutoSave(!autoSave)}>
-                  <SwitchCircle data-active={autoSave} />
-                </ToggleSwitch>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Idioma da Interface</SettingTitle>
-                  <SettingDescription>Definir idioma preferido</SettingDescription>
-                </SettingText>
-                <SelectInput value={language} onChange={(e) => setLanguage(e.target.value)}>
-                  <option value="pt">Português</option>
-                  <option value="en">English</option>
-                  <option value="es">Español</option>
-                </SelectInput>
-              </SettingItem>
-            </SettingsCard>
-          </div>
-        )}
+        {activeItem === 'settings' && <Config />}
         
-        {activeItem === 'profile' && (
-          <div>
-            <WelcomeText>Perfil do Usuário</WelcomeText>
-            <SettingsCard>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Nome</SettingTitle>
-                  <SettingDescription>{currentUser?.name || 'Nome não informado'}</SettingDescription>
-                </SettingText>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Email</SettingTitle>
-                  <SettingDescription>{currentUser?.email || 'Email não informado'}</SettingDescription>
-                </SettingText>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Função</SettingTitle>
-                  <SettingDescription>{currentUser?.role === 'admin' ? 'Administrador' : currentUser?.role === 'superadmin' ? 'Super Administrador' : 'Usuário'}</SettingDescription>
-                </SettingText>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Empresa</SettingTitle>
-                  <SettingDescription>{currentUser?.company_name || 'Empresa não informada'}</SettingDescription>
-                </SettingText>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Plano Atual</SettingTitle>
-                  <SettingDescription>{currentUser?.plan_name || 'Plano não informado'}</SettingDescription>
-                </SettingText>
-              </SettingItem>
-              <SettingItem>
-                <SettingText>
-                  <SettingTitle>Créditos Disponíveis</SettingTitle>
-                  <SettingDescription>{currentUser?.credits || 0} créditos</SettingDescription>
-                </SettingText>
-              </SettingItem>
-            </SettingsCard>
-          </div>
-        )}
-      </Content>
+        {activeItem === 'profile' && <Profile />}
+        
+        {activeItem === 'reports' && <Reports />}
+      </div>
       
       {modalOpen && (
         <Modal>
@@ -5212,8 +4978,7 @@ const Home = () => {
         </Modal>
       )}
       
-      <ToastContainer />
-    </Container>
+    </div>
   );
 };
 
