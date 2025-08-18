@@ -18,7 +18,6 @@ import {
 
 const defaultMenuItems = [
   { id: 'dashboard', text: 'Home', icon: <FaHome /> },
-  { id: 'ai', text: 'Inteligência Artificial', icon: <FaRobot /> },
   { id: 'laboratory', text: 'Laboratório', icon: <FaFlask /> },
   { id: 'security', text: 'Segurança', icon: <FaLock /> },
   { id: 'settings', text: 'Configurações', icon: <FaCog /> },
