@@ -223,13 +223,15 @@ useEffect(() => {
                 <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="mín. 8 caracteres" required
                   className="w-full rounded-xl border bg-white px-3 py-2 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-4 dark:bg-neutral-950 dark:text-neutral-100 border-neutral-200 focus:border-indigo-500 focus:ring-indigo-200/60 dark:border-neutral-800"/>
                 
-                {/* Força da senha */}
+                {/* Força da senha - Comentado */}
+                {/* 
                 <div className="mt-2 flex items-center gap-2">
                   <div className="flex-1 h-2 w-full rounded-full bg-neutral-200 dark:bg-neutral-700">
                     <div className={`h-2 rounded-full ${strengthColor}`} style={{width: `${(passwordStrength/4)*100}%`}}></div>
                   </div>
                   <span className="text-xs font-medium text-neutral-700 dark:text-neutral-300">{strengthLabel}</span>
                 </div>
+                */}
               </div>
             )}
 
@@ -246,7 +248,8 @@ useEffect(() => {
               {loading ? "Processando..." : tab === "password" ? "Entrar" : "Enviar link"}
             </button>
 
-            {/* Social login */}
+            {/* Social login - Botões comentados */}
+            {/* 
             <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mt-4 mb-2">ou continue com</p>
             <div className="grid grid-cols-2 gap-3">
               <button type="button" onClick={() => sso("google")} className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm font-medium shadow-sm hover:scale-105 transition-transform dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900">
@@ -256,6 +259,7 @@ useEffect(() => {
                 <GitHubIcon /> GitHub
               </button>
             </div>
+            */}
           </motion.form>
         </section>
       </main>

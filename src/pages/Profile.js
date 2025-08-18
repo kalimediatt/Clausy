@@ -218,26 +218,7 @@ const Profile = () => {
               </div>
             </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex items-center space-x-3"
-            >
-              <div className="flex items-center px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg border border-neutral-200 dark:border-neutral-700">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-600 to-brown-500 flex items-center justify-center text-white text-sm font-bold mr-3">
-                  {getInitials(getUserName())}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                    {getUserName()}
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {currentUser?.role === 'superadmin' ? 'Super Admin' : 'Usuário'}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
+
           </div>
         </div>
       </motion.header>
