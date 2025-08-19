@@ -2799,6 +2799,10 @@ const Home = () => {
   const [initialChatName, setInitialChatName] = useState('');
   const [labKeepFileAttached, setLabKeepFileAttached] = useState(false);
   const [labShowHistorySidebar, setLabShowHistorySidebar] = useState(false);
+  
+  // Estados para drag and drop
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
   const [labChatHistory, setLabChatHistory] = useState([]);
   const [labSelectedConversation, setLabSelectedConversation] = useState(null);
   const [labSelectedChatName, setLabSelectedChatName] = useState(null);
@@ -3217,26 +3221,173 @@ const Home = () => {
     setLabSelectedFile(file);
     if (!file) {
       setLabSelectedFile(null);
+    } else {
+      showSuccessToast('Arquivo anexado com sucesso!');
     }
   };
 
-  // [3] Atualize handleLabSendMessage para usar o chat atual
+  // Funções para drag and drop
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => prev + 1);
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => {
+      const newCount = prev - 1;
+      if (newCount === 0) {
+        setIsDragOver(false);
+      }
+      return newCount;
+    });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    setDragCounter(0);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      
+      // Validação de tipo de arquivo
+      const allowedTypes = [
+        'text/plain',
+        'text/csv',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        showErrorToast('Tipo de arquivo não suportado. Use: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV ou imagens.');
+        return;
+      }
+      
+      // Validação de tamanho (máximo 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        showErrorToast('Arquivo muito grande. Tamanho máximo: 10MB');
+        return;
+      }
+      
+      handleLabFileUpload(file);
+    }
+  };
+
+  // Função para filtrar a resposta da IA e remover conteúdo de arquivo
+  const filterAIResponse = (content) => {
+    if (!content || typeof content !== 'string') return content;
+    
+    // Padrões comuns que indicam conteúdo de arquivo que deve ser removido
+    const fileContentPatterns = [
+      /^(Conteúdo do arquivo:|Arquivo:|Texto extraído:|Documento:|File content:)/i,
+      /^(---+\s*BEGIN|---+\s*START)/i,
+      /^(###\s*(ARQUIVO|FILE|DOCUMENT))/i,
+      /^(```[\s\S]*?```)/g, // Blocos de código que podem conter conteúdo de arquivo
+    ];
+    
+    let filtered = content;
+    
+    // Tentar dividir a resposta em seções e manter apenas a análise/resposta da IA
+    const lines = content.split('\n');
+    const aiResponseLines = [];
+    let foundAIResponse = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Pular linhas que claramente são conteúdo de arquivo
+      if (fileContentPatterns.some(pattern => pattern.test(line))) {
+        continue;
+      }
+      
+      // Procurar por indicadores de resposta da IA
+      if (line.match(/^(Análise:|Resumo:|Resposta:|Com base no arquivo|Baseado no documento|Analisando o arquivo)/i)) {
+        foundAIResponse = true;
+        aiResponseLines.push(line);
+        continue;
+      }
+      
+      // Se já encontrou a resposta da IA, continuar coletando
+      if (foundAIResponse) {
+        aiResponseLines.push(line);
+      }
+      // Se ainda não encontrou, adicionar linhas que parecem ser análise
+      else if (line.length > 10 && !line.match(/^[A-Z\s]{3,}$/) && !line.match(/^\d+[\.\)]/)) {
+        aiResponseLines.push(line);
+      }
+    }
+    
+    // Se encontrou uma resposta estruturada da IA, usar ela
+    if (aiResponseLines.length > 0 && foundAIResponse) {
+      filtered = aiResponseLines.join('\n').trim();
+    }
+    // Caso contrário, tentar extrair a parte final que normalmente é a resposta da IA
+    else if (lines.length > 10) {
+      // Pegar a segunda metade das linhas, que normalmente contém a análise da IA
+      const midPoint = Math.floor(lines.length / 2);
+      const secondHalf = lines.slice(midPoint).filter(line => line.trim().length > 0);
+      if (secondHalf.length > 0) {
+        filtered = secondHalf.join('\n').trim();
+      }
+    }
+    
+    // Limpar padrões restantes de conteúdo de arquivo
+    fileContentPatterns.forEach(pattern => {
+      if (typeof pattern === 'object' && pattern.global) {
+        filtered = filtered.replace(pattern, '');
+      } else {
+        filtered = filtered.replace(pattern, '');
+      }
+    });
+    
+    // Limpar espaços excessivos
+    filtered = filtered.replace(/\n{3,}/g, '\n\n').trim();
+    
+    return filtered || content; // Fallback para o conteúdo original se a filtragem resultar em vazio
+  };
 
   // [3] Atualize handleLabSendMessage para usar o chat atual
   const handleLabSendMessage = async () => {
     if (!labInput.trim() && !labSelectedFile) return;
     
-    // Validação da mensagem
-    const validation = validateMessage(labInput);
-    if (!validation.valid) {
-      showInfoToast(validation.error);
-      return;
+    // Validação da mensagem (apenas se houver texto)
+    if (labInput.trim()) {
+      const validation = validateMessage(labInput);
+      if (!validation.valid) {
+        showInfoToast(validation.error);
+        return;
+      }
     }
     const chatKey = getCurrentLabChatKey();
     const userMessage = {
       id: Date.now(),
       role: 'user',
-      content: labSelectedFile ? `${labInput} (Arquivo anexado: ${labSelectedFile.name})` : labInput,
+      content: labInput.trim() || 'Arquivo enviado',
+      file: labSelectedFile ? {
+        name: labSelectedFile.name,
+        size: labSelectedFile.size,
+        type: labSelectedFile.type
+      } : null,
       timestamp: new Date().toISOString()
     };
     setLabMessagesByChat(prev => {
@@ -3498,10 +3649,13 @@ const Home = () => {
         console.log('📝 Conteúdo completo da resposta:', content);
       }
       
+      // Filtrar o conteúdo para remover texto do arquivo anexado
+      const filteredContent = filterAIResponse(content);
+      
       const labResponse = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: content,
+        content: filteredContent,
         timestamp: new Date().toISOString()
       };
       console.log('Adicionando resposta da IA ao chat:', labSelectedChatName, 'Conteúdo:', content.substring(0, 100) + '...');
@@ -4442,7 +4596,37 @@ const Home = () => {
                 <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
               </div> */}
             </div>
-            <div className="flex flex-col bg-white dark:bg-neutral-800 rounded-xl shadow-md h-full overflow-hidden border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm mb-8 md:mb-6 sm:mb-4">
+            <div 
+              className="flex flex-col bg-white dark:bg-neutral-800 rounded-xl shadow-md h-full overflow-hidden border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm mb-8 md:mb-6 sm:mb-4 relative"
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              {/* Overlay de drag and drop */}
+              {isDragOver && (
+                <div className="absolute inset-0 bg-amber-500/20 backdrop-blur-sm border-2 border-dashed border-amber-500 rounded-xl z-50 flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-amber-200 dark:border-amber-700"
+                    >
+                      <div className="text-6xl mb-4">📁</div>
+                      <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400 mb-2">
+                        Solte o arquivo aqui
+                      </h3>
+                      <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                        Suportamos: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV e imagens
+                      </p>
+                      <p className="text-neutral-500 dark:text-neutral-400 text-xs mt-2">
+                        Tamanho máximo: 10MB
+                      </p>
+                    </motion.div>
+                  </div>
+                </div>
+              )}
+              
               <div className="flex flex-col h-full min-h-0 gap-0">
                 <div className="flex justify-between items-center p-5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm">
                   <h3 className="text-xl text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2 md:text-lg">Chat do Laboratório</h3>
@@ -4471,7 +4655,15 @@ const Home = () => {
                           : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600'
                       } md:max-w-[90%] sm:max-w-[95%]`}>
                         <div className="whitespace-pre-wrap break-words leading-relaxed">
-                          {message.content}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{message.content}</span>
+                            {message.file && (
+                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-white/20 dark:bg-black/20 rounded-lg text-xs">
+                                <FaFileAlt className="w-3 h-3" />
+                                <span className="truncate max-w-[100px]">{message.file.name}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className={`text-xs opacity-60 mt-2 ${
                           message.role === 'user' 
@@ -4508,6 +4700,34 @@ const Home = () => {
                   )}
                   <div ref={labChatEndRef} />
                 </div>
+                
+                {/* Indicador de arquivo anexado */}
+                {labSelectedFile && (
+                  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-amber-100 dark:bg-amber-800 rounded-lg flex items-center justify-center">
+                          <FaFileAlt className="w-4 h-4 text-amber-600 dark:text-amber-300" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                            {labSelectedFile.name}
+                          </p>
+                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                            {(labSelectedFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setLabSelectedFile(null)}
+                        className="w-6 h-6 bg-amber-200 dark:bg-amber-700 hover:bg-amber-300 dark:hover:bg-amber-600 rounded-full flex items-center justify-center text-amber-700 dark:text-amber-200 transition-all duration-200"
+                      >
+                        <FaTimes className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+                
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
