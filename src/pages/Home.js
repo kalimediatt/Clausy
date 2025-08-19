@@ -4490,7 +4490,7 @@ const Home = () => {
                   ))}
                   {isLabTyping && (
                     <div className="flex flex-col w-full mb-4 items-start">
-                      <div className="relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300">
+                      <div className="relative max-w-[80%] p-2 rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300">
                         <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
                           <div className="flex items-center gap-1">
                             <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
@@ -4509,7 +4509,7 @@ const Home = () => {
                     e.preventDefault();
                     handleLabSendMessage();
                   }}
-                  className="flex gap-4 p-6 bg-white dark:bg-neutral-800 rounded-b-xl shadow-md flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 sticky bottom-0 backdrop-blur-sm md:gap-3 md:p-4 sm:gap-2 sm:p-3"
+                  className="flex gap-4 p-4 bg-white dark:bg-neutral-800 rounded-b-xl shadow-md flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 sticky bottom-0 backdrop-blur-sm md:gap-3 md:p-4 sm:gap-2 sm:p-3"
                 >
                   <textarea
                     value={labInput}
@@ -4521,12 +4521,12 @@ const Home = () => {
                         handleLabSendMessage();
                       }
                     }}
-                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 text-base resize-none min-h-12 max-h-32 leading-6 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 focus:shadow-lg focus:shadow-amber-200/20 dark:focus:shadow-amber-800/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 md:p-3.5 md:text-sm md:min-h-12 sm:p-3 sm:text-sm sm:min-h-13"
+                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-3 text-sm resize-none min-h-[2.25rem] max-h-20 leading-4 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 focus:shadow-lg focus:shadow-amber-200/20 dark:focus:shadow-amber-800/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 flex items-center"
                   />
                   <button 
                     type="submit" 
                     disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
-                    className="bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none md:p-3.5 md:min-w-12 md:min-h-12 md:text-sm sm:p-4 sm:min-w-13 sm:min-h-13 sm:text-sm"
+                    className="bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none w-14 h-14"
                   >
                     <FaPaperPlane />
                   </button>
