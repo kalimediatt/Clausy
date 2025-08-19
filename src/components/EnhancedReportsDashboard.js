@@ -18,8 +18,7 @@ import { reportsService, exportService } from '../services/reports.service';
 import { 
   FaDownload, 
   FaFilePdf, 
-  FaFileExcel, 
-  FaFileCsv,
+  FaFileExcel,
   FaUsers,
   FaChartLine,
   FaClock,
@@ -87,16 +86,16 @@ const getThemeStyles = (isDarkMode) => ({
     color: 'white',
   },
   secondaryButton: {
-    background: isDarkMode ? '#374151' : '#f3f4f6',
-    color: isDarkMode ? '#f9fafb' : '#374151',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid #d1d5db',
+    background: '#f3f4f6',
+    color: '#374151',
+    border: '1px solid #d1d5db',
   },
   select: {
     padding: '0.5rem 1rem',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid #d1d5db',
+    border: '1px solid #d1d5db',
     borderRadius: '8px',
-    background: isDarkMode ? '#374151' : 'white',
-    color: isDarkMode ? '#f9fafb' : '#374151',
+    background: 'white',
+    color: '#374151',
     fontSize: '0.9rem',
     minWidth: '150px',
     cursor: 'pointer',
@@ -108,11 +107,12 @@ const getThemeStyles = (isDarkMode) => ({
     marginBottom: '2rem',
   },
   summaryCard: {
-    background: isDarkMode ? '#374151' : 'white',
+    background: isDarkMode ? 'rgba(55, 65, 81, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+    backdropFilter: 'blur(8px)',
     padding: '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+    border: isDarkMode ? '1px solid rgba(75, 85, 99, 0.5)' : '1px solid rgba(229, 231, 235, 0.5)',
     transition: 'all 0.2s',
   },
   summaryCardHover: {
@@ -145,11 +145,12 @@ const getThemeStyles = (isDarkMode) => ({
     marginBottom: '2rem',
   },
   chartCard: {
-    background: isDarkMode ? '#374151' : 'white',
+    background: isDarkMode ? 'rgba(55, 65, 81, 0.6)' : 'rgba(255, 255, 255, 0.6)',
+    backdropFilter: 'blur(8px)',
     padding: '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+    border: isDarkMode ? '1px solid rgba(75, 85, 99, 0.5)' : '1px solid rgba(229, 231, 235, 0.5)',
     height: '400px',
     display: 'flex',
     flexDirection: 'column',
@@ -168,11 +169,11 @@ const getThemeStyles = (isDarkMode) => ({
     position: 'relative',
   },
   tableCard: {
-    background: isDarkMode ? '#374151' : 'white',
+    background: 'white',
     padding: '1.5rem',
     borderRadius: '12px',
-    boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-    border: isDarkMode ? '1px solid #4b5563' : '1px solid #e5e7eb',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+    border: '1px solid #e5e7eb',
     marginBottom: '2rem',
   },
   table: {
@@ -181,24 +182,24 @@ const getThemeStyles = (isDarkMode) => ({
     fontSize: '0.9rem',
   },
   tableHeader: {
-    background: isDarkMode ? '#4b5563' : '#f9fafb',
-    borderBottom: isDarkMode ? '2px solid #6b7280' : '2px solid #e5e7eb',
+    background: '#f9fafb',
+    borderBottom: '2px solid #e5e7eb',
   },
   tableHeaderCell: {
     padding: '0.75rem',
     textAlign: 'left',
     fontWeight: 600,
-    color: isDarkMode ? '#f9fafb' : '#374151',
+    color: '#374151',
   },
   tableCell: {
     padding: '0.75rem',
-    borderBottom: isDarkMode ? '1px solid #4b5563' : '1px solid #f3f4f6',
-    color: isDarkMode ? '#e5e7eb' : '#374151',
+    borderBottom: '1px solid #f3f4f6',
+    color: '#374151',
   },
   loading: {
     textAlign: 'center',
     padding: '3rem',
-    color: isDarkMode ? '#9ca3af' : '#6b7280',
+    color: '#6b7280',
     fontSize: '1.1rem',
   },
   error: {
@@ -415,6 +416,8 @@ const EnhancedReportsDashboard = () => {
     }
   });
 
+  const chartOptions = getChartOptions(isDarkMode);
+
   const exportToPDF = async () => {
     if (!data) return;
     
@@ -575,12 +578,12 @@ const EnhancedReportsDashboard = () => {
             ['Período', 'Total Tokens', 'Total Requisições', 'Média por Requisição']
           ];
           
-          Object.entries(periodData).forEach(([period, periodInfo]) => {
+          Object.entries(periodData).forEach(([period, data]) => {
             usageData.push([
               period,
-              periodInfo.tokens,
-              periodInfo.requests,
-              Math.round(periodInfo.tokens / periodInfo.requests)
+              data.tokens,
+              data.requests,
+              Math.round(data.tokens / data.requests)
             ]);
           });
           
@@ -599,82 +602,20 @@ const EnhancedReportsDashboard = () => {
     }
   };
 
-  const exportToCSV = async () => {
-    if (!data) return;
-    
-    setExporting(true);
-    try {
-      const { saveAs } = await import('file-saver');
-      
-      let csvContent = 'Métrica,Valor\n';
-      
-      if (data.dashboardStats && selectedCompany) {
-        const stats = data.dashboardStats[selectedCompany];
-        if (stats) {
-          csvContent += `Total de Usuários,${stats.totalUsers}\n`;
-          csvContent += `Usuários Ativos,${stats.activeUsers}\n`;
-          csvContent += `Total de Tokens,${stats.totalTokens}\n`;
-          csvContent += `Total de Requisições,${stats.totalRequests}\n`;
-          csvContent += `Média por Requisição,${Math.round(stats.averageTokensPerRequest)}\n`;
-        }
-      }
-      
-             csvContent += selectedCompany === 'Geral' 
-         ? '\nUsuário,Empresa,Email,Total Tokens,Total Requisições,Média por Requisição\n'
-         : '\nUsuário,Email,Total Tokens,Total Requisições,Média por Requisição\n';
-       
-       if (data.topUsers && selectedCompany) {
-         const users = data.topUsers[selectedCompany] || [];
-         users.forEach(user => {
-           if (selectedCompany === 'Geral') {
-             csvContent += `${user.name},${user.companyName},${user.email},${user.totalTokens},${user.totalRequests},${Math.round(user.averageTokensPerRequest)}\n`;
-           } else {
-             csvContent += `${user.name},${user.email},${user.totalTokens},${user.totalRequests},${Math.round(user.averageTokensPerRequest)}\n`;
-           }
-         });
-       }
-      
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      saveAs(blob, `relatorio-${selectedCompany}-${new Date().toISOString().split('T')[0]}.csv`);
-      toast.success('Relatório CSV exportado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao exportar CSV:', error);
-      toast.error('Erro ao exportar CSV');
-    } finally {
-      setExporting(false);
-    }
-  };
+
 
   // Definir estilos primeiro para usar nos returns de loading/error
   const styles = getThemeStyles(isDarkMode);
-  const chartOptions = getChartOptions(isDarkMode);
 
   if (loading) return <div style={styles.loading}>Carregando dashboard...</div>;
   if (error) return <div style={styles.error}>Erro: {error}</div>;
   if (!data) return <div style={styles.loading}>Nenhum dado disponível</div>;
 
   const aggregatedData = processAggregatedData(data.tokenHistory);
-  
   if (!aggregatedData) return <div style={styles.loading}>Dados insuficientes</div>;
 
   const stats = data.dashboardStats?.[selectedCompany];
   const topUsers = data.topUsers?.[selectedCompany] || [];
-
-  // Função para cores dinâmicas de gráficos
-  const getChartColors = (isDarkMode) => ({
-    primary: isDarkMode ? '#60a5fa' : '#3b82f6',
-    primaryBackground: isDarkMode ? 'rgba(96, 165, 250, 0.15)' : 'rgba(59, 130, 246, 0.12)',
-    secondary: isDarkMode ? '#34d399' : '#10b981',
-    secondaryBackground: isDarkMode ? 'rgba(52, 211, 153, 0.15)' : 'rgba(16, 185, 129, 0.12)',
-    multiColor: isDarkMode 
-      ? ['#60a5fa', '#a78bfa', '#fb7185', '#fbbf24', '#34d399', '#f87171', '#a3e635']
-      : ['#60a5fa', '#818cf8', '#f472b6', '#fbbf24', '#34d399', '#f87171', '#a3e635'],
-    userColors: isDarkMode
-      ? ['#60a5fa', '#34d399', '#fbbf24', '#f87171', '#a78bfa']
-      : ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
-  });
-
-  const chartColors = getChartColors(isDarkMode);
 
   // Dados para os gráficos
   const hourlyChartData = {
@@ -682,8 +623,8 @@ const EnhancedReportsDashboard = () => {
     datasets: [{
       label: 'Consumo Médio por Hora',
       data: aggregatedData.hourly.data,
-      borderColor: chartColors.primary,
-      backgroundColor: chartColors.primaryBackground,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59, 130, 246, 0.12)',
       tension: 0.4,
       pointRadius: 3
     }]
@@ -694,7 +635,9 @@ const EnhancedReportsDashboard = () => {
     datasets: [{
       label: 'Consumo por Dia da Semana',
       data: aggregatedData.daily.data,
-      backgroundColor: chartColors.multiColor,
+      backgroundColor: [
+        '#60a5fa', '#818cf8', '#f472b6', '#fbbf24', '#34d399', '#f87171', '#a3e635'
+      ],
       borderWidth: 1
     }]
   };
@@ -703,9 +646,11 @@ const EnhancedReportsDashboard = () => {
     labels: topUsers.slice(0, 5).map(user => user.name),
     datasets: [{
       data: topUsers.slice(0, 5).map(user => user.totalTokens),
-      backgroundColor: chartColors.userColors,
+      backgroundColor: [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+      ],
       borderWidth: 2,
-      borderColor: isDarkMode ? '#374151' : '#ffffff'
+      borderColor: '#ffffff'
     }]
   };
 
@@ -716,8 +661,8 @@ const EnhancedReportsDashboard = () => {
     datasets: [{
       label: `Consumo por ${selectedPeriod === 'daily' ? 'Dia' : selectedPeriod === 'weekly' ? 'Semana' : 'Mês'}`,
       data: Object.keys(periodData).sort().map(key => periodData[key].tokens),
-      borderColor: chartColors.secondary,
-      backgroundColor: chartColors.secondaryBackground,
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
       tension: 0.4,
       pointRadius: 4
     }]
@@ -726,14 +671,15 @@ const EnhancedReportsDashboard = () => {
   const gridStyle = isMobile ? styles.mobileGrid : styles.chartsGrid;
 
   return (
-    <div style={styles.container}>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+      <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Dashboard de Relatórios</h1>
           <p style={{ 
             margin: '0.5rem 0 0 0', 
-            color: isDarkMode ? '#9ca3af' : '#6b7280', 
+            color: '#6b7280', 
             fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
@@ -745,48 +691,34 @@ const EnhancedReportsDashboard = () => {
         </div>
         <div style={styles.controls}>
           <select
-            className="px-4 py-2 border rounded-lg bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 text-sm min-w-[150px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 0.5rem center',
-              backgroundSize: '1em 1em',
-              paddingRight: '2.5rem'
-            }}
+            style={styles.select}
             value={selectedCompany || ''}
             onChange={(e) => setSelectedCompany(e.target.value)}
           >
             {data.tokenHistory?.companies && Object.keys(data.tokenHistory.companies).map(company => {
               // Para superadmin, mostrar "Geral" primeiro, depois as empresas
               if (isSuperAdmin && company === 'Geral') {
-                return <option key={company} value={company} className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">📊 {company}</option>;
+                return <option key={company} value={company}>📊 {company}</option>;
               } else if (isSuperAdmin && company !== 'Geral') {
-                return <option key={company} value={company} className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">🏢 {company}</option>;
+                return <option key={company} value={company}>🏢 {company}</option>;
               } else {
-                return <option key={company} value={company} className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">{company}</option>;
+                return <option key={company} value={company}>{company}</option>;
               }
             })}
           </select>
           
           <select
-            className="px-4 py-2 border rounded-lg bg-white dark:bg-neutral-700 border-neutral-300 dark:border-neutral-600 text-neutral-900 dark:text-neutral-100 text-sm min-w-[150px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 appearance-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e")`,
-              backgroundRepeat: 'no-repeat',
-              backgroundPosition: 'right 0.5rem center',
-              backgroundSize: '1em 1em',
-              paddingRight: '2.5rem'
-            }}
+            style={styles.select}
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
           >
-            <option value="daily" className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">Diário</option>
-            <option value="weekly" className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">Semanal</option>
-            <option value="monthly" className="bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100">Mensal</option>
+            <option value="daily">Diário</option>
+            <option value="weekly">Semanal</option>
+            <option value="monthly">Mensal</option>
           </select>
           
           <button
-            className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-100 cursor-pointer flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:bg-neutral-200 dark:hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ ...styles.button, ...styles.secondaryButton }}
             onClick={fetchData}
             disabled={loading}
           >
@@ -794,9 +726,14 @@ const EnhancedReportsDashboard = () => {
             Atualizar
           </button>
           
-          <div className="flex gap-2">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              className="px-4 py-2 border-none rounded-lg bg-blue-500 text-white cursor-pointer flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                ...styles.button, 
+                background: '#E1663D',
+                color: 'white',
+                border: 'none'
+              }}
               onClick={exportToPDF}
               disabled={exporting}
             >
@@ -804,20 +741,17 @@ const EnhancedReportsDashboard = () => {
               PDF
             </button>
             <button
-              className="px-4 py-2 border-none rounded-lg bg-blue-500 text-white cursor-pointer flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                ...styles.button, 
+                background: '#E1663D',
+                color: 'white',
+                border: 'none'
+              }}
               onClick={exportToExcel}
               disabled={exporting}
             >
               <FaFileExcel />
               Excel
-            </button>
-            <button
-              className="px-4 py-2 border-none rounded-lg bg-blue-500 text-white cursor-pointer flex items-center gap-2 text-sm font-semibold transition-all duration-200 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={exportToCSV}
-              disabled={exporting}
-            >
-              <FaFileCsv />
-              CSV
             </button>
           </div>
         </div>
@@ -922,7 +856,7 @@ const EnhancedReportsDashboard = () => {
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 height: '100%',
-                color: isDarkMode ? '#9ca3af' : '#6b7280',
+                color: '#6b7280',
                 fontSize: '0.9rem'
               }}>
                 Nenhum dado disponível para o período selecionado
@@ -971,7 +905,7 @@ const EnhancedReportsDashboard = () => {
               datasets: [{
                 label: 'Total de Tokens',
                 data: topUsers.slice(0, 5).map(user => user.totalTokens),
-                backgroundColor: chartColors.primary,
+                backgroundColor: '#3b82f6',
                 borderWidth: 1
               }]
             }} options={chartOptions} />
@@ -1018,6 +952,7 @@ const EnhancedReportsDashboard = () => {
           </table>
         </div>
       )}
+      </div>
     </div>
   );
 };
