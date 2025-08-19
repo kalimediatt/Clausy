@@ -445,14 +445,15 @@ export default function SecurityPanel({
             Limpar
             </motion.button>
 
-            <motion.button
+                        <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleExport}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+              className="flex items-center px-4 py-2 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+              style={{ backgroundColor: '#E1663D' }}
             >
               <FaDownload className="w-4 h-4 mr-2" />
-            Exportar CSV
+              Exportar CSV
             </motion.button>
           </div>
         </motion.div>

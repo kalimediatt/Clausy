@@ -1075,22 +1075,28 @@ export const AuthProvider = ({ children }) => {
   
   // Obter dados para gráficos
   const getQueryDistribution = async () => {
-    if (!currentUser) return null;
+    if (!currentUser) {
+      console.log('No current user, returning null');
+      return null;
+    }
     
     try {
+      console.log('Fetching query distribution for user:', currentUser.user_id);
       const response = await api.get(`/user/${currentUser.user_id}/query-distribution`);
+      console.log('API response:', response);
       
       if (response.success) {
+        console.log('Returning successful response data');
         return {
           distribution: response.distribution || [],
-          planDistribution: response.planDistribution || [],
-          activities: response.activities || { labels: [], data: [] }
+          planDistribution: response.planDistribution || []
         };
       }
     } catch (error) {
       console.error('Error fetching query distribution:', error);
     }
     
+    console.log('Returning fallback data');
     // Dados de fallback em caso de erro
     return {
       distribution: [
@@ -1103,11 +1109,7 @@ export const AuthProvider = ({ children }) => {
         { label: 'Free Trial', user_count: 5, color: '#64748b' },
         { label: 'Standard', user_count: 12, color: '#3b82f6' },
         { label: 'Profissional', user_count: 3, color: '#10b981' }
-      ],
-      activities: {
-        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'],
-        data: [24, 28, 32, 36, 42, 38, 45]
-      }
+      ]
     };
   };
 

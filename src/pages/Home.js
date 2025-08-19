@@ -3692,213 +3692,303 @@ const Home = () => {
     };
     
     return (
-      <DashboardContainer>
-        <InfoBannerContainer>
-          <WelcomeText>Bem-vindo(a), {currentUser?.name || 'Usuário'}!</WelcomeText>
-        </InfoBannerContainer>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+        {/* Header */}
+        <motion.header 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="flex items-center justify-between"
+            >
+              <div>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Dashboard
+                </h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Bem-vindo(a), {currentUser?.name || 'Usuário'}! • Visão geral da sua conta
+                </p>
+              </div>
+              
+              {/* Status Badge */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"
+              >
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>Sistema Online</span>
+              </motion.div>
+            </motion.div>
+          </div>
+        </motion.header>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 transition-colors duration-500"
+          >
         
-        <StatisticsSection>
-          <StatTitle>Estatísticas de uso</StatTitle>
-          <StatCards>
-            <DashboardStatCard>
-              <StatIcon>
-                <FaChartLine />
-              </StatIcon>
-              <StatInfo>
-                <DashboardStatValue>{usageStats?.queries_today || 0}</DashboardStatValue>
-                <DashboardStatLabel>Consultas hoje</DashboardStatLabel>
-              </StatInfo>
-            </DashboardStatCard>
-            <DashboardStatCard>
-              <StatIcon style={{ backgroundColor: '#f59e0b' }}>
-                <FaCode />
-              </StatIcon>
-              <StatInfo>
-                <DashboardStatValue>{usageStats?.tokens_today || 0}</DashboardStatValue>
-                <DashboardStatLabel>Tokens hoje</DashboardStatLabel>
-              </StatInfo>
-            </DashboardStatCard>
-            <DashboardStatCard>
-              <StatIcon style={{ backgroundColor: '#10b981' }}>
-                <FaClock />
-              </StatIcon>
-              <StatInfo>
-                <DashboardStatValue>{usageStats?.queries_this_month || 0}</DashboardStatValue>
-                <DashboardStatLabel>Consultas no mês</DashboardStatLabel>
-              </StatInfo>
-            </DashboardStatCard>
-            <DashboardStatCard>
-              <StatIcon style={{ backgroundColor: '#8b5cf6' }}>
-                <FaCommentDots />
-              </StatIcon>
-              <StatInfo>
-                <DashboardStatValue>{usageStats?.total_queries || 0}</DashboardStatValue>
-                <DashboardStatLabel>Total de consultas</DashboardStatLabel>
-              </StatInfo>
-            </DashboardStatCard>
-          </StatCards>
-        </StatisticsSection>
+            {/* Statistics Header */}
+            <div className="px-8 py-6 border-b border-neutral-200 dark:border-neutral-800">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex items-center space-x-4"
+              >
+                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg">
+                  <FaChartLine className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Estatísticas de Uso
+                  </h1>
+                  <p className="text-neutral-600 dark:text-neutral-300 mt-1">
+                    Acompanhe seu desempenho e atividade na plataforma
+                  </p>
+                </div>
+              </motion.div>
+            </div>
 
-        <TasksSection>
-          <TasksHeader>
-            <TasksTitle>Tarefas Pendentes</TasksTitle>
-            <TasksCounter>{userTasks?.length || 0}</TasksCounter>
-          </TasksHeader>
-          <TasksList>
-            {userTasks && userTasks.length > 0 ? (
-              userTasks.map(task => (
-                <TaskItem key={task.id} priority={task.priority}>
-                  <TaskItemContent>
-                    <TaskListItemTitle>{task.title}</TaskListItemTitle>
-                    <TaskListItemDescription>{task.description}</TaskListItemDescription>
-                    <TaskDueDate>
-                      <FaCalendarAlt style={{ marginRight: '5px' }} />
-                      {new Date(task.due_date).toLocaleDateString('pt-BR')}
-                    </TaskDueDate>
-                  </TaskItemContent>
-                  <TaskItemActions>
-                    <TaskButton aria-label="Complete task">
-                      <FaCheck />
-                    </TaskButton>
-                  </TaskItemActions>
-                </TaskItem>
-              ))
-            ) : (
-              <EmptyTasksMessage>
-                Não há tarefas pendentes
-              </EmptyTasksMessage>
-            )}
-          </TasksList>
-        </TasksSection>
-
-        <TeamSection>
-          <TeamSectionHeader>
-            <TeamTitle>Membros da Equipe</TeamTitle>
-            <TeamViewAll>Ver todos</TeamViewAll>
-          </TeamSectionHeader>
-          <TeamList>
-            {teamMembers && teamMembers.length > 0 ? (
-              teamMembers.map(member => (
-                <TeamMember key={member.id}>
-                  <Avatar style={{ backgroundColor: member.color || '#3b82f6' }}>
-                    {member.initials || member.name?.substring(0, 2) || 'U'}
-                  </Avatar>
-                  <MemberInfo>
-                    <MemberName>{member.name || 'Usuário'}</MemberName>
-                    <MemberRole>{member.role || 'Membro'}</MemberRole>
-                  </MemberInfo>
-                  <TeamMemberAction>
-                    <FaComment />
-                  </TeamMemberAction>
-                </TeamMember>
-              ))
-            ) : (
-              <EmptyTeamMessage>
-                Não há membros na equipe
-              </EmptyTeamMessage>
-            )}
-          </TeamList>
-        </TeamSection>
-
-        {queryDistributionData && queryDistributionData.distribution && (
-          <QueryDistributionSection>
-            <DistributionTitle>Distribuição de Consultas</DistributionTitle>
-            <DistributionChart>
-              {queryDistributionData.distribution.map((item, index) => (
-                <DistributionItem key={index}>
-                  <DistributionLabel>
-                    <ColorDot style={{ backgroundColor: item.color || '#3b82f6' }} />
-                    {item.label || 'Categoria'}
-                  </DistributionLabel>
-                  <DistributionBar>
-                    <DistributionProgress 
-                      style={{ 
-                        width: `${item.percentage || 0}%`,
-                        backgroundColor: item.color || '#3b82f6'
-                      }} 
-                    />
-                  </DistributionBar>
-                  <DistributionPercentage>{item.percentage || 0}%</DistributionPercentage>
-                </DistributionItem>
-              ))}
-            </DistributionChart>
-          </QueryDistributionSection>
-        )}
-
-        {queryDistributionData && queryDistributionData.planDistribution && (
-          <QueryDistributionSection>
-            <DistributionTitle>Usuários por Plano</DistributionTitle>
-            <DistributionChart>
-              {queryDistributionData.planDistribution.map((plan, index) => {
-                const userCount = typeof plan.user_count === 'number' ? plan.user_count : parseInt(plan.user_count || '0', 10);
-                
-                return (
-                <DistributionItem key={index}>
-                  <DistributionLabel>
-                    <ColorDot style={{ backgroundColor: plan.color || '#3b82f6' }} />
-                    {plan.label || 'Plano'}
-                  </DistributionLabel>
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ 
-                      backgroundColor: plan.color || '#3b82f6',
-                      color: 'white',
-                      borderRadius: '50%',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold'
-                    }}>
-                      {userCount}
+            {/* Statistics Content */}
+            <div className="p-8 space-y-6">
+              
+              {/* Stats Grid */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              >
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                        <FaChartLine className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          Consultas Hoje
+                        </h3>
+                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                          Total de consultas realizadas hoje
+                        </p>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
-                      {userCount === 1 ? 'usuário' : 'usuários'}
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {usageStats?.queries_today || 0}
                     </div>
                   </div>
-                </DistributionItem>
+                </div>
+
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+                        <FaCode className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          Tokens Hoje
+                        </h3>
+                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                          Tokens processados hoje
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {usageStats?.tokens_today || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white">
+                        <FaClock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          Consultas no Mês
+                        </h3>
+                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                          Total mensal de consultas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {usageStats?.queries_this_month || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                        <FaCommentDots className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          Total de Consultas
+                        </h3>
+                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                          Consultas realizadas no total
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      {usageStats?.total_queries || 0}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+
+
+              
+
+
+
+              {/* Plan Distribution */}
+        {queryDistributionData && queryDistributionData.planDistribution && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+                >
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
+                    Usuários por Plano
+                  </h3>
+                  <div className="space-y-3">
+              {queryDistributionData.planDistribution.map((plan, index) => {
+                const userCount = typeof plan.user_count === 'number' ? plan.user_count : parseInt(plan.user_count || '0', 10);
+                return (
+                        <div key={index} className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div 
+                              className="w-4 h-4 rounded"
+                              style={{ backgroundColor: plan.color || '#3b82f6' }}
+                            />
+                            <span className="text-sm text-neutral-900 dark:text-neutral-100">
+                    {plan.label || 'Plano'}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div 
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                              style={{ backgroundColor: plan.color || '#3b82f6' }}
+                            >
+                      {userCount}
+                    </div>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                      {userCount === 1 ? 'usuário' : 'usuários'}
+                            </span>
+                    </div>
+                  </div>
                 );
               })}
-            </DistributionChart>
-          </QueryDistributionSection>
-        )}
+                  </div>
+                </motion.div>
+              )}
 
-        <CurrentPlanSection>
-          <CurrentPlanHeader>
-            <CurrentPlanTitle>Seu Plano Atual</CurrentPlanTitle>
+              {/* Current Plan */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.8 }}
+                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    Seu Plano Atual
+                  </h3>
             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
-              <PlanUpgradeBtn>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
+                    >
                 Fazer upgrade
-              </PlanUpgradeBtn>
-            )}
-          </CurrentPlanHeader>
-          <CurrentPlanDetails style={{ borderColor: planData.color || '#3b82f6' }}>
-            <PlanName style={{ color: planData.color || '#3b82f6' }}>{planData.name || 'Plano Básico'}</PlanName>
-            <PlanInfo>
-              <PlanInfoItem>
-                <FaClock style={{ marginRight: '8px' }} />
-                {planData.maxQueriesPerHour || 0} consultas/hora
-              </PlanInfoItem>
-              <PlanInfoItem>
-                <FaCode style={{ marginRight: '8px' }} />
-                {(planData.maxTokensPerHour || 0).toLocaleString()} tokens/hora
-              </PlanInfoItem>
-              <PlanInfoItem>
-                <FaHistory style={{ marginRight: '8px' }} />
-                {!planData.historyRetention 
-                  ? 'Sem histórico'
-                  : `Histórico por ${planData.historyRetention}h`}
-              </PlanInfoItem>
-            </PlanInfo>
-            <PlanPrice>{planData.price || 'Gratuito'}</PlanPrice>
+                    </motion.button>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div 
+                      className="px-3 py-1 rounded-full text-sm font-medium"
+                      style={{ 
+                        backgroundColor: 'rgba(225, 102, 61, 0.1)',
+                        color: '#E1663D'
+                      }}
+                    >
+                      {planData.name || 'Free Trial'}
+                    </div>
+                    <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                      {planData.price || 'Gratuito'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <FaClock className="w-4 h-4 text-neutral-500" />
+                      <div>
+                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {planData.maxQueriesPerHour || 100}
+                        </div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                          consultas/hora
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <FaCode className="w-4 h-4 text-neutral-500" />
+                      <div>
+                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {(planData.maxTokensPerHour || 20000).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                          tokens/hora
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <FaHistory className="w-4 h-4 text-neutral-500" />
+                      <div>
+                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                          {!planData.historyRetention ? 'Limitado' : `${planData.historyRetention}h`}
+                        </div>
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                          histórico
+                        </div>
+                      </div>
+                    </div>
+                  </div>
             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
-              <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                Upgrade disponível
-              </small>
-            )}
-          </CurrentPlanDetails>
-        </CurrentPlanSection>
-      </DashboardContainer>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                      Upgrade disponível para mais recursos
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
     );
   };
 
@@ -4628,7 +4718,7 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: 0.1 }}
                   className="flex items-center justify-between"
                 >
-                  <div>
+          <div>
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       Segurança e Logs
                     </h1>
@@ -4653,18 +4743,18 @@ const Home = () => {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              <SecurityPanel
-                logs={authLogs}
-                loading={securityLoading}
-                error={securityError}
-                filter={securityFilter}
-                setFilter={setSecurityFilter}
-                page={securityPage}
-                setPage={setSecurityPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                debugData={authLogs}
-              />
+            <SecurityPanel
+              logs={authLogs}
+              loading={securityLoading}
+              error={securityError}
+              filter={securityFilter}
+              setFilter={setSecurityFilter}
+              page={securityPage}
+              setPage={setSecurityPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              debugData={authLogs}
+            />
             </main>
           </div>
         )}

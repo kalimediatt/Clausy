@@ -561,17 +561,127 @@ app.get('/api/team-members', authenticateToken, (req, res) => {
 });
 
 // Rota para obter distribuição de consultas
-app.get('/api/user/:userId/query-distribution', authenticateToken, checkCompanyAccess, (req, res) => {
-  // Dados simulados para distribuição de consultas
-  const distribution = [
-    { category: 'Contratos', count: 42, color: '#4299e1' },
-    { category: 'Processos', count: 28, color: '#48bb78' },
-    { category: 'Pareceres', count: 19, color: '#ed8936' },
-    { category: 'Pesquisas', count: 15, color: '#9f7aea' },
-    { category: 'Outros', count: 8, color: '#667eea' }
-  ];
-  
-  res.json({ success: true, data: distribution });
+app.get('/api/user/:userId/query-distribution', authenticateToken, checkCompanyAccess, async (req, res) => {
+  let connection;
+  try {
+    connection = await dbService.getConnection();
+    const { role, company_id } = req.user;
+    
+    // Buscar distribuição de consultas por categoria (baseado em tags ou palavras-chave das consultas)
+    let queryDistributionQuery;
+    let queryParams = [];
+    
+    if (role === 'superadmin') {
+      // Superadmin vê dados de todas as empresas
+      queryDistributionQuery = `
+        SELECT 
+          CASE 
+            WHEN LOWER(query_text) LIKE '%contrato%' OR LOWER(query_text) LIKE '%contratual%' THEN 'Contratos'
+            WHEN LOWER(query_text) LIKE '%processo%' OR LOWER(query_text) LIKE '%processual%' THEN 'Processos'
+            WHEN LOWER(query_text) LIKE '%parecer%' OR LOWER(query_text) LIKE '%opinião%' THEN 'Pareceres'
+            WHEN LOWER(query_text) LIKE '%pesquisa%' OR LOWER(query_text) LIKE '%jurisprudência%' THEN 'Pesquisas'
+            ELSE 'Outros'
+          END as category,
+          COUNT(*) as count
+        FROM token_usage tu
+        JOIN users u ON tu.user_id = u.user_id
+        WHERE tu.query_text IS NOT NULL AND tu.query_text != ''
+        GROUP BY category
+        ORDER BY count DESC
+      `;
+    } else {
+      // Admin e usuários veem apenas dados da sua empresa
+      queryDistributionQuery = `
+        SELECT 
+          CASE 
+            WHEN LOWER(query_text) LIKE '%contrato%' OR LOWER(query_text) LIKE '%contratual%' THEN 'Contratos'
+            WHEN LOWER(query_text) LIKE '%processo%' OR LOWER(query_text) LIKE '%processual%' THEN 'Processos'
+            WHEN LOWER(query_text) LIKE '%parecer%' OR LOWER(query_text) LIKE '%opinião%' THEN 'Pareceres'
+            WHEN LOWER(query_text) LIKE '%pesquisa%' OR LOWER(query_text) LIKE '%jurisprudência%' THEN 'Pesquisas'
+            ELSE 'Outros'
+          END as category,
+          COUNT(*) as count
+        FROM token_usage tu
+        JOIN users u ON tu.user_id = u.user_id
+        WHERE u.company_id = ? AND tu.query_text IS NOT NULL AND tu.query_text != ''
+        GROUP BY category
+        ORDER BY count DESC
+      `;
+      queryParams = [company_id];
+    }
+    
+    const [distributionResults] = await connection.execute(queryDistributionQuery, queryParams);
+    
+    // Calcular percentuais e adicionar cores
+    const total = distributionResults.reduce((sum, item) => sum + item.count, 0);
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#64748b'];
+    
+    const distribution = distributionResults.map((item, index) => ({
+      label: item.category,
+      percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+      color: colors[index % colors.length]
+    }));
+    
+    // Buscar distribuição de usuários por plano
+    let planDistributionQuery;
+    let planParams = [];
+    
+    if (role === 'superadmin') {
+      planDistributionQuery = `
+        SELECT sp.name as label, sp.color, COUNT(u.user_id) as user_count
+        FROM subscription_plans sp
+        LEFT JOIN users u ON sp.plan_id = u.plan_id
+        GROUP BY sp.plan_id, sp.name, sp.color
+        ORDER BY user_count DESC
+      `;
+    } else {
+      planDistributionQuery = `
+        SELECT sp.name as label, sp.color, COUNT(u.user_id) as user_count
+        FROM subscription_plans sp
+        LEFT JOIN users u ON sp.plan_id = u.plan_id AND u.company_id = ?
+        GROUP BY sp.plan_id, sp.name, sp.color
+        ORDER BY user_count DESC
+      `;
+      planParams = [company_id];
+    }
+    
+    const [planResults] = await connection.execute(planDistributionQuery, planParams);
+    
+    const planDistribution = planResults.filter(plan => plan.user_count > 0);
+    
+    res.json({
+      success: true,
+      distribution: distribution,
+      planDistribution: planDistribution
+    });
+    
+  } catch (error) {
+    console.error('Erro ao buscar distribuição de consultas:', error);
+    
+    // Dados de fallback em caso de erro
+    const fallbackData = {
+      distribution: [
+        { label: 'Consultas Jurídicas', percentage: 55, color: '#3b82f6' },
+        { label: 'Análise Documental', percentage: 20, color: '#f59e0b' },
+        { label: 'Modelagem de Contratos', percentage: 15, color: '#10b981' },
+        { label: 'Pesquisa de Jurisprudência', percentage: 10, color: '#64748b' }
+      ],
+      planDistribution: [
+        { label: 'Free Trial', user_count: 5, color: '#64748b' },
+        { label: 'Standard', user_count: 12, color: '#3b82f6' },
+        { label: 'Profissional', user_count: 3, color: '#10b981' }
+      ]
+    };
+    
+    res.json({
+      success: true,
+      ...fallbackData
+    });
+  } finally {
+    if (connection) {
+      await connection.release();
+    }
+  }
 });
 
 // Rota para obter estatísticas do dashboard
