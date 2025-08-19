@@ -86,16 +86,18 @@ const getThemeStyles = (isDarkMode) => ({
     color: 'white',
   },
   secondaryButton: {
-    background: '#f3f4f6',
-    color: '#374151',
-    border: '1px solid #d1d5db',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    color: isDarkMode ? '#f9fafb' : '#374151',
+    border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
+    backdropFilter: 'blur(4px)',
   },
   select: {
     padding: '0.5rem 1rem',
-    border: '1px solid #d1d5db',
+    border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     borderRadius: '8px',
-    background: 'white',
-    color: '#374151',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(4px)',
+    color: isDarkMode ? '#f9fafb' : '#374151',
     fontSize: '0.9rem',
     minWidth: '150px',
     cursor: 'pointer',
@@ -107,16 +109,16 @@ const getThemeStyles = (isDarkMode) => ({
     marginBottom: '2rem',
   },
   summaryCard: {
-    background: isDarkMode ? 'rgba(55, 65, 81, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-    backdropFilter: 'blur(8px)',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(4px)',
     padding: '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-    border: isDarkMode ? '1px solid rgba(75, 85, 99, 0.5)' : '1px solid rgba(229, 231, 235, 0.5)',
-    transition: 'all 0.2s',
+    border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
+    transition: 'all 0.3s',
   },
   summaryCardHover: {
-    boxShadow: '0 4px 16px rgba(59,130,246,0.15)',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.6)' : 'rgba(255, 255, 255, 0.6)',
     transform: 'translateY(-2px)',
   },
   summaryTitle: {
@@ -145,15 +147,16 @@ const getThemeStyles = (isDarkMode) => ({
     marginBottom: '2rem',
   },
   chartCard: {
-    background: isDarkMode ? 'rgba(55, 65, 81, 0.6)' : 'rgba(255, 255, 255, 0.6)',
-    backdropFilter: 'blur(8px)',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(4px)',
     padding: '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-    border: isDarkMode ? '1px solid rgba(75, 85, 99, 0.5)' : '1px solid rgba(229, 231, 235, 0.5)',
+    border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     height: '400px',
     display: 'flex',
     flexDirection: 'column',
+    transition: 'all 0.3s',
   },
   chartTitle: {
     fontSize: '1.1rem',
@@ -169,12 +172,14 @@ const getThemeStyles = (isDarkMode) => ({
     position: 'relative',
   },
   tableCard: {
-    background: 'white',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(4px)',
     padding: '1.5rem',
     borderRadius: '12px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    border: '1px solid #e5e7eb',
+    boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+    border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     marginBottom: '2rem',
+    transition: 'all 0.3s',
   },
   table: {
     width: '100%',
@@ -182,24 +187,24 @@ const getThemeStyles = (isDarkMode) => ({
     fontSize: '0.9rem',
   },
   tableHeader: {
-    background: '#f9fafb',
-    borderBottom: '2px solid #e5e7eb',
+    background: isDarkMode ? 'rgba(64, 64, 64, 0.2)' : '#f9fafb',
+    borderBottom: isDarkMode ? '2px solid #525252' : '2px solid #e5e7eb',
   },
   tableHeaderCell: {
     padding: '0.75rem',
     textAlign: 'left',
     fontWeight: 600,
-    color: '#374151',
+    color: isDarkMode ? '#f9fafb' : '#374151',
   },
   tableCell: {
     padding: '0.75rem',
-    borderBottom: '1px solid #f3f4f6',
-    color: '#374151',
+    borderBottom: isDarkMode ? '1px solid rgba(64, 64, 64, 0.3)' : '1px solid #f3f4f6',
+    color: isDarkMode ? '#d1d5db' : '#374151',
   },
   loading: {
     textAlign: 'center',
     padding: '3rem',
-    color: '#6b7280',
+    color: isDarkMode ? '#9ca3af' : '#6b7280',
     fontSize: '1.1rem',
   },
   error: {
@@ -671,7 +676,7 @@ const EnhancedReportsDashboard = () => {
   const gridStyle = isMobile ? styles.mobileGrid : styles.chartsGrid;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50/30 via-transparent to-indigo-50/30 dark:from-neutral-950/10 dark:via-transparent dark:to-neutral-950/10 transition-colors duration-500">
       <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
@@ -679,7 +684,7 @@ const EnhancedReportsDashboard = () => {
           <h1 style={styles.title}>Dashboard de Relatórios</h1>
           <p style={{ 
             margin: '0.5rem 0 0 0', 
-            color: '#6b7280', 
+            color: isDarkMode ? '#9ca3af' : '#6b7280', 
             fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
