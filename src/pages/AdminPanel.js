@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import styled, { createGlobalStyle } from 'styled-components';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,647 +12,31 @@ import {
   FaArrowLeft,
   FaCog,
   FaDatabase,
-  FaServer,
   FaChartLine,
   FaUsers,
   FaLock,
-  FaFileAlt,
-  FaBell,
-  FaSearch,
-  FaUserPlus,
-  FaExclamation,
-  FaExclamationTriangle,
-  FaInfoCircle
+  FaSearch
 } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import WhiteLogo from '../logos/white.png';
+import BlackLogo from '../logos/black.png';
 
-// Estilos globais para as fontes
-const GlobalStyle = createGlobalStyle`
-  body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+// Animation variants for framer-motion
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 }
+};
+
+const staggerContainer = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.1
+    }
   }
-
-  * {
-    box-sizing: border-box;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
-// Componentes estilizados
-const Container = styled.div`
-  padding: 2rem;
-  min-height: 100vh;
-  background: #2B2B2B;
-  color: #DFDFDF;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
-`;
-
-const Card = styled.div`
-  background: #DFDFDF;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #ADADAD;
-  margin-bottom: 2rem;
-  width: 100%;
-`;
-
-const Button = styled.button.withConfig({
-  shouldForwardProp: (prop) => !['variant'].includes(prop)
-})`
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  background-color: ${props => 
-    props.variant === 'primary' ? '#8C4B35' : 
-    props.variant === 'secondary' ? '#ADADAD' :
-    props.variant === 'danger' ? '#ef4444' :
-    'transparent'};
-  color: ${props => 
-    props.variant === 'primary' ? 'white' : 
-    props.variant === 'secondary' ? '#2B2B2B' :
-    props.variant === 'danger' ? 'white' :
-    '#2B2B2B'};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 500;
-  
-  &:hover {
-    background-color: ${props => 
-      props.variant === 'primary' ? '#2B2B2B' : 
-      props.variant === 'secondary' ? '#8C4B35' :
-      props.variant === 'danger' ? '#dc2626' :
-      '#ADADAD'};
-    color: ${props => 
-      props.variant === 'primary' ? 'white' : 
-      props.variant === 'secondary' ? 'white' :
-      props.variant === 'danger' ? 'white' :
-      '#2B2B2B'};
-  }
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  background: #DFDFDF;
-  border-radius: 8px;
-  overflow: hidden;
-  table-layout: fixed;
-  font-family: 'Roboto', sans-serif;
-
-  th, td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #ADADAD;
-    color: #2B2B2B;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  th {
-    background: #2B2B2B;
-    color: #DFDFDF;
-    font-weight: 600;
-    font-family: 'Inter', sans-serif;
-  }
-
-  th:nth-child(1) { width: 20%; } /* Nome */
-  th:nth-child(2) { width: 25%; } /* Email */
-  th:nth-child(3) { width: 15%; } /* Função */
-  th:nth-child(4) { width: 15%; } /* Plano */
-  th:nth-child(5) { width: 10%; } /* Créditos */
-  th:nth-child(6) { width: 15%; } /* Ações */
-
-  tr:hover {
-    background: rgba(140, 75, 53, 0.1);
-  }
-`;
-
-const Header = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 0 1rem;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  background: linear-gradient(45deg, #3b82f6, #60a5fa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-family: 'Inter', sans-serif;
-  font-weight: 700;
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-`;
-
-const IconButton = styled(motion.button).withConfig({
-  shouldForwardProp: (prop) => !['variant'].includes(prop)
-})`
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background: ${props => props.variant === 'danger' ? 'rgba(239, 68, 68, 0.1)' : 
-               props.variant === 'primary' ? 'rgba(59, 130, 246, 0.1)' :
-               props.variant === 'success' ? 'rgba(16, 185, 129, 0.1)' :
-               'rgba(0, 0, 0, 0.05)'};
-  color: ${props => props.variant === 'danger' ? '#ef4444' : 
-          props.variant === 'primary' ? '#3b82f6' :
-          props.variant === 'success' ? '#10b981' :
-          '#64748b'};
-  border: none;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  }
-`;
-
-const CardTitle = styled.h3`
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: 'Inter', sans-serif;
-  
-  svg {
-    color: #3b82f6;
-  }
-`;
-
-const CardGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-  padding: 0 1rem;
-`;
-
-const Th = styled.th`
-  text-align: left;
-  padding: 1rem;
-  color: #64748b;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-`;
-
-const Td = styled.td`
-  padding: 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  vertical-align: middle;
-`;
-
-const Tr = styled.tr`
-  transition: background 0.2s ease;
-  
-  &:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-`;
-
-const Badge = styled.span`
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: ${props => props.role === 'admin' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)'};
-  color: ${props => props.role === 'admin' ? '#3b82f6' : '#10b981'};
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  color: #64748b;
-  font-weight: 500;
-  font-family: 'Roboto', sans-serif;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  transition: border 0.2s ease;
-  font-family: 'Roboto', sans-serif;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-  }
-`;
-
-const Select = styled.select`
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-family: 'Roboto', sans-serif;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-  }
-`;
-
-const Modal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
-
-const ModalContent = styled(motion.div)`
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-`;
-
-
-
-const ModalActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-`;
-
-// Novos componentes para análise de dados
-const StatContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-  width: 100%;
-  padding: 0 1rem;
-`;
-
-const StatCard = styled.div`
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: bold;
-  color: ${props => props.color || '#334155'};
-  font-family: 'Inter', sans-serif;
-`;
-
-const StatLabel = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-  font-family: 'Roboto', sans-serif;
-`;
-
-const Tabs = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 0 1rem;
-`;
-
-const Tab = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  padding: 0.75rem 1.5rem;
-  border: none;
-  background: none;
-  color: ${props => props['data-active'] ? '#3b82f6' : '#64748b'};
-  font-weight: ${props => props['data-active'] ? '600' : '400'};
-  border-bottom: 2px solid ${props => props['data-active'] ? '#3b82f6' : 'transparent'};
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    color: #3b82f6;
-  }
-`;
-
-const ChartContainer = styled.div`
-  height: 300px;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2rem;
-  position: relative;
-  overflow: hidden;
-`;
-
-const BarChart = styled.div`
-  position: absolute;
-  bottom: 0;
-  width: ${props => props.width || '8%'};
-  height: ${props => props.height || '50%'};
-  background: ${props => props.color || '#3b82f6'};
-  left: ${props => props.position || '0'};
-  border-radius: 6px 6px 0 0;
-  transition: height 1s ease;
-  
-  &::after {
-    content: '${props => props.value || ''}';
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75rem;
-    color: #334155;
-    font-weight: bold;
-  }
-`;
-
-const AxisLabels = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 0 4%;
-  margin-top: 0.5rem;
-`;
-
-const AxisLabel = styled.div`
-  font-size: 0.75rem;
-  color: #64748b;
-  text-align: center;
-  width: 8%;
-`;
-
-const SettingSection = styled.div`
-  margin-bottom: 2rem;
-`;
-
-const SettingRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: white;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
-const SettingInfo = styled.div`
-  flex: 1;
-`;
-
-const SettingTitle = styled.h3`
-  margin: 0;
-  font-size: 1rem;
-  color: #334155;
-  font-family: 'Inter', sans-serif;
-`;
-
-const SettingDescription = styled.p`
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-family: 'Roboto', sans-serif;
-`;
-
-const ToggleSwitch = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  width: 48px;
-  height: 24px;
-  border-radius: 12px;
-  background: ${props => props['data-active'] ? '#3b82f6' : '#e2e8f0'};
-  position: relative;
-  cursor: pointer;
-  border: none;
-  transition: background 0.2s ease;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    top: 2px;
-    left: ${props => props['data-active'] ? '26px' : '2px'};
-    transition: left 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const SelectInput = styled.select`
-  padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 4px;
-  background: white;
-  color: #334155;
-  min-width: 150px;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const UserListItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem;
-  background: ${props => props.style?.background || 'transparent'};
-`;
-
-const UserName = styled.span`
-  font-size: ${props => props.style?.fontSize || 'inherit'};
-`;
-
-const Content = styled.div`
-  margin-top: 2rem;
-  padding: 0 1rem;
-`;
-
-// Componentes para paginação e filtragem
-const SearchContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  background: white;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const SortableTh = styled.th`
-  text-align: left;
-  padding: 1rem;
-  color: #64748b;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  user-select: none;
-  position: relative;
-  
-  &:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-  
-  &::after {
-    content: '↕';
-    position: absolute;
-    right: 0.5rem;
-    opacity: 0.5;
-    font-size: 0.75rem;
-  }
-  
-  &.sorted-asc::after {
-    content: '↑';
-    opacity: 1;
-    color: #3b82f6;
-  }
-  
-  &.sorted-desc::after {
-    content: '↓';
-    opacity: 1;
-    color: #3b82f6;
-  }
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-`;
-
-const PaginationInfo = styled.span`
-  color: #64748b;
-  font-size: 0.875rem;
-`;
-
-const PaginationButtons = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const PaginationButton = styled.button`
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #374151;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-  
-  &:hover:not(:disabled) {
-    background: #f3f4f6;
-    border-color: #9ca3af;
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  &.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-  }
-`;
-
-const ItemsPerPageSelect = styled.select`
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  background: white;
-  color: #374151;
-  font-size: 0.875rem;
-  cursor: pointer;
-  
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const ItemsPerPageContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #64748b;
-  font-size: 0.875rem;
-`;
+};
 
 const AdminPanel = () => {
   const navigate = useNavigate();
@@ -667,15 +50,13 @@ const AdminPanel = () => {
     addCredits, 
     changePlan, 
     loadUsers,
-    hasAdminAccess,
-    getCurrentPlanData,
-    getSystemSettings,
-    saveSystemSettings,
-    resetSystemSettings,
-    getSettingsHistory,
-    api
+    hasAdminAccess
   } = useAuth();
   
+  // Estado para tema
+  const [theme] = useState(localStorage.getItem("theme") || "light");
+  
+  // Estados do componente
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState('add');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -689,8 +70,46 @@ const AdminPanel = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-  
+
+  // Estados para formulários
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company_name: '',
+    plan_name: 'free',
+    credits: 0,
+    role: 'user'
+  });
+
+  // Aplicar tema
+  useEffect(() => {
+    if (theme === "dark") document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, [theme]);
+
+  // Inicialização
+  useEffect(() => {
+    const initializeAdmin = async () => {
+      try {
+        if (!hasAdminAccess) {
+          toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
+          navigate('/');
+          return;
+        }
+
+        await loadUsers();
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Erro ao inicializar painel admin:', error);
+        toast.error('Erro ao carregar dados do painel admin');
+      }
+    };
+
+    if (currentUser) {
+      initializeAdmin();
+    }
+  }, [currentUser, hasAdminAccess, loadUsers, navigate]);
+
   // Funções para filtragem, ordenação e paginação
   const handleSort = (field) => {
     if (sortField === field) {
@@ -699,17 +118,17 @@ const AdminPanel = () => {
       setSortField(field);
       setSortDirection('asc');
     }
-    setCurrentPage(1); // Reset para primeira página ao ordenar
+    setCurrentPage(1);
   };
 
   const handleSearch = (value) => {
     setSearchTerm(value);
-    setCurrentPage(1); // Reset para primeira página ao pesquisar
+    setCurrentPage(1);
   };
 
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(parseInt(value));
-    setCurrentPage(1); // Reset para primeira página ao mudar itens por página
+    setCurrentPage(1);
   };
 
   const filterAndSortUsers = useCallback(() => {
@@ -718,51 +137,24 @@ const AdminPanel = () => {
       return;
     }
 
-    let filtered = users;
-
-    // Aplicar filtro de pesquisa
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(user => 
-        (user.name && user.name.toLowerCase().includes(term)) ||
-        (user.email && user.email.toLowerCase().includes(term)) ||
-        (user.role && user.role.toLowerCase().includes(term)) ||
-        (user.plan_id && subscriptionPlans[user.plan_id]?.name.toLowerCase().includes(term)) ||
-        (user.plan && subscriptionPlans[user.plan]?.name.toLowerCase().includes(term)) ||
-        (user.credits && user.credits.toString().includes(term))
+    let filtered = users.filter(user => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        (user.name && user.name.toLowerCase().includes(searchLower)) ||
+        (user.email && user.email.toLowerCase().includes(searchLower)) ||
+        (user.company_name && user.company_name.toLowerCase().includes(searchLower)) ||
+        (user.plan_name && user.plan_name.toLowerCase().includes(searchLower)) ||
+        (user.role && user.role.toLowerCase().includes(searchLower))
       );
-    }
+    });
 
-    // Aplicar ordenação
     filtered.sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortField) {
-        case 'name':
-          aValue = (a.name || '').toLowerCase();
-          bValue = (b.name || '').toLowerCase();
-          break;
-        case 'email':
-          aValue = (a.email || '').toLowerCase();
-          bValue = (b.email || '').toLowerCase();
-          break;
-        case 'role':
-          aValue = (a.role || '').toLowerCase();
-          bValue = (b.role || '').toLowerCase();
-          break;
-        case 'plan':
-          aValue = (subscriptionPlans[a.plan_id || a.plan]?.name || '').toLowerCase();
-          bValue = (subscriptionPlans[b.plan_id || b.plan]?.name || '').toLowerCase();
-          break;
-        case 'credits':
-          aValue = parseInt(a.credits || 0);
-          bValue = parseInt(b.credits || 0);
-          break;
-        default:
-          aValue = (a.name || '').toLowerCase();
-          bValue = (b.name || '').toLowerCase();
-      }
-
+      let aValue = a[sortField] || '';
+      let bValue = b[sortField] || '';
+      
+      if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+      if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+      
       if (sortDirection === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -773,1377 +165,1049 @@ const AdminPanel = () => {
     setFilteredUsers(filtered);
   }, [users, searchTerm, sortField, sortDirection]);
 
-  // Calcular dados de paginação
-  const totalItems = filteredUsers.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentUsers = filteredUsers.slice(startIndex, endIndex);
-
-  // Atualizar usuários filtrados quando mudar os filtros
   useEffect(() => {
     filterAndSortUsers();
   }, [filterAndSortUsers]);
 
-  // Reset para primeira página quando mudar de aba
-  useEffect(() => {
-    if (activeTab === 'users') {
-      setCurrentPage(1);
-      setSearchTerm('');
-      // Não resetar a ordenação aqui para manter a consistência
-    }
-  }, [activeTab]);
-
-  // Load users only once when component mounts or when tab changes to users
-  useEffect(() => {
-    const initializeAdmin = async () => {
-      if (!isInitialized && currentUser) {
-        await loadUsers(true); // Força refresh na inicialização
-        setIsInitialized(true);
-        // Reset ordenação apenas na primeira carga
-        if (isFirstLoad) {
-          setSortField('name');
-          setSortDirection('asc');
-          setIsFirstLoad(false);
-        }
-      }
-    };
-    
-    initializeAdmin();
-  }, [currentUser, isInitialized, loadUsers, isFirstLoad]);
-
-  // Recarregar usuários quando mudar para a aba de usuários
-  useEffect(() => {
-    if (activeTab === 'users' && isInitialized && (!users || users.length === 0)) {
-      loadUsers(true); // Força refresh para garantir dados corretos
-    }
-  }, [activeTab, isInitialized, loadUsers, users]);
-  
-  // Monitorar mudanças no estado users
-  useEffect(() => {
-    console.log('DEBUG: Estado users mudou:', users.length, 'usuários');
-  }, [users]);
-  
-  // Carregar configurações quando mudar para a aba de configurações
-  useEffect(() => {
-    if (activeTab === 'settings' && isInitialized) {
-      loadSystemSettings();
-    }
-  }, [activeTab, isInitialized]);
-  
-  // Check admin access after initialization
-  useEffect(() => {
-    if (isInitialized && currentUser && !hasAdminAccess()) {
-      toast.error("Você não tem permissão para acessar o painel de administração");
-      navigate('/');
-    }
-  }, [currentUser, hasAdminAccess, isInitialized, navigate]);
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    role: 'user',
-    credits: 0,
-    plan: 'FREE_TRIAL',
-    company_id: ''
-  });
-  
-  const [creditsAmount, setCreditsAmount] = useState(100);
-  const [selectedPlan, setSelectedPlan] = useState('');
-  
-  // Estados de validação
-  const [validationErrors, setValidationErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Estado para empresas (apenas para superadmin)
-  const [companies, setCompanies] = useState([]);
-  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
-
-  // Configurações do sistema
-  const [systemSettings, setSystemSettings] = useState({
-    newUserNotifications: true,
-    requireEmailVerification: false,
-    minPasswordLength: 8,
-    defaultCredits: 100,
-    maintenanceMode: false,
-    backupFrequency: 'daily',
-    dataPurgePolicy: '90days',
-    auditLogs: true,
-    loginAttempts: 5,
-    sessionTimeout: 30
-  });
-  
-  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
-  
-  // Dados simulados para gráficos
-  const usageData = {
-    totalUsers: users?.length || 0,
-    activeUsers: users?.length ? Math.round(users.length * 0.8) : 0,
-    usersWithAdminAccess: users?.filter(u => u.role === 'admin')?.length || 0,
-    totalCreditsIssued: users?.reduce((sum, user) => sum + (user.credits || 0), 0) || 0,
-    
-    weeklyActiveUsers: [24, 28, 32, 36, 42, 38, 45],
-    creditUsageByDay: [120, 85, 140, 95, 170, 80, 110],
-    
-    // Distribuição por tipo de consulta
-    queryTypes: {
-      'Consultas Jurídicas': 48,
-      'Análise Documental': 22,
-      'Modelagem de Contratos': 15,
-      'Pesquisa de Jurisprudência': 10,
-      'Outros': 5
-    }
-  };
-  
-  // Definir subscriptionPlans com cores e nomes
-  const subscriptionPlans = {
-    FREE_TRIAL: { 
-      name: 'Free Trial',
-      color: '#64748b'
-    },
-    STANDARD: { 
-      name: 'Standard',
-      color: '#3b82f6'
-    },
-    PRO: { 
-      name: 'Profissional',
-      color: '#10b981'
-    }
-  };
-  
-  // Função para carregar empresas (apenas para superadmin)
-  const loadCompanies = async () => {
-    if (currentUser?.role !== 'superadmin') return;
-    
-    setIsLoadingCompanies(true);
-    try {
-      const response = await api.get('/companies');
-      if (response.success && response.data) {
-        setCompanies(response.data);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar empresas:', error);
-      toast.error('Erro ao carregar lista de empresas');
-    } finally {
-      setIsLoadingCompanies(false);
-    }
-  };
-
-  // Carregar empresas quando o componente inicializar (apenas para superadmin)
-  useEffect(() => {
-    if (currentUser?.role === 'superadmin') {
-      loadCompanies();
-    }
-  }, [currentUser?.role]);
-
-  // Função para verificar se o usuário pode editar/excluir outro usuário
-  const canEditUser = (targetUser) => {
-    if (!currentUser || !targetUser) return false;
-    
-    // Superadmin pode editar qualquer usuário
-    if (currentUser.role === 'superadmin') return true;
-    
-    // Admin pode editar usuários da mesma empresa
-    if (currentUser.role === 'admin' && targetUser.company_id === currentUser.company_id) return true;
-    
-    return false;
-  };
-
-  // Função para verificar se o usuário pode excluir outro usuário
-  const canDeleteUser = (targetUser) => {
-    if (!currentUser || !targetUser) return false;
-    
-    // Não pode deletar a si mesmo
-    if (currentUser.email === targetUser.email) return false;
-    
-    // Superadmin pode deletar qualquer usuário (exceto a si mesmo)
-    if (currentUser.role === 'superadmin') return true;
-    
-    // Admin pode deletar usuários da mesma empresa (exceto a si mesmo)
-    if (currentUser.role === 'admin' && targetUser.company_id === currentUser.company_id) return true;
-    
-    return false;
-  };
-
+  // Funções do modal
   const openAddModal = () => {
     setModalType('add');
+    setSelectedUser(null);
     setFormData({
-      email: '',
-      password: '',
       name: '',
-      role: 'user',
+      email: '',
+      company_name: '',
+      plan_name: 'free',
       credits: 0,
-      plan: 'FREE_TRIAL',
-      company_id: currentUser?.role === 'superadmin' ? '' : (currentUser?.company_id || 1)
+      role: 'user'
     });
-    setValidationErrors({});
-    setIsSubmitting(false);
     setModalOpen(true);
   };
-  
+
   const openEditModal = (user) => {
     setModalType('edit');
     setSelectedUser(user);
     setFormData({
-      email: user.email,
-      password: '', // Por questões de segurança, não preenchemos a senha
-      name: user.name,
-      role: user.role || 'user',
+      name: user.name || '',
+      email: user.email || '',
+      company_name: user.company_name || '',
+      plan_name: user.plan_name || 'free',
       credits: user.credits || 0,
-      plan: user.plan_id || user.plan || 'FREE_TRIAL',
-      company_id: user.company_id || ''
+      role: user.role || 'user'
     });
     setModalOpen(true);
   };
-  
+
   const openCreditsModal = (user) => {
     setModalType('credits');
     setSelectedUser(user);
-    setCreditsAmount(100);
+    setFormData({
+      ...formData,
+      credits: 0
+    });
     setModalOpen(true);
   };
-  
+
   const openPlanModal = (user) => {
     setModalType('plan');
     setSelectedUser(user);
-    setSelectedPlan(user.plan_id || user.plan || 'FREE_TRIAL');
-    setModalOpen(true);
-  };
-  
-  const handleChange = (e) => {
-    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value
+      plan_name: user.plan_name || 'free'
     });
-    
-    // Limpar erro de validação quando o usuário começar a digitar
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
-    }
+    setModalOpen(true);
   };
-  
-  const handleSubmit = async () => {
-    if (modalType === 'add') {
-      // Limpar erros anteriores
-      setValidationErrors({});
-      
-      // Validações básicas
-      const errors = {};
-      
-      if (!formData.email) {
-        errors.email = 'Email é obrigatório';
-      } else {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-          errors.email = 'Formato de email inválido';
-        }
-      }
-      
-      if (!formData.password) {
-        errors.password = 'Senha é obrigatória';
-      } else if (formData.password.length < (systemSettings.minPasswordLength || 6)) {
-        errors.password = `A senha deve ter pelo menos ${systemSettings.minPasswordLength || 6} caracteres`;
-      }
-      
-      if (!formData.name) {
-        errors.name = 'Nome é obrigatório';
-      } else if (formData.name.trim().length < 2) {
-        errors.name = 'O nome deve ter pelo menos 2 caracteres';
-      }
-      
-      // Validação para empresa (apenas para superadmin)
-      if (currentUser?.role === 'superadmin' && !formData.company_id) {
-        errors.company_id = 'Empresa é obrigatória';
-      }
-      
-      // Se há erros de validação, exibir e parar
-      if (Object.keys(errors).length > 0) {
-        setValidationErrors(errors);
-        return;
-      }
-      
-      setIsSubmitting(true);
-      
-      try {
-        // Preparar dados para envio
-        const userData = {
-          ...formData,
-          credits: Number(formData.credits)
-        };
-        
-        // Tratar company_id - remover se estiver vazio para usar o padrão do backend
-        if (userData.company_id === '' || userData.company_id === undefined) {
-          delete userData.company_id;
-        }
-        
-        const result = await addUser(userData);
-        
-        if (result.success) {
-          toast.success('Usuário adicionado com sucesso!');
-          setModalOpen(false);
-          // Limpar o formulário e erros
-          setFormData({
-            email: '',
-            password: '',
-            name: '',
-            role: 'user',
-            credits: 0,
-            plan: 'FREE_TRIAL',
-            company_id: currentUser?.role === 'superadmin' ? '' : (currentUser?.company_id || 1)
-          });
-          setValidationErrors({});
-          console.log('DEBUG: Chamando loadUsers após adicionar usuário');
-          await loadUsers(true); // Recarregar a lista após adicionar
-          console.log('DEBUG: loadUsers concluído');
-        } else {
-          toast.error(result.message || 'Não foi possível adicionar o usuário');
-        }
-      } catch (error) {
-        toast.error('Erro inesperado ao adicionar usuário');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (modalType === 'edit') {
-      setIsSubmitting(true);
-      
-      try {
-        // Tratamos o caso da senha vazia (não modificar)
-        const updates = { ...formData };
-        if (!updates.password) delete updates.password;
-        
-        // Mapear 'plan' para 'plan_id' para compatibilidade com o backend
-        if (updates.plan) {
-          updates.plan_id = updates.plan;
-          delete updates.plan;
-        }
-        
-        // Tratar company_id - remover se estiver vazio para não alterar
-        if (updates.company_id === '' || updates.company_id === undefined) {
-          delete updates.company_id;
-        }
-        
-        console.log('DEBUG: Enviando atualização do usuário:', {
-          ...updates,
-          credits: Number(updates.credits)
-        });
-        
-        const result = await updateUser(selectedUser.email, {
-          ...updates,
-          credits: Number(updates.credits)
-        });
-        
-        if (result.success) {
-          toast.success('Usuário atualizado com sucesso');
-          setModalOpen(false);
-          loadUsers(true); // Recarregar a lista após atualizar
-        } else {
-          toast.error(result.message || 'Não foi possível atualizar o usuário');
-        }
-      } catch (error) {
-        console.error('Erro ao atualizar usuário:', error);
-        toast.error('Erro inesperado ao atualizar usuário');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else if (modalType === 'credits') {
-      setIsSubmitting(true);
-      
-      try {
-        const result = await addCredits(selectedUser.email, Number(creditsAmount));
-        
-        if (result.success) {
-          toast.success(`${creditsAmount} créditos adicionados com sucesso para ${selectedUser.name}`);
-          setModalOpen(false);
-          loadUsers(true); // Recarregar a lista após adicionar créditos
-        } else {
-          toast.error(result.message || 'Não foi possível adicionar créditos');
-        }
-      } catch (error) {
-        console.error('Erro ao adicionar créditos:', error);
-        toast.error('Erro inesperado ao adicionar créditos');
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-  
-  const handleChangePlan = async () => {
-    if (selectedUser && selectedPlan) {
-      setIsSubmitting(true);
-      
-      try {
-        const result = await changePlan(selectedUser.email, selectedPlan);
-        
-        if (result.success) {
-          toast.success(`Plano alterado para ${subscriptionPlans[selectedPlan]?.name || selectedPlan}`);
-          setModalOpen(false);
-          loadUsers(true); // Recarregar a lista após alterar o plano
-        } else {
-          toast.error(result.message || 'Não foi possível alterar o plano');
-        }
-      } catch (error) {
-        console.error('Erro ao alterar plano:', error);
-        toast.error('Erro inesperado ao alterar plano');
-      } finally {
-        setIsSubmitting(false);
-      }
-    }
-  };
-  
-  const handleDeleteUser = async (email) => {
-    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
-      const result = await removeUser(email);
-      
-      if (result.success) {
-        toast.success('Usuário removido com sucesso');
-        loadUsers(true); // Recarregar a lista após remover
-      } else {
-        toast.error(result.message || 'Não foi possível remover o usuário');
-      }
-    }
-  };
-  
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-  
-  const handleSettingToggle = async (setting) => {
-    const newValue = !systemSettings[setting];
+
+  // Handlers
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     
     try {
-      const result = await saveSystemSettings({ [setting]: newValue });
+      if (modalType === 'add') {
+        await addUser(formData);
+        toast.success('Usuário adicionado com sucesso!');
+      } else if (modalType === 'edit') {
+        await updateUser(selectedUser.id, formData);
+        toast.success('Usuário atualizado com sucesso!');
+      } else if (modalType === 'credits') {
+        await addCredits(selectedUser.id, parseInt(formData.credits));
+        toast.success('Créditos adicionados com sucesso!');
+      } else if (modalType === 'plan') {
+        await changePlan(selectedUser.id, formData.plan_name);
+        toast.success('Plano alterado com sucesso!');
+      }
       
-      if (result.success) {
-        setSystemSettings(prev => ({
-          ...prev,
-          [setting]: newValue
-        }));
-        
-        // Mostrar feedback ao usuário
-        const settingNames = {
-          newUserNotifications: 'Notificações de novos usuários',
-          requireEmailVerification: 'Verificação de email',
-          maintenanceMode: 'Modo de manutenção',
-          backupFrequency: 'Frequência de backup',
-          auditLogs: 'Logs de auditoria'
-        };
-        
-        toast.success(`${settingNames[setting] || setting} ${newValue ? 'ativado' : 'desativado'} com sucesso`);
-      } else {
-        toast.error(result.message || 'Erro ao salvar configuração');
-      }
+      setModalOpen(false);
+      await loadUsers();
     } catch (error) {
-      toast.error('Erro ao salvar configuração');
-      console.error('Error saving setting:', error);
-    }
-  };
-  
-  const loadSystemSettings = async () => {
-    if (isLoadingSettings) return;
-    
-    setIsLoadingSettings(true);
-    try {
-      const result = await getSystemSettings();
-      if (result.success) {
-        setSystemSettings(result.data);
-      } else {
-        toast.error('Erro ao carregar configurações');
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      toast.error('Erro ao carregar configurações');
-    } finally {
-      setIsLoadingSettings(false);
+      console.error('Erro ao processar:', error);
+      toast.error(error.message || 'Erro ao processar operação');
     }
   };
 
-  const handleSettingChange = async (setting, value) => {
-    try {
-      const result = await saveSystemSettings({ [setting]: value });
-      
-      if (result.success) {
-        setSystemSettings(prev => ({
-          ...prev,
-          [setting]: value
-        }));
-        
-        // Mostrar feedback ao usuário
-        const settingNames = {
-          minPasswordLength: 'Comprimento mínimo de senha',
-          backupFrequency: 'Frequência de backup',
-          dataPurgePolicy: 'Política de limpeza de dados',
-          loginAttempts: 'Limite de tentativas de login',
-          sessionTimeout: 'Timeout de sessão'
-        };
-        
-        toast.success(`${settingNames[setting] || setting} atualizado para: ${value}`);
-      } else {
-        toast.error(result.message || 'Erro ao salvar configuração');
+  const handleDelete = async (userId) => {
+    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
+      try {
+        await removeUser(userId);
+        toast.success('Usuário removido com sucesso!');
+        await loadUsers();
+      } catch (error) {
+        console.error('Erro ao remover usuário:', error);
+        toast.error('Erro ao remover usuário');
       }
-    } catch (error) {
-      toast.error('Erro ao salvar configuração');
-      console.error('Error saving setting:', error);
     }
   };
-  
+
+  const handleLogout = async () => {
+    if (window.confirm('Tem certeza que deseja sair?')) {
+      await logout();
+      navigate('/login');
+    }
+  };
+
+  // Paginação
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+
+  // Estatísticas
+  const stats = {
+    totalUsers: users?.length || 0,
+    activeUsers: users?.filter(u => u.status === 'active')?.length || 0,
+    totalCredits: users?.reduce((sum, u) => sum + (u.credits || 0), 0) || 0,
+    adminUsers: users?.filter(u => u.role === 'admin' || u.role === 'superadmin')?.length || 0
+  };
+
+  // Render do modal
   const renderModal = () => {
     if (!modalOpen) return null;
-    
-    return (
-      <Modal>
-        <ModalContent>
-          <h2>
-            {modalType === 'add' ? 'Adicionar Usuário' :
-             modalType === 'edit' ? 'Editar Usuário' :
-             modalType === 'credits' ? 'Adicionar Créditos' :
-             'Alterar Plano'}
-          </h2>
-          
-          {modalType === 'plan' ? (
-            <FormGroup>
-              <Label htmlFor="plan">Plano</Label>
-              <Select
-                id="plan"
-                value={selectedPlan}
-                onChange={(e) => setSelectedPlan(e.target.value)}
-              >
-                {Object.keys(subscriptionPlans).map(planKey => (
-                  <option key={planKey} value={planKey}>
-                    {subscriptionPlans[planKey].name}
-                  </option>
-                ))}
-              </Select>
-            </FormGroup>
-          ) : modalType === 'credits' ? (
-            <FormGroup>
-              <Label htmlFor="creditsAmount">Quantidade de Créditos</Label>
-              <Input
-                type="number"
-                id="creditsAmount"
-                value={creditsAmount}
-                onChange={(e) => setCreditsAmount(e.target.value)}
-                min="1"
-              />
-            </FormGroup>
-          ) : (
-            <>
-              <FormGroup>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  readOnly={modalType === 'edit'}
-                  style={{ 
-                    borderColor: validationErrors.email ? '#ef4444' : undefined 
-                  }}
-                />
-                {validationErrors.email && (
-                  <div style={{ 
-                    color: '#ef4444', 
-                    fontSize: '0.875rem', 
-                    marginTop: '0.25rem' 
-                  }}>
-                    {validationErrors.email}
-                  </div>
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="password">
-                  Senha{modalType === 'edit' ? ' (deixe em branco para não alterar)' : ''}
-                </Label>
-                <Input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required={modalType === 'add'}
-                  style={{ 
-                    borderColor: validationErrors.password ? '#ef4444' : undefined 
-                  }}
-                />
-                {validationErrors.password && (
-                  <div style={{ 
-                    color: '#ef4444', 
-                    fontSize: '0.875rem', 
-                    marginTop: '0.25rem' 
-                  }}>
-                    {validationErrors.password}
-                  </div>
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  style={{ 
-                    borderColor: validationErrors.name ? '#ef4444' : undefined 
-                  }}
-                />
-                {validationErrors.name && (
-                  <div style={{ 
-                    color: '#ef4444', 
-                    fontSize: '0.875rem', 
-                    marginTop: '0.25rem' 
-                  }}>
-                    {validationErrors.name}
-                  </div>
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="role">Papel</Label>
-                <Select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                >
-                  <option value="user">Usuário</option>
-                  <option value="admin">Administrador</option>
-                </Select>
-              </FormGroup>
-              
-              {/* Campo de empresa - apenas para superadmin ou editável para admin */}
-              {currentUser?.role === 'superadmin' ? (
-                <FormGroup>
-                  <Label htmlFor="company_id">Empresa</Label>
-                  <Select
-                    id="company_id"
-                    name="company_id"
-                    value={formData.company_id}
-                    onChange={handleChange}
-                    required
-                    disabled={isLoadingCompanies}
-                    style={{ 
-                      borderColor: validationErrors.company_id ? '#ef4444' : undefined 
-                    }}
-                  >
-                    <option value="">Selecione uma empresa</option>
-                    {companies.map(company => (
-                      <option key={company.company_id} value={company.company_id}>
-                        {company.name}
-                      </option>
-                    ))}
-                  </Select>
-                  {validationErrors.company_id && (
-                    <div style={{ 
-                      color: '#ef4444', 
-                      fontSize: '0.875rem', 
-                      marginTop: '0.25rem' 
-                    }}>
-                      {validationErrors.company_id}
-                    </div>
-                  )}
-                  {isLoadingCompanies && (
-                    <div style={{ 
-                      color: '#64748b', 
-                      fontSize: '0.875rem', 
-                      marginTop: '0.25rem' 
-                    }}>
-                      Carregando empresas...
-                    </div>
-                  )}
-                </FormGroup>
-              ) : (
-                <FormGroup>
-                  <Label htmlFor="company_id">Empresa</Label>
-                  <Input
-                    type="text"
-                    id="company_id"
-                    name="company_id"
-                    value={currentUser?.company_name || 'Sua empresa'}
-                    disabled
-                    style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
-                  />
-                </FormGroup>
-              )}
-              
-              <FormGroup>
-                <Label htmlFor="plan">Plano</Label>
-                <Select
-                  id="plan"
-                  name="plan"
-                  value={formData.plan}
-                  onChange={handleChange}
-                >
-                  {Object.keys(subscriptionPlans).map(planKey => (
-                    <option key={planKey} value={planKey}>
-                      {subscriptionPlans[planKey].name}
-                    </option>
-                  ))}
-                </Select>
-              </FormGroup>
-              
-              <FormGroup>
-                <Label htmlFor="credits">Créditos Iniciais</Label>
-                <Input
-                  type="number"
-                  id="credits"
-                  name="credits"
-                  value={formData.credits}
-                  onChange={handleChange}
-                  min="0"
-                />
-              </FormGroup>
-            </>
-          )}
-          
-          <ModalActions>
-            <Button 
-              onClick={() => setModalOpen(false)}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              variant="primary" 
-              onClick={
-                modalType === 'plan' 
-                  ? handleChangePlan 
-                  : handleSubmit
-              }
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <div style={{ 
-                    display: 'inline-block', 
-                    width: '16px', 
-                    height: '16px', 
-                    border: '2px solid transparent', 
-                    borderTop: '2px solid currentColor', 
-                    borderRadius: '50%', 
-                    animation: 'spin 1s linear infinite',
-                    marginRight: '8px'
-                  }} />
-                  {modalType === 'add' ? 'Adicionando...' : 
-                   modalType === 'edit' ? 'Salvando...' : 
-                   modalType === 'credits' ? 'Adicionando...' :
-                   'Alterando...'}
-                </>
-              ) : (
-                modalType === 'add' ? 'Adicionar' : 
-                modalType === 'edit' ? 'Salvar' : 
-                modalType === 'credits' ? 'Adicionar Créditos' :
-                'Alterar Plano'
-              )}
-            </Button>
-          </ModalActions>
-        </ModalContent>
-      </Modal>
-    );
-  };
-  
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'users':
-        return (
-          <Card>
-            <CardTitle>
-              <FaUsers />
-              Lista de Usuários
-            </CardTitle>
-            
-            <SearchContainer>
-              <FaSearch style={{ color: '#64748b' }} />
-              <SearchInput
-                type="text"
-                placeholder="Pesquisar usuários por nome, email, função, plano ou créditos..."
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </SearchContainer>
-            
-            <Table>
-              <thead>
-                <tr>
-                  <SortableTh 
-                    onClick={() => handleSort('name')}
-                    className={sortField === 'name' ? `sorted-${sortDirection}` : ''}
-                  >
-                    Nome
-                  </SortableTh>
-                  <SortableTh 
-                    onClick={() => handleSort('email')}
-                    className={sortField === 'email' ? `sorted-${sortDirection}` : ''}
-                  >
-                    Email
-                  </SortableTh>
-                  <SortableTh 
-                    onClick={() => handleSort('role')}
-                    className={sortField === 'role' ? `sorted-${sortDirection}` : ''}
-                  >
-                    Função
-                  </SortableTh>
-                  <SortableTh 
-                    onClick={() => handleSort('plan')}
-                    className={sortField === 'plan' ? `sorted-${sortDirection}` : ''}
-                  >
-                    Plano
-                  </SortableTh>
-                  <SortableTh 
-                    onClick={() => handleSort('credits')}
-                    className={sortField === 'credits' ? `sorted-${sortDirection}` : ''}
-                  >
-                    Créditos
-                  </SortableTh>
-                  <Th>Ações</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {!currentUsers || currentUsers.length === 0 ? (
-                  <tr>
-                    <Td colSpan="6" style={{ textAlign: 'center' }}>
-                      {searchTerm ? 'Nenhum usuário encontrado com os critérios de pesquisa' : 'Nenhum usuário encontrado'}
-                    </Td>
-                  </tr>
-                ) : (
-                  currentUsers.map(user => (
-                    <Tr key={user.email || user.user_id}>
-                      <Td>{user.name || 'N/A'}</Td>
-                      <Td>{user.email || 'N/A'}</Td>
-                      <Td>
-                        <Badge role={user.role}>
-                          {user.role === 'admin' ? 'Administrador' : 'Usuário'}
-                        </Badge>
-                      </Td>
-                      <Td>
-                        <Badge
-                          style={{ 
-                            background: `${subscriptionPlans[user.plan_id || user.plan]?.color || '#64748b'}20`, 
-                            color: subscriptionPlans[user.plan_id || user.plan]?.color || '#64748b'
-                          }}
-                        >
-                          {subscriptionPlans[user.plan_id || user.plan]?.name || 'Free Trial'}
-                        </Badge>
-                      </Td>
-                      <Td>{user.credits || 0}</Td>
-                      <Td>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          {canEditUser(user) && (
-                            <>
-                              <IconButton 
-                                variant="primary"
-                                onClick={() => openEditModal(user)}
-                              >
-                                <FaEdit />
-                              </IconButton>
-                              <IconButton 
-                                variant="primary"
-                                onClick={() => openCreditsModal(user)}
-                              >
-                                <FaCoins />
-                              </IconButton>
-                              <IconButton 
-                                variant="primary"
-                                onClick={() => openPlanModal(user)}
-                              >
-                                <FaUserShield />
-                              </IconButton>
-                            </>
-                          )}
-                          {canDeleteUser(user) && (
-                            <IconButton 
-                              variant="danger"
-                              onClick={() => handleDeleteUser(user.email)}
-                            >
-                              <FaTrash />
-                            </IconButton>
-                          )}
-                        </div>
-                      </Td>
-                    </Tr>
-                  ))
-                )}
-              </tbody>
-            </Table>
 
-            <PaginationContainer>
-              <PaginationInfo>
-                {totalItems > 0 ? `${startIndex + 1} - ${Math.min(endIndex, totalItems)} de ${totalItems} usuários` : 'Nenhum usuário encontrado'}
-              </PaginationInfo>
-              {totalPages > 1 && (
-                <PaginationButtons>
-                  <PaginationButton 
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </PaginationButton>
-                  
-                  {/* Botões de página numerados */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <PaginationButton
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum ? 'active' : ''}
-                      >
-                        {pageNum}
-                      </PaginationButton>
-                    );
-                  })}
-                  
-                  <PaginationButton 
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Próxima
-                  </PaginationButton>
-                </PaginationButtons>
-              )}
-              <ItemsPerPageContainer>
-                <span>Mostrar:</span>
-                <ItemsPerPageSelect 
-                  value={itemsPerPage} 
-                  onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                >
-                  <option value="10">10 por página</option>
-                  <option value="20">20 por página</option>
-                  <option value="30">30 por página</option>
-                  <option value="40">40 por página</option>
-                  <option value="50">50 por página</option>
-                </ItemsPerPageSelect>
-              </ItemsPerPageContainer>
-            </PaginationContainer>
-          </Card>
-        );
-      case 'stats':
-        return (
-          <>
-            <StatContainer>
-              <StatCard color="#3b82f6">
-                <FaUsers style={{ color: '#3b82f6', fontSize: '1.5rem' }} />
-                <StatValue>{usageData.totalUsers}</StatValue>
-                <StatLabel>Total de Usuários</StatLabel>
-              </StatCard>
-              
-              <StatCard color="#10b981">
-                <FaChartLine style={{ color: '#10b981', fontSize: '1.5rem' }} />
-                <StatValue>{usageData.activeUsers}</StatValue>
-                <StatLabel>Usuários Ativos</StatLabel>
-              </StatCard>
-              
-              <StatCard color="#f59e0b">
-                <FaCoins style={{ color: '#f59e0b', fontSize: '1.5rem' }} />
-                <StatValue>{usageData.totalCreditsIssued}</StatValue>
-                <StatLabel>Créditos Emitidos</StatLabel>
-              </StatCard>
-              
-              <StatCard color="#ef4444">
-                <FaLock style={{ color: '#ef4444', fontSize: '1.5rem' }} />
-                <StatValue>{usageData.usersWithAdminAccess}</StatValue>
-                <StatLabel>Administradores</StatLabel>
-              </StatCard>
-            </StatContainer>
-            
-            <Card>
-              <CardTitle>
-                <FaChartLine />
-                Distribuição por Tipo de Consulta
-              </CardTitle>
-              
-              <ChartContainer>
-                {Object.entries(usageData.queryTypes).map(([type, value], index) => {
-                  const percentage = (value / 100) * 100;
-                  const position = `${(index * 20) + 10}%`;
-                  
-                  return (
-                    <BarChart
-                      key={type}
-                      width="15%"
-                      height={`${percentage}%`}
-                      position={position}
-                      color={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]}
-                      value={value}
-                    />
-                  );
-                })}
-              </ChartContainer>
-              
-              <AxisLabels>
-                {Object.keys(usageData.queryTypes).map((type, index) => (
-                  <AxisLabel key={type} style={{ width: '15%' }}>
-                    {type}
-                  </AxisLabel>
-                ))}
-              </AxisLabels>
-            </Card>
-          </>
-        );
-      case 'settings':
-        return (
-          <>
-            {isLoadingSettings ? (
-              <div style={{ 
-                textAlign: 'center', 
-                padding: '2rem',
-                color: '#64748b'
-              }}>
-                Carregando configurações...
-              </div>
-            ) : (
+    const modalTitles = {
+      add: 'Adicionar Usuário',
+      edit: 'Editar Usuário',
+      credits: 'Adicionar Créditos',
+      plan: 'Alterar Plano'
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl max-w-md w-full p-6 border border-neutral-200 dark:border-neutral-800"
+        >
+          <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-6">
+            {modalTitles[modalType]}
+          </h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {(modalType === 'add' || modalType === 'edit') && (
               <>
-                <SettingSection>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
-                    <h2>Configurações de Usuários</h2>
-                    {currentUser?.role === 'superadmin' && (
-                      <Button 
-                        variant="danger" 
-                        onClick={async () => {
-                          if (window.confirm('Tem certeza que deseja resetar todas as configurações para os valores padrão?')) {
-                            try {
-                              const result = await resetSystemSettings();
-                              if (result.success) {
-                                toast.success('Configurações resetadas com sucesso');
-                                loadSystemSettings();
-                              } else {
-                                toast.error(result.message || 'Erro ao resetar configurações');
-                              }
-                            } catch (error) {
-                              toast.error('Erro ao resetar configurações');
-                            }
-                          }
-                        }}
-                        style={{ fontSize: '0.875rem', padding: '0.5rem 1rem' }}
-                      >
-                        Resetar Configurações
-                      </Button>
-                    )}
-                  </div>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Notificações de Novos Usuários</SettingTitle>
-                  <SettingDescription>Enviar notificação para administradores quando novos usuários são criados</SettingDescription>
-                </SettingInfo>
-                <ToggleSwitch 
-                  data-active={systemSettings.newUserNotifications}
-                  onClick={() => handleSettingToggle('newUserNotifications')}
-                />
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Verificação de Email</SettingTitle>
-                  <SettingDescription>Exigir verificação de email para novos usuários</SettingDescription>
-                </SettingInfo>
-                <ToggleSwitch 
-                  data-active={systemSettings.requireEmailVerification}
-                  onClick={() => handleSettingToggle('requireEmailVerification')}
-                />
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Comprimento Mínimo de Senha</SettingTitle>
-                  <SettingDescription>Número mínimo de caracteres para senhas</SettingDescription>
-                </SettingInfo>
-                <SelectInput 
-                  value={systemSettings.minPasswordLength}
-                  onChange={(e) => handleSettingChange('minPasswordLength', parseInt(e.target.value))}
-                >
-                  <option value="6">6 caracteres</option>
-                  <option value="8">8 caracteres</option>
-                  <option value="10">10 caracteres</option>
-                  <option value="12">12 caracteres</option>
-                </SelectInput>
-              </SettingRow>
-            </SettingSection>
-            
-            {/* <SettingSection>
-              <h2>Configurações do Sistema</h2>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Modo de Manutenção</SettingTitle>
-                  <SettingDescription>Desabilitar acesso para todos exceto administradores</SettingDescription>
-                </SettingInfo>
-                <ToggleSwitch 
-                  data-active={systemSettings.maintenanceMode}
-                  onClick={() => handleSettingToggle('maintenanceMode')}
-                />
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Frequência de Backup</SettingTitle>
-                  <SettingDescription>Frequência dos backups automáticos</SettingDescription>
-                </SettingInfo>
-                <SelectInput 
-                  value={systemSettings.backupFrequency}
-                  onChange={(e) => handleSettingChange('backupFrequency', e.target.value)}
-                >
-                  <option value="hourly">A cada hora</option>
-                  <option value="daily">Diariamente</option>
-                  <option value="weekly">Semanalmente</option>
-                  <option value="monthly">Mensalmente</option>
-                </SelectInput>
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Política de Limpeza de Dados</SettingTitle>
-                  <SettingDescription>Período para limpeza automática de dados antigos</SettingDescription>
-                </SettingInfo>
-                <SelectInput 
-                  value={systemSettings.dataPurgePolicy}
-                  onChange={(e) => handleSettingChange('dataPurgePolicy', e.target.value)}
-                >
-                  <option value="30days">30 dias</option>
-                  <option value="60days">60 dias</option>
-                  <option value="90days">90 dias</option>
-                  <option value="180days">180 dias</option>
-                  <option value="never">Nunca</option>
-                </SelectInput>
-              </SettingRow>
-            </SettingSection> */}
-            
-            <SettingSection>
-              <h2>Configurações de Segurança</h2>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Logs de Auditoria</SettingTitle>
-                  <SettingDescription>Manter logs detalhados de todas as ações dos usuários</SettingDescription>
-                </SettingInfo>
-                <ToggleSwitch 
-                  data-active={systemSettings.auditLogs || true}
-                  onClick={() => handleSettingToggle('auditLogs')}
-                />
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Limite de Tentativas de Login</SettingTitle>
-                  <SettingDescription>Número máximo de tentativas de login antes do bloqueio</SettingDescription>
-                </SettingInfo>
-                <SelectInput 
-                  value={systemSettings.loginAttempts || 5}
-                  onChange={(e) => handleSettingChange('loginAttempts', parseInt(e.target.value))}
-                >
-                  <option value="3">3 tentativas</option>
-                  <option value="5">5 tentativas</option>
-                  <option value="10">10 tentativas</option>
-                  <option value="unlimited">Ilimitado</option>
-                </SelectInput>
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Timeout de Sessão</SettingTitle>
-                  <SettingDescription>Tempo de inatividade antes do logout automático</SettingDescription>
-                </SettingInfo>
-                <SelectInput 
-                  value={systemSettings.sessionTimeout || 30}
-                  onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
-                >
-                  <option value="15">15 minutos</option>
-                  <option value="30">30 minutos</option>
-                  <option value="60">1 hora</option>
-                  <option value="120">2 horas</option>
-                  <option value="never">Nunca</option>
-                </SelectInput>
-              </SettingRow>
-            </SettingSection>
-            
-            <SettingSection>
-              <h2>Informações do Sistema</h2>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Versão do Sistema</SettingTitle>
-                  <SettingDescription>Versão atual da aplicação</SettingDescription>
-                </SettingInfo>
-                <div style={{ color: '#64748b', fontWeight: '500' }}>v1.0.0</div>
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Última Atualização</SettingTitle>
-                  <SettingDescription>Data da última atualização do sistema</SettingDescription>
-                </SettingInfo>
-                <div style={{ color: '#64748b', fontWeight: '500' }}>15/01/2024</div>
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Status do Servidor</SettingTitle>
-                  <SettingDescription>Status atual do servidor</SettingDescription>
-                </SettingInfo>
-                <div style={{ 
-                  color: '#10b981', 
-                  fontWeight: '500',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10b981'
-                  }} />
-                  Online
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Nome
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    required
+                  />
                 </div>
-              </SettingRow>
-              
-              {/* <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Uso de Memória</SettingTitle>
-                  <SettingDescription>Uso atual de memória do servidor</SettingDescription>
-                </SettingInfo>
-                <div style={{ color: '#64748b', fontWeight: '500' }}>45%</div>
-              </SettingRow>
-              
-              <SettingRow>
-                <SettingInfo>
-                  <SettingTitle>Uso de CPU</SettingTitle>
-                  <SettingDescription>Uso atual de CPU do servidor</SettingDescription>
-                </SettingInfo>
-                <div style={{ color: '#64748b', fontWeight: '500' }}>23%</div>
-              </SettingRow> */}
-                </SettingSection>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Empresa
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.company_name}
+                    onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Função
+                  </label>
+                  <select
+                    value={formData.role}
+                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  >
+                    <option value="user">Usuário</option>
+                    <option value="admin">Admin</option>
+                    <option value="superadmin">Super Admin</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Plano
+                  </label>
+                  <select
+                    value={formData.plan_name}
+                    onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  >
+                    <option value="free">Free</option>
+                    <option value="premium">Premium</option>
+                    <option value="business">Business</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Créditos
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.credits}
+                    onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    min="0"
+                  />
+                </div>
               </>
             )}
-          </>
-        );
-      case 'plans':
-        return (
-          <>
-            <CardGrid>
-              {Object.entries(subscriptionPlans).map(([planKey, plan]) => {
-                const usersWithPlan = users?.filter(u => (u.plan_id || u.plan) === planKey) || [];
-                
-                return (
-                  <Card key={planKey}>
-                    <CardTitle>
-                      <FaUserShield style={{ color: plan.color }} />
-                      {plan.name}
-                    </CardTitle>
-                    
-                    <div style={{ marginBottom: '1rem' }}>
-                      <p style={{ color: '#64748b', marginBottom: '0.5rem' }}>
-                        {usersWithPlan.length} usuário{usersWithPlan.length !== 1 ? 's' : ''}
-                      </p>
-                      
-                      {usersWithPlan.length > 0 && (
-                        <div style={{ marginTop: '1rem', maxHeight: '200px', overflowY: 'auto' }}>
-                          {usersWithPlan.slice(0, 5).map(user => (
-                            <UserListItem key={user.email || user.user_id} style={{ padding: '0.5rem', background: `${plan.color}08` }}>
-                              <UserName style={{ fontSize: '0.875rem' }}>{user.name || 'Usuário'}</UserName>
-                              <Badge
-                                style={{ 
-                                  background: `${plan.color}20`, 
-                                  color: plan.color
-                                }}
-                              >
-                                {plan.name}
-                              </Badge>
-                            </UserListItem>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                );
-              })}
-            </CardGrid>
-          </>
-        );
-      default:
-        return null;
-    }
+
+            {modalType === 'credits' && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  Créditos para adicionar
+                </label>
+                <input
+                  type="number"
+                  value={formData.credits}
+                  onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  min="1"
+                  required
+                />
+              </div>
+            )}
+
+            {modalType === 'plan' && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  Novo Plano
+                </label>
+                <select
+                  value={formData.plan_name}
+                  onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  required
+                >
+                  <option value="free">Free</option>
+                  <option value="premium">Premium</option>
+                  <option value="business">Business</option>
+                </select>
+              </div>
+            )}
+
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-amber-600 to-amber-600 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium"
+              >
+                {modalType === 'add' ? 'Adicionar' : modalType === 'edit' ? 'Salvar' : 'Confirmar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalOpen(false)}
+                className="flex-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-4 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    );
   };
 
   if (!currentUser || !isInitialized) {
     return (
-      <Container>
-        <div style={{ textAlign: 'center', padding: '4rem' }}>
-          <h2>Carregando Painel Admin...</h2>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 flex items-center justify-center transition-colors duration-500">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Carregando Painel Admin...</h2>
         </div>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <>
-      <GlobalStyle />
-      <Container>
-        <Header>
-          <Title>Painel de Administração</Title>
-          <ButtonGroup>
-            <Button variant="primary" onClick={openAddModal}>
-              <FaPlus />
-              Adicionar Usuário
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/')}>
-              <FaArrowLeft />
-              Voltar
-            </Button>
-            <Button variant="danger" onClick={handleLogout}>
-              <FaSignOutAlt />
-              Sair
-            </Button>
-          </ButtonGroup>
-        </Header>
-        
-        <Tabs>
-          <Tab data-active={activeTab === 'users'} onClick={() => setActiveTab('users')}>
-            Usuários
-          </Tab>
-          <Tab data-active={activeTab === 'stats'} onClick={() => setActiveTab('stats')}>
-            Análise de Dados
-          </Tab>
-          <Tab data-active={activeTab === 'settings'} onClick={() => setActiveTab('settings')}>
-            Configurações
-          </Tab>
-          <Tab data-active={activeTab === 'plans'} onClick={() => setActiveTab('plans')}>
-            Planos
-          </Tab>
-        </Tabs>
-        
-        <Content>
-          {renderContent()}
-        </Content>
-        
-        {renderModal()}
-        
-        <ToastContainer />
-      </Container>
-    </>
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+      {/* Header */}
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="flex items-center space-x-3"
+            >
+              <img 
+                src={theme === "dark" ? WhiteLogo : BlackLogo}
+                alt="Clausy Logo" 
+                className="h-8 w-auto"
+              />
+              <div>
+                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  Painel de Administração
+                </h1>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Gestão completa de usuários e sistema
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex items-center space-x-3"
+            >
+              <button
+                onClick={openAddModal}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-amber-600 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium shadow-lg"
+              >
+                <FaPlus className="w-4 h-4" />
+                Adicionar Usuário
+              </button>
+
+              <button
+                onClick={() => navigate('/')}
+                className="inline-flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-4 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium"
+              >
+                <FaArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition-all duration-300 font-medium shadow-lg"
+              >
+                <FaSignOutAlt className="w-4 h-4" />
+                Sair
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Tabs */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+      >
+        <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-1">
+          <div className="flex space-x-1">
+            {[
+              { id: 'users', label: 'Usuários', icon: FaUsers },
+              { id: 'stats', label: 'Análise de Dados', icon: FaChartLine },
+              { id: 'settings', label: 'Configurações', icon: FaCog },
+              { id: 'plans', label: 'Planos', icon: FaDatabase }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white shadow-lg'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+        {activeTab === 'users' && (
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="space-y-6"
+          >
+            {/* Estatísticas */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total de Usuários</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.totalUsers}</p>
+                  </div>
+                  <FaUsers className="text-3xl text-blue-500" />
+                </div>
+              </div>
+              
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Usuários Ativos</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.activeUsers}</p>
+                  </div>
+                  <FaUserShield className="text-3xl text-green-500" />
+                </div>
+              </div>
+              
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Créditos</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.totalCredits}</p>
+                  </div>
+                  <FaCoins className="text-3xl text-yellow-500" />
+                </div>
+              </div>
+              
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Administradores</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.adminUsers}</p>
+                  </div>
+                  <FaLock className="text-3xl text-red-500" />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Controles de busca e filtros */}
+            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar usuários..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => handleItemsPerPageChange(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    style={{
+                      colorScheme: theme === 'dark' ? 'dark' : 'light'
+                    }}
+                  >
+                    <option value={5} style={{
+                      backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
+                      color: theme === 'dark' ? '#f5f5f5' : '#171717'
+                    }}>5 por página</option>
+                    <option value={10} style={{
+                      backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
+                      color: theme === 'dark' ? '#f5f5f5' : '#171717'
+                    }}>10 por página</option>
+                    <option value={25} style={{
+                      backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
+                      color: theme === 'dark' ? '#f5f5f5' : '#171717'
+                    }}>25 por página</option>
+                    <option value={50} style={{
+                      backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
+                      color: theme === 'dark' ? '#f5f5f5' : '#171717'
+                    }}>50 por página</option>
+                  </select>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Tabela de usuários */}
+            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+                    <tr>
+                      <th 
+                        className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-300"
+                        onClick={() => handleSort('name')}
+                      >
+                        Nome {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th 
+                        className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-300"
+                        onClick={() => handleSort('email')}
+                      >
+                        Email {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th 
+                        className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-300"
+                        onClick={() => handleSort('role')}
+                      >
+                        Função {sortField === 'role' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th 
+                        className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-300"
+                        onClick={() => handleSort('plan_name')}
+                      >
+                        Plano {sortField === 'plan_name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th 
+                        className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors duration-300"
+                        onClick={() => handleSort('credits')}
+                      >
+                        Créditos {sortField === 'credits' && (sortDirection === 'asc' ? '↑' : '↓')}
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
+                    {paginatedUsers.map((user, index) => (
+                      <motion.tr
+                        key={user.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className="hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-300"
+                      >
+                        <td className="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
+                          {user.name || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-neutral-600 dark:text-neutral-400">
+                          {user.email || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.role === 'superadmin' 
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                              : user.role === 'admin' 
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+                          }`}>
+                            {user.role === 'superadmin' ? 'Super Admin' : user.role === 'admin' ? 'Admin' : 'Usuário'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.plan_name === 'premium' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+                              : user.plan_name === 'business' 
+                              ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300'
+                              : 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                          }`}>
+                            {user.plan_name || 'free'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-neutral-900 dark:text-neutral-100">
+                          {user.credits || 0}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                              title="Editar usuário"
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={() => openCreditsModal(user)}
+                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                              title="Adicionar créditos"
+                            >
+                              <FaCoins />
+                            </button>
+                            <button
+                              onClick={() => openPlanModal(user)}
+                              className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-300"
+                              title="Alterar plano"
+                            >
+                              <FaCog />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(user.id)}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
+                              title="Excluir usuário"
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Paginação com cores corretas para dark mode */}
+              {totalPages > 1 && (
+                <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Mostrando {startIndex + 1} a {Math.min(endIndex, filteredUsers.length)} de {filteredUsers.length} usuários
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-300"
+                    >
+                      Anterior
+                    </button>
+                    
+                    {[...Array(totalPages)].map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => setCurrentPage(i + 1)}
+                        className={`px-3 py-1 rounded-lg border transition-colors duration-300 ${
+                          currentPage === i + 1
+                            ? 'bg-amber-500 text-white border-amber-500'
+                            : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-300"
+                    >
+                      Próximo
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+
+        {activeTab === 'stats' && (
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="space-y-6"
+          >
+            {/* Estatísticas Avançadas */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Logins por Dia</h3>
+                  <FaChartLine className="text-2xl text-blue-500" />
+                </div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">127</div>
+                <p className="text-sm text-green-600">+15% desde ontem</p>
+              </div>
+              
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Créditos Usados</h3>
+                  <FaCoins className="text-2xl text-yellow-500" />
+                </div>
+                <div className="text-3xl font-bold text-yellow-600 mb-2">2,543</div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Esta semana</p>
+              </div>
+              
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Taxa de Conversão</h3>
+                  <FaUsers className="text-2xl text-green-500" />
+                </div>
+                <div className="text-3xl font-bold text-green-600 mb-2">8.4%</div>
+                <p className="text-sm text-green-600">+2.1% este mês</p>
+              </div>
+            </motion.div>
+
+            {/* Gráficos */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Usuários por Plano</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-700 dark:text-neutral-300">Free</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                        <div className="bg-green-500 h-2 rounded-full" style={{width: '60%'}}></div>
+                      </div>
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">60%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-700 dark:text-neutral-300">Premium</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                        <div className="bg-yellow-500 h-2 rounded-full" style={{width: '30%'}}></div>
+                      </div>
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">30%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-neutral-700 dark:text-neutral-300">Business</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
+                        <div className="bg-purple-500 h-2 rounded-full" style={{width: '10%'}}></div>
+                      </div>
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">10%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">Atividade Recente</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <div>
+                      <p className="text-sm text-neutral-900 dark:text-neutral-100">Novo usuário registrado</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">há 5 minutos</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div>
+                      <p className="text-sm text-neutral-900 dark:text-neutral-100">Upgrade para Premium</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">há 12 minutos</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                    <div>
+                      <p className="text-sm text-neutral-900 dark:text-neutral-100">Sistema atualizado</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">há 1 hora</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {activeTab === 'settings' && (
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="space-y-6"
+          >
+            {/* Configurações Gerais */}
+            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-6">Configurações Gerais</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Nome da Aplicação
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue="Clausy IA Jurídico"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Email de Suporte
+                  </label>
+                  <input
+                    type="email"
+                    defaultValue="suporte@clausy.com"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Limite de Tentativas de Login
+                  </label>
+                  <select className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <option value={3}>3 tentativas</option>
+                    <option value={5}>5 tentativas</option>
+                    <option value={10}>10 tentativas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Sessão Expira em (horas)
+                  </label>
+                  <input
+                    type="number"
+                    defaultValue="24"
+                    min="1"
+                    max="168"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex space-x-3">
+                <button className="bg-gradient-to-r from-amber-600 to-amber-600 text-white px-6 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium">
+                  Salvar Configurações
+                </button>
+                <button className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-6 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium">
+                  Resetar
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Configurações de Segurança */}
+            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-6">Configurações de Segurança</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
+                  <div>
+                    <h4 className="font-medium text-neutral-900 dark:text-neutral-100">Autenticação de Dois Fatores</h4>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Requer verificação adicional no login</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
+                  <div>
+                    <h4 className="font-medium text-neutral-900 dark:text-neutral-100">Log de Auditoria</h4>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Registra todas as ações administrativas</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800">
+                  <div>
+                    <h4 className="font-medium text-neutral-900 dark:text-neutral-100">Backup Automático</h4>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Backup diário dos dados do sistema</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" defaultChecked className="sr-only peer" />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {activeTab === 'plans' && (
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="space-y-6"
+          >
+            {/* Cards de Planos */}
+            <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Free</h3>
+                  <div className="text-3xl font-bold text-green-600 mt-2">R$ 0</div>
+                  <p className="text-neutral-600 dark:text-neutral-400">por mês</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">100 créditos/mês</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Suporte básico</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">1 usuário</span>
+                  </li>
+                </ul>
+
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">{stats.totalUsers}</div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">usuários ativos</p>
+                </div>
+              </div>
+
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border-2 border-amber-500 relative">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-medium">Mais Popular</span>
+                </div>
+                
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Premium</h3>
+                  <div className="text-3xl font-bold text-amber-600 mt-2">R$ 99</div>
+                  <p className="text-neutral-600 dark:text-neutral-400">por mês</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">1.000 créditos/mês</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Suporte prioritário</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">5 usuários</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Relatórios avançados</span>
+                  </li>
+                </ul>
+
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
+                    {users?.filter(u => u.plan_name === 'premium')?.length || 0}
+                  </div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">usuários ativos</p>
+                </div>
+              </div>
+
+              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+                <div className="text-center mb-6">
+                  <h3 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Business</h3>
+                  <div className="text-3xl font-bold text-purple-600 mt-2">R$ 299</div>
+                  <p className="text-neutral-600 dark:text-neutral-400">por mês</p>
+                </div>
+                
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Créditos ilimitados</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Suporte 24/7</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">Usuários ilimitados</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">API personalizada</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300">White-label</span>
+                  </li>
+                </ul>
+
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
+                    {users?.filter(u => u.plan_name === 'business')?.length || 0}
+                  </div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">usuários ativos</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Configurações de Planos */}
+            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-6">Configuração de Preços</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Preço Premium (R$)
+                  </label>
+                  <input
+                    type="number"
+                    defaultValue="99"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Preço Business (R$)
+                  </label>
+                  <input
+                    type="number"
+                    defaultValue="299"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Créditos Free
+                  </label>
+                  <input
+                    type="number"
+                    defaultValue="100"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <button className="bg-gradient-to-r from-amber-600 to-amber-600 text-white px-6 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium">
+                  Atualizar Preços
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </main>
+
+      {/* Modal */}
+      {renderModal()}
+
+      {/* Toast Container */}
+      <ToastContainer 
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={theme}
+      />
+    </div>
   );
 };
 

@@ -99,15 +99,12 @@ useEffect(() => {
       {/* Header */}
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-orange-600 to-brown-500 text-white shadow-lg shadow-orange-500/25">
-            
-          <div className="flex justify-center mb-6">
-            {/* Logo Light NAO ALTERAR*/}
+          <div className="flex justify-center">
+            {/* Logo Light */}
             <img src={BlackLogo} alt="Logo Black" className="h-10 w-auto dark:hidden" />
 
-            {/* Logo Dark NAO ALTERAR*/}
+            {/* Logo Dark */}
             <img src={WhiteLogo} alt="Logo White" className="h-10 w-auto hidden dark:block" />
-          </div>
           </div>
           <div className="leading-tight">
             <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Clausy</p>
