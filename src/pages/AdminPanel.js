@@ -220,9 +220,80 @@ const AdminPanel = () => {
     setModalOpen(true);
   };
 
+  // Validação
+  const validateForm = () => {
+    if (modalType === 'add') {
+      if (!formData.name?.trim()) {
+        toast.error('Nome é obrigatório');
+        return false;
+      }
+      if (!formData.email?.trim()) {
+        toast.error('Email é obrigatório');
+        return false;
+      }
+      if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        toast.error('Email inválido');
+        return false;
+      }
+      if (!formData.password?.trim()) {
+        toast.error('Senha é obrigatória');
+        return false;
+      }
+      if (formData.password.length < 6) {
+        toast.error('Senha deve ter pelo menos 6 caracteres');
+        return false;
+      }
+    } else if (modalType === 'edit') {
+      if (!selectedUser?.email) {
+        toast.error('Usuário selecionado inválido');
+        return false;
+      }
+      if (!formData.name?.trim()) {
+        toast.error('Nome é obrigatório');
+        return false;
+      }
+      if (!formData.email?.trim()) {
+        toast.error('Email é obrigatório');
+        return false;
+      }
+      if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        toast.error('Email inválido');
+        return false;
+      }
+    } else if (modalType === 'credits') {
+      if (!selectedUser?.email) {
+        toast.error('Usuário selecionado inválido');
+        return false;
+      }
+      if (!formData.credits || formData.credits <= 0) {
+        toast.error('Quantidade de créditos deve ser maior que 0');
+        return false;
+      }
+    } else if (modalType === 'plan') {
+      if (!selectedUser?.email) {
+        toast.error('Usuário selecionado inválido');
+        return false;
+      }
+      if (!formData.plan_name) {
+        toast.error('Plano é obrigatório');
+        return false;
+      }
+      const validPlans = ['free', 'premium', 'business', 'enterprise'];
+      if (!validPlans.includes(formData.plan_name)) {
+        toast.error('Plano selecionado é inválido');
+        return false;
+      }
+    }
+    return true;
+  };
+
   // Handlers
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       if (modalType === 'add') {
@@ -230,7 +301,8 @@ const AdminPanel = () => {
         const planMap = {
           'free': 'FREE_TRIAL',
           'premium': 'STANDARD', 
-          'business': 'PRO'
+          'business': 'PRO',
+          'enterprise': 'ENTERPRISE'
         };
         
         const userData = {
@@ -247,29 +319,46 @@ const AdminPanel = () => {
           toast.error(result.message || 'Erro ao adicionar usuário');
         }
       } else if (modalType === 'edit') {
-        const result = await updateUser(selectedUser.id, formData);
+        const result = await updateUser(selectedUser.email, formData);
         if (result.success) {
           toast.success('Usuário atualizado com sucesso!');
           setModalOpen(false);
-          await loadUsers();
+          await loadUsers(true); // Força refresh
         } else {
           toast.error(result.message || 'Erro ao atualizar usuário');
         }
       } else if (modalType === 'credits') {
-        const result = await addCredits(selectedUser.id, parseInt(formData.credits));
+        const result = await addCredits(selectedUser.email, parseInt(formData.credits));
         if (result.success) {
           toast.success('Créditos adicionados com sucesso!');
           setModalOpen(false);
-          await loadUsers();
+          await loadUsers(true); // Força refresh
         } else {
           toast.error(result.message || 'Erro ao adicionar créditos');
         }
       } else if (modalType === 'plan') {
-        const result = await changePlan(selectedUser.id, formData.plan_name);
+        // Mapear plan_name para plan_id para o backend
+        const planMap = {
+          'free': 'FREE_TRIAL',
+          'premium': 'STANDARD', 
+          'business': 'PRO',
+          'enterprise': 'ENTERPRISE'
+        };
+        
+        const planId = planMap[formData.plan_name] || 'FREE_TRIAL';
+        console.log('AdminPanel - Changing plan:', {
+          userEmail: selectedUser.email,
+          formPlanName: formData.plan_name,
+          mappedPlanId: planId
+        });
+        
+        const result = await changePlan(selectedUser.email, planId);
+        console.log('AdminPanel - Change plan result:', result);
+        
         if (result.success) {
           toast.success('Plano alterado com sucesso!');
           setModalOpen(false);
-          await loadUsers();
+          await loadUsers(true); // Força refresh
         } else {
           toast.error(result.message || 'Erro ao alterar plano');
         }
@@ -280,15 +369,30 @@ const AdminPanel = () => {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
+  const handleDelete = async (userEmail) => {
+    if (!userEmail) {
+      toast.error('Email do usuário não encontrado');
+      return;
+    }
+
+    if (userEmail === currentUser?.email) {
+      toast.error('Você não pode excluir seu próprio usuário');
+      return;
+    }
+
+    if (window.confirm(`Tem certeza que deseja excluir o usuário ${userEmail}? Esta ação não pode ser desfeita.`)) {
       try {
-        await removeUser(userId);
-        toast.success('Usuário removido com sucesso!');
-        await loadUsers();
+        const result = await removeUser(userEmail);
+        
+        if (result.success) {
+          toast.success('Usuário removido com sucesso!');
+          await loadUsers(true); // Força refresh
+        } else {
+          toast.error(result.message || 'Erro ao remover usuário');
+        }
       } catch (error) {
         console.error('Erro ao remover usuário:', error);
-        toast.error('Erro ao remover usuário');
+        toast.error(error.message || 'Erro ao remover usuário');
       }
     }
   };
@@ -539,7 +643,7 @@ const AdminPanel = () => {
             >
               <button
                 onClick={openAddModal}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-600 to-amber-600 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium shadow-lg"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-accent2 to-accent1 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium shadow-lg"
               >
                 <FaPlus className="w-4 h-4" />
                 Adicionar Usuário
@@ -739,7 +843,7 @@ const AdminPanel = () => {
                   <tbody className="divide-y divide-neutral-200 dark:divide-neutral-700">
                     {paginatedUsers.map((user, index) => (
                       <motion.tr
-                        key={user.id}
+                        key={user.user_id || user.email || index}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -777,34 +881,34 @@ const AdminPanel = () => {
                           {user.credits || 0}
                         </td>
                         <td className="px-6 py-4 text-sm">
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-1">
                             <button
                               onClick={() => openEditModal(user)}
-                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300"
+                              className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-300 hover:scale-110"
                               title="Editar usuário"
                             >
-                              <FaEdit />
+                              <FaEdit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => openCreditsModal(user)}
-                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300"
+                              className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 dark:hover:bg-green-900/20 rounded-lg transition-all duration-300 hover:scale-110"
                               title="Adicionar créditos"
                             >
-                              <FaCoins />
+                              <FaCoins className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => openPlanModal(user)}
-                              className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-300"
+                              className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg transition-all duration-300 hover:scale-110"
                               title="Alterar plano"
                             >
-                              <FaCog />
+                              <FaCog className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(user.id)}
-                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300"
+                              onClick={() => handleDelete(user.email)}
+                              className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-all duration-300 hover:scale-110"
                               title="Excluir usuário"
                             >
-                              <FaTrash />
+                              <FaTrash className="w-4 h-4" />
                             </button>
                           </div>
                         </td>

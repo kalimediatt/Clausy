@@ -17,96 +17,21 @@ const Profile = () => {
     getCurrentPlanData
   } = useAuth();
 
-  // Estado local igual ao samples.js
-  const [isInitialized, setIsInitialized] = useState(false);
+  // Estado local
   const [theme] = useState(localStorage.getItem("theme") || "light");
-  
-  // Debug: verificar estrutura completa do currentUser
-  console.log('=== PROFILE DEBUG DETALHADO ===');
-  console.log('Profile - Token no localStorage:', localStorage.getItem('auth_token') ? 'EXISTE' : 'NÃO EXISTE');
-  console.log('Profile - isAuthenticated:', isAuthenticated);
-  console.log('Profile - isLoading:', isLoading);
-  console.log('Profile - currentUser existe?:', !!currentUser);
-  console.log('Profile - currentUser completo:', JSON.stringify(currentUser, null, 2));
-  console.log('Profile - Todas as chaves do currentUser:', currentUser ? Object.keys(currentUser) : 'null');
-  console.log('Profile - Tipo do currentUser:', typeof currentUser);
-  
-  // Verificar se é um objeto vazio
-  if (currentUser && typeof currentUser === 'object') {
-    console.log('Profile - É objeto vazio?:', Object.keys(currentUser).length === 0);
-  }
-  
-  // Testar diferentes campos possíveis para nome
-  console.log('Profile - currentUser.name:', currentUser?.name);
-  console.log('Profile - currentUser.username:', currentUser?.username);
-  console.log('Profile - currentUser.full_name:', currentUser?.full_name);
-  console.log('Profile - currentUser.display_name:', currentUser?.display_name);
-  console.log('Profile - currentUser.first_name:', currentUser?.first_name);
-  console.log('Profile - currentUser.user_name:', currentUser?.user_name);
-  console.log('Profile - currentUser.email:', currentUser?.email);
-  console.log('Profile - currentUser.company_name:', currentUser?.company_name);
-  console.log('Profile - currentUser.plan_name:', currentUser?.plan_name);
-  console.log('Profile - currentUser.credits:', currentUser?.credits);
-  console.log('Profile - currentUser.role:', currentUser?.role);
-  console.log('===================================');
 
-  // Função para carregar dados iniciais (como no samples.js)
-  const loadInitialData = useCallback(async () => {
-    if (!currentUser) {
-      console.log('Profile - loadInitialData: currentUser não disponível');
-      return;
-    }
+  // Efeito para verificar autenticação na montagem se necessário
+  useEffect(() => {
+    const token = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('current_user');
     
-    try {
-      console.log('Profile - Carregando dados iniciais...');
-      console.log('Profile - getDashboardStats disponível?:', typeof getDashboardStats);
-      console.log('Profile - getUserTasks disponível?:', typeof getUserTasks);
-      console.log('Profile - getTeamMembers disponível?:', typeof getTeamMembers);
-      console.log('Profile - getQueryDistribution disponível?:', typeof getQueryDistribution);
-      
-      const promises = [];
-      if (getDashboardStats) promises.push(getDashboardStats());
-      if (getUserTasks) promises.push(getUserTasks());
-      if (getTeamMembers) promises.push(getTeamMembers());
-      if (getQueryDistribution) promises.push(getQueryDistribution());
-      
-      await Promise.all(promises);
-      console.log('Profile - Dados iniciais carregados com sucesso');
-    } catch (error) {
-      console.error('Profile - Erro ao carregar dados iniciais:', error);
+    // Se há token mas não está autenticado ou não há dados do usuário, verificar
+    if (token && (!isAuthenticated || !currentUser) && !isLoading) {
+      if (checkAuth) {
+        checkAuth();
+      }
     }
-  }, [currentUser, getDashboardStats, getUserTasks, getTeamMembers, getQueryDistribution]);
-
-  // Efeito de inicialização igual ao samples.js
-  useEffect(() => {
-    console.log('Profile - useEffect inicial - isAuthenticated:', isAuthenticated, 'currentUser:', !!currentUser);
-    
-    if (isAuthenticated && currentUser && !isInitialized) {
-      console.log('Profile - Inicializando dados do usuário...');
-      setIsInitialized(true);
-      loadInitialData();
-    }
-  }, [isAuthenticated, currentUser, isInitialized, loadInitialData]);
-
-  // Efeito único para carregar dados iniciais quando currentUser mudar
-  useEffect(() => {
-    if (currentUser && isAuthenticated) {
-      console.log('Profile - currentUser mudou, carregando dados...');
-      loadInitialData();
-    }
-  }, [currentUser, isAuthenticated, loadInitialData]);
-
-  // Verificação de autenticação na montagem do componente
-  useEffect(() => {
-    console.log('Profile - Montagem do componente, verificando autenticação...');
-    if (!isAuthenticated && checkAuth) {
-      checkAuth().then(() => {
-        console.log('Profile - checkAuth concluído na montagem');
-      }).catch(error => {
-        console.error('Profile - Erro no checkAuth na montagem:', error);
-      });
-    }
-  }, [isAuthenticated, checkAuth]);
+  }, []); // Executa apenas na montagem
 
   // Função para obter o nome do usuário exatamente como no samples.js
   const getUserName = () => {
@@ -129,7 +54,7 @@ const Profile = () => {
 
 
 
-  // Verificações de estado igual ao samples.js
+  // Loading - apenas quando realmente carregando
   if (isLoading) {
     return (
       <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
@@ -140,14 +65,15 @@ const Profile = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center"
           >
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600 mx-auto"></div>
-            <p className="mt-4 text-neutral-600 dark:text-neutral-400">Verificando autenticação...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-600 mx-auto"></div>
+            <p className="mt-4 text-neutral-600 dark:text-neutral-400">Carregando...</p>
           </motion.div>
         </div>
       </div>
     );
   }
 
+  // Não autenticado - redirecionar para login
   if (!isAuthenticated) {
     return (
       <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
@@ -165,6 +91,7 @@ const Profile = () => {
     );
   }
 
+  // Se não há dados do usuário (fallback de segurança)
   if (!currentUser) {
     return (
       <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
@@ -175,13 +102,26 @@ const Profile = () => {
             animate={{ opacity: 1, scale: 1 }}
             className="text-center"
           >
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-amber-600 mx-auto"></div>
             <p className="mt-4 text-neutral-600 dark:text-neutral-400">Carregando dados do usuário...</p>
           </motion.div>
         </div>
       </div>
     );
   }
+
+  console.log('✅ Profile - TODOS os dados do currentUser:', currentUser);
+  console.log('✅ Profile - Campos específicos:', {
+    id: currentUser?.user_id,
+    name: currentUser?.name,
+    email: currentUser?.email,
+    company_id: currentUser?.company_id,
+    company_name: currentUser?.company_name,
+    plan_id: currentUser?.plan_id,
+    plan_name: currentUser?.plan_name,
+    credits: currentUser?.credits,
+    role: currentUser?.role
+  });
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden transition-colors duration-500
@@ -231,7 +171,7 @@ const Profile = () => {
             <div className="mb-6 text-center">
               {/* Avatar */}
               <div className="relative mx-auto mb-4 w-24 h-24">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-600 to-brown-500 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-orange-500/25">
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent2 to-accent1 flex items-center justify-center text-2xl font-bold text-white shadow-lg shadow-accent2/25">
                   {getInitials(getUserName())}
                 </div>
                 {/* Botão de adicionar foto - comentado temporariamente */}
@@ -252,7 +192,7 @@ const Profile = () => {
               </p>
               
               {/* Role Badge */}
-              <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-orange-600 to-brown-500 text-white text-xs font-medium shadow-lg shadow-orange-500/25">
+              <div className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-accent2 to-accent1 text-white text-xs font-medium shadow-lg shadow-accent2/25">
                 <FaCrown className="w-3 h-3" />
                 {getRoleDisplay(currentUser.role)}
               </div>
@@ -288,7 +228,7 @@ const Profile = () => {
               {/* Personal Info */}
               <div className="rounded-xl border border-neutral-200 bg-white/40 p-4 dark:border-neutral-700 dark:bg-neutral-800/40">
                 <div className="flex items-center gap-3 mb-3">
-                  <FaUser className="w-4 h-4 text-orange-600" />
+                  <FaUser className="w-4 h-4 text-accent2" />
                   <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Informações Pessoais</span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -306,7 +246,7 @@ const Profile = () => {
               {/* Company Info */}
               <div className="rounded-xl border border-neutral-200 bg-white/40 p-4 dark:border-neutral-700 dark:bg-neutral-800/40">
                 <div className="flex items-center gap-3 mb-3">
-                  <FaBuilding className="w-4 h-4 text-orange-600" />
+                  <FaBuilding className="w-4 h-4 text-accent2" />
                   <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Empresa</span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -324,7 +264,7 @@ const Profile = () => {
               {/* Plan & Credits */}
               <div className="rounded-xl border border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50 p-4 dark:border-orange-700/50 dark:from-orange-900/20 dark:to-amber-900/20">
                 <div className="flex items-center gap-3 mb-3">
-                  <FaCoins className="w-4 h-4 text-orange-600" />
+                  <FaCoins className="w-4 h-4 text-accent2" />
                   <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Plano e Créditos</span>
                 </div>
                 <div className="space-y-2 text-sm">
@@ -335,7 +275,7 @@ const Profile = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-neutral-600 dark:text-neutral-400">Créditos:</span>
                     <div className="text-right">
-                      <span className="text-xl font-bold text-orange-600">{currentUser.credits || 0}</span>
+                      <span className="text-xl font-bold text-accent2">{currentUser.credits || 0}</span>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">disponíveis</p>
                     </div>
                   </div>

@@ -180,9 +180,12 @@ async function addCredits(email, amount) {
 
 // Alterar plano
 async function changePlan(email, newPlan) {
+  console.log('DEBUG: changePlan called with:', { email, newPlan });
   const query = 'UPDATE users SET plan_id = ? WHERE email = ?';
   try {
+    console.log('DEBUG: Executing query:', query, 'with params:', [newPlan, email]);
     const result = await db.executeQuery(query, [newPlan, email]);
+    console.log('DEBUG: Query result:', result);
     return { success: result.affectedRows > 0 };
   } catch (error) {
     console.error('Erro ao alterar plano:', error);
@@ -198,9 +201,11 @@ async function changePlan(email, newPlan) {
 async function getUserById(userId) {
   const query = `
     SELECT u.user_id, u.email, u.name, u.role, u.credits, u.plan_id, u.last_login,
-           u.company_id, c.name as company_name
+           u.company_id, c.name as company_name, p.name as plan_name, p.color as plan_color,
+           p.max_queries_per_hour, p.max_tokens_per_hour, p.history_retention_hours
     FROM users u
     LEFT JOIN companies c ON u.company_id = c.company_id
+    LEFT JOIN subscription_plans p ON u.plan_id = p.plan_id
     WHERE u.user_id = ?
   `;
   
@@ -208,9 +213,24 @@ async function getUserById(userId) {
   return results.length > 0 ? results[0] : null;
 }
 
+// Função getUserByEmailNoIsolation (alias para getUserByEmail sem isolamento por empresa)
+async function getUserByEmailNoIsolation(email) {
+  const query = `
+    SELECT u.user_id, u.email, u.password_hash, u.name, u.role, u.credits, u.plan_id, u.last_login,
+           u.company_id, c.name as company_name, p.name as plan_name, p.color as plan_color
+    FROM users u
+    LEFT JOIN companies c ON u.company_id = c.company_id
+    LEFT JOIN subscription_plans p ON u.plan_id = p.plan_id
+    WHERE u.email = ?
+  `;
+  const results = await db.executeQuery(query, [email]);
+  return results.length ? results[0] : null;
+}
+
 module.exports = {
   getAllUsers,
   getUserByEmail,
+  getUserByEmailNoIsolation,
   verifyCredentials,
   createUser,
   updateUser,

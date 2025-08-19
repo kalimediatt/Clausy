@@ -462,11 +462,33 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 // Rota para verificar autenticação
-app.get('/api/auth/verify', authenticateToken, (req, res) => {
-  res.json({
-    success: true,
-    user: req.user
-  });
+app.get('/api/auth/verify', authenticateToken, async (req, res) => {
+  try {
+    // Buscar dados completos do usuário no banco de dados
+    const fullUser = await userService.getUserById(req.user.user_id);
+    
+    if (!fullUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    // Retornar dados completos do usuário
+    res.json({
+      success: true,
+      user: {
+        ...req.user, // Dados do token
+        ...fullUser  // Dados completos do banco
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao verificar autenticação:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno no servidor'
+    });
+  }
 });
 
 // Rota para obter estatísticas de uso
@@ -1109,7 +1131,12 @@ app.post('/api/users/:userId/change-plan', authenticateToken, async (req, res) =
     console.log('DEBUG: Comparando company_id (change-plan) - req.user.company_id:', req.user.company_id, 'targetUser.company_id:', targetUser.company_id);
     console.log('DEBUG: Tipos (change-plan) - req.user.company_id:', typeof req.user.company_id, 'targetUser.company_id:', typeof targetUser.company_id);
     
-    if (req.user.role !== 'superadmin' && req.user.company_id !== targetUser.company_id) {
+    // Converter para string para comparação consistente
+    const userCompanyId = String(req.user.company_id || '');
+    const targetCompanyId = String(targetUser.company_id || '');
+    
+    if (req.user.role !== 'superadmin' && userCompanyId !== targetCompanyId) {
+      console.log('DEBUG: Access denied - company mismatch:', userCompanyId, '!==', targetCompanyId);
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied: You can only change plans for users from your own company' 

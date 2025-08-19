@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 // API base URL from environment variable
 const API_URL = process.env.REACT_APP_API_URL || '/api';
 
-// Token management with secure storage
+// Token and user data management with secure storage
 const getStoredToken = () => {
   try {
     const token = localStorage.getItem('auth_token');
@@ -31,6 +31,28 @@ const getStoredToken = () => {
   }
 };
 
+const getStoredUser = () => {
+  try {
+    const userData = localStorage.getItem('current_user');
+    return userData ? JSON.parse(userData) : null;
+  } catch (error) {
+    console.error('Error reading stored user:', error);
+    return null;
+  }
+};
+
+const setStoredUser = (user) => {
+  try {
+    if (user) {
+      localStorage.setItem('current_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('current_user');
+    }
+  } catch (error) {
+    console.error('Error storing user:', error);
+  }
+};
+
 const setStoredToken = (token) => {
   try {
     // Basic token validation
@@ -54,6 +76,7 @@ const setStoredToken = (token) => {
 
 const removeStoredToken = () => {
   localStorage.removeItem('auth_token');
+  localStorage.removeItem('current_user');
   sessionStorage.removeItem('csrf_token');
 };
 
@@ -393,8 +416,22 @@ function simulateUsers() {
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Inicializar estado com dados armazenados se disponíveis
+  const [currentUser, setCurrentUser] = useState(() => {
+    const storedUser = getStoredUser();
+    const token = getStoredToken();
+    console.log('🔄 AuthProvider: Inicializando com dados armazenados');
+    console.log('🔄 AuthProvider: storedUser:', storedUser);
+    console.log('🔄 AuthProvider: token presente:', !!token);
+    return (storedUser && token) ? storedUser : null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = getStoredToken();
+    const storedUser = getStoredUser();
+    const isAuth = !!(token && storedUser);
+    console.log('🔄 AuthProvider: isAuthenticated inicial:', isAuth);
+    return isAuth;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [authLogs, setAuthLogs] = useState([]);
@@ -410,8 +447,9 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar autenticação ao iniciar
   useEffect(() => {
+    console.log('🔄 AuthContext: Iniciando verificação de autenticação');
     checkAuth();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Limpar cache quando company_id mudar
   useEffect(() => {
@@ -423,17 +461,56 @@ export const AuthProvider = ({ children }) => {
   }, [currentUser?.company_id]);
   
   const checkAuth = async () => {
+    console.log('🔍 CheckAuth: Iniciando verificação');
     try {
       const token = getStoredToken();
+      const storedUser = getStoredUser();
+      console.log('🔍 CheckAuth: Token encontrado?', !!token);
+      console.log('🔍 CheckAuth: Usuário armazenado?', !!storedUser);
+      
       if (!token) {
+        console.log('❌ CheckAuth: Sem token, definindo como não autenticado');
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Se já temos dados válidos do usuário armazenados localmente, usar eles
+      if (storedUser && storedUser.user_id && storedUser.email && storedUser.name) {
+        console.log('✅ CheckAuth: Dados válidos já armazenados, usando cache');
+        setIsAuthenticated(true);
+        setCurrentUser(storedUser);
         setIsLoading(false);
         return;
       }
       
+      console.log('🌐 CheckAuth: Verificando token com servidor');
       const response = await api.get('/auth/verify');
+      console.log('🌐 CheckAuth: Resposta do servidor:', response);
+      
       if (response.success) {
+        console.log('✅ CheckAuth: Token válido, usuário completo:', response.user);
+        console.log('✅ CheckAuth: Campos disponíveis:', Object.keys(response.user));
+        console.log('✅ CheckAuth: Nome:', response.user.name);
+        console.log('✅ CheckAuth: Email:', response.user.email);
+        console.log('✅ CheckAuth: Company:', response.user.company_name || response.user.company);
+        console.log('✅ CheckAuth: Plano:', response.user.plan_name || response.user.plan);
+        console.log('✅ CheckAuth: Créditos:', response.user.credits);
+        
+        // Garantir que todos os campos necessários estão presentes
+        const completeUser = {
+          ...response.user,
+          // Garantir compatibilidade com campos antigos
+          plan: response.user.plan_id,
+          maxQueriesPerHour: response.user.max_queries_per_hour,
+          maxTokensPerHour: response.user.max_tokens_per_hour,
+          historyRetention: response.user.history_retention_hours
+        };
+        
         setIsAuthenticated(true);
-        setCurrentUser(response.user);
+        setCurrentUser(completeUser);
+        setStoredUser(completeUser); // Persistir dados do usuário
         
         // Carregar estatísticas do usuário
         try {
@@ -454,12 +531,18 @@ export const AuthProvider = ({ children }) => {
           console.error('Error loading usage stats:', error);
         }
       } else {
+        console.log('❌ CheckAuth: Token inválido, removendo');
         removeStoredToken();
+        setIsAuthenticated(false);
+        setCurrentUser(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('❌ CheckAuth: Erro na verificação:', error);
       removeStoredToken();
+      setIsAuthenticated(false);
+      setCurrentUser(null);
     } finally {
+      console.log('🏁 CheckAuth: Finalizando, setIsLoading(false)');
       setIsLoading(false);
     }
   };
@@ -485,6 +568,7 @@ export const AuthProvider = ({ children }) => {
         };
         
         setCurrentUser(updatedUser);
+        setStoredUser(updatedUser); // Persistir dados do usuário
         return true;
       }
       
@@ -508,7 +592,7 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.removeItem(sessionKey);
       }
       
-      removeStoredToken();
+      removeStoredToken(); // Já remove both token e user data
       setIsAuthenticated(false);
       setCurrentUser(null);
       setUsageStats({
