@@ -97,7 +97,7 @@ const Sidebar = ({
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
+        className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
         aria-label="Alternar sidebar"
       >
         {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
@@ -111,7 +111,7 @@ const Sidebar = ({
           transition={{ duration: 0.3 }}
         >
           <motion.div 
-            className="rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg flex-shrink-0"
+            className="rounded-xl bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center shadow-lg flex-shrink-0"
             animate={{ 
               width: isOpen ? '40px' : '32px',
               height: isOpen ? '40px' : '32px',
@@ -157,7 +157,7 @@ const Sidebar = ({
             className={`
               flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
               ${activeItem === item.id 
-                ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 shadow-lg border border-amber-500/30' 
+                ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
                 : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
               }
             `}
@@ -168,7 +168,7 @@ const Sidebar = ({
             <div className={`
               text-lg transition-all duration-300
               ${isOpen ? 'mr-4' : 'mx-auto'}
-              ${activeItem === item.id ? 'text-amber-400' : 'group-hover:text-amber-400'}
+              ${activeItem === item.id ? 'text-accent1' : 'group-hover:text-accent1'}
             `}>
               {item.icon}
             </div>
@@ -241,7 +241,7 @@ const Sidebar = ({
             className={`
               flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
               ${activeItem === 'profile' 
-                ? 'bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-400 shadow-lg border border-amber-500/30' 
+                ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
                 : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
               }
             `}
@@ -250,7 +250,7 @@ const Sidebar = ({
             whileTap={{ scale: 0.98 }}
           >
             <motion.div 
-              className="rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
+              className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
               animate={{ 
                 width: isOpen ? '32px' : '28px',
                 height: isOpen ? '32px' : '28px',

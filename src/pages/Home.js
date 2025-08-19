@@ -504,7 +504,7 @@ const PlanBadge = styled.div`
   align-items: center;
   padding: 0.375rem 1rem;
   background: ${props => props.color || 'rgba(225, 102, 61, 0.1)'};
-  color: ${props => props.textColor || '#E1663D'};
+  color: ${props => props.textColor || '#8C4B35'};
   border-radius: 2rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -515,7 +515,7 @@ const PlanBadge = styled.div`
 const PlanUpgradeBtn = styled.button`
   display: flex;
   align-items: center;
-  background-color: #E1663D;
+  background-color: #8C4B35;
   color: white;
   border: none;
   border-radius: 5px;
@@ -956,7 +956,7 @@ const MessageItemWrapper = styled.div.withConfig({
 const MessageBubble = styled.div.withConfig({
   shouldForwardProp: (prop) => prop !== 'isUser' && prop !== 'isError'
 })`
-  background: ${props => props.isUser ? '#E1663D' : '#DFDFDF'};
+  background: ${props => props.isUser ? '#8C4B35' : '#DFDFDF'};
   color: ${props => props.isUser ? 'white' : '#2B2B2B'};
   padding: 1rem;
   border-radius: 12px;
@@ -1290,7 +1290,7 @@ const Badge = styled.span`
     'rgba(59, 130, 246, 0.1)'
   };
   color: ${props => 
-    props.type === 'warning' ? '#f59e0b' :
+    props.type === 'warning' ? '#8C4B35' :
     props.type === 'error' ? '#ef4444' :
     props.type === 'success' ? '#10b981' :
     '#3b82f6'
@@ -1342,7 +1342,7 @@ const SettingDescription = styled.p`
 const ToggleSwitch = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'data-active'
 })`
-  background: ${props => props['data-active'] ? '#E1663D' : '#ADADAD'};
+  background: ${props => props['data-active'] ? '#8C4B35' : '#ADADAD'};
   width: 48px;
   height: 24px;
   border-radius: 9999px;
@@ -1490,7 +1490,7 @@ const DoughnutChart = styled.div`
   border-radius: 50%;
   background: conic-gradient(
     #3b82f6 0% 55%,
-    #f59e0b 55% 75%,
+    #8C4B35 55% 75%,
     #10b981 75% 85%,
     #64748b 85% 100%
   );
@@ -1652,7 +1652,7 @@ const TaskItem = styled.div`
   padding: 15px;
   border-left: 3px solid ${props => 
     props.priority === 'high' ? '#ef4444' : 
-    props.priority === 'medium' ? '#f59e0b' : '#3b82f6'
+    props.priority === 'medium' ? '#8C4B35' : '#3b82f6'
   };
   background-color: #f8fafc;
   border-radius: 5px;
@@ -2419,7 +2419,7 @@ const ToggleSwitchStyled = styled.button.withConfig({
   width: 52px;
   height: 26px;
   border-radius: 13px;
-  background: ${props => props['data-active'] ? '#f59e0b' : '#e5e7eb'};
+  background: ${props => props['data-active'] ? '#8C4B35' : '#e5e7eb'};
   border: none;
   position: relative;
   cursor: pointer;
@@ -2435,7 +2435,7 @@ const ToggleSwitchStyled = styled.button.withConfig({
 
   // Dark mode support
   .dark & {
-    background: ${props => props['data-active'] ? '#f59e0b' : '#374151'};
+    background: ${props => props['data-active'] ? '#8C4B35' : '#374151'};
     
     &:hover {
       background: ${props => props['data-active'] ? '#d97706' : '#4b5563'};
@@ -2525,7 +2525,7 @@ const LabCardStatus = styled.div`
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: ${props => props.status === 'active' ? '#10b981' : props.status === 'warning' ? '#f59e0b' : '#ef4444'};
+  color: ${props => props.status === 'active' ? '#10b981' : props.status === 'warning' ? '#8C4B35' : '#ef4444'};
 `;
 
 const LabExperimentGrid = styled.div`
@@ -3293,78 +3293,7 @@ const Home = () => {
     }
   };
 
-  // Função para filtrar a resposta da IA e remover conteúdo de arquivo
-  const filterAIResponse = (content) => {
-    if (!content || typeof content !== 'string') return content;
-    
-    // Padrões comuns que indicam conteúdo de arquivo que deve ser removido
-    const fileContentPatterns = [
-      /^(Conteúdo do arquivo:|Arquivo:|Texto extraído:|Documento:|File content:)/i,
-      /^(---+\s*BEGIN|---+\s*START)/i,
-      /^(###\s*(ARQUIVO|FILE|DOCUMENT))/i,
-      /^(```[\s\S]*?```)/g, // Blocos de código que podem conter conteúdo de arquivo
-    ];
-    
-    let filtered = content;
-    
-    // Tentar dividir a resposta em seções e manter apenas a análise/resposta da IA
-    const lines = content.split('\n');
-    const aiResponseLines = [];
-    let foundAIResponse = false;
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Pular linhas que claramente são conteúdo de arquivo
-      if (fileContentPatterns.some(pattern => pattern.test(line))) {
-        continue;
-      }
-      
-      // Procurar por indicadores de resposta da IA
-      if (line.match(/^(Análise:|Resumo:|Resposta:|Com base no arquivo|Baseado no documento|Analisando o arquivo)/i)) {
-        foundAIResponse = true;
-        aiResponseLines.push(line);
-        continue;
-      }
-      
-      // Se já encontrou a resposta da IA, continuar coletando
-      if (foundAIResponse) {
-        aiResponseLines.push(line);
-      }
-      // Se ainda não encontrou, adicionar linhas que parecem ser análise
-      else if (line.length > 10 && !line.match(/^[A-Z\s]{3,}$/) && !line.match(/^\d+[\.\)]/)) {
-        aiResponseLines.push(line);
-      }
-    }
-    
-    // Se encontrou uma resposta estruturada da IA, usar ela
-    if (aiResponseLines.length > 0 && foundAIResponse) {
-      filtered = aiResponseLines.join('\n').trim();
-    }
-    // Caso contrário, tentar extrair a parte final que normalmente é a resposta da IA
-    else if (lines.length > 10) {
-      // Pegar a segunda metade das linhas, que normalmente contém a análise da IA
-      const midPoint = Math.floor(lines.length / 2);
-      const secondHalf = lines.slice(midPoint).filter(line => line.trim().length > 0);
-      if (secondHalf.length > 0) {
-        filtered = secondHalf.join('\n').trim();
-      }
-    }
-    
-    // Limpar padrões restantes de conteúdo de arquivo
-    fileContentPatterns.forEach(pattern => {
-      if (typeof pattern === 'object' && pattern.global) {
-        filtered = filtered.replace(pattern, '');
-      } else {
-        filtered = filtered.replace(pattern, '');
-      }
-    });
-    
-    // Limpar espaços excessivos
-    filtered = filtered.replace(/\n{3,}/g, '\n\n').trim();
-    
-    return filtered || content; // Fallback para o conteúdo original se a filtragem resultar em vazio
-  };
+  // [3] Atualize handleLabSendMessage para usar o chat atual
 
   // [3] Atualize handleLabSendMessage para usar o chat atual
   const handleLabSendMessage = async () => {
@@ -3382,12 +3311,9 @@ const Home = () => {
     const userMessage = {
       id: Date.now(),
       role: 'user',
-      content: labInput.trim() || 'Arquivo enviado',
-      file: labSelectedFile ? {
-        name: labSelectedFile.name,
-        size: labSelectedFile.size,
-        type: labSelectedFile.type
-      } : null,
+      content: labSelectedFile 
+        ? (labInput.trim() ? `${labInput} (Arquivo anexado: ${labSelectedFile.name})` : `Arquivo enviado: ${labSelectedFile.name}`)
+        : labInput,
       timestamp: new Date().toISOString()
     };
     setLabMessagesByChat(prev => {
@@ -3649,13 +3575,10 @@ const Home = () => {
         console.log('📝 Conteúdo completo da resposta:', content);
       }
       
-      // Filtrar o conteúdo para remover texto do arquivo anexado
-      const filteredContent = filterAIResponse(content);
-      
       const labResponse = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: filteredContent,
+        content: content,
         timestamp: new Date().toISOString()
       };
       console.log('Adicionando resposta da IA ao chat:', labSelectedChatName, 'Conteúdo:', content.substring(0, 100) + '...');
@@ -3921,7 +3844,7 @@ const Home = () => {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="flex items-center space-x-4"
               >
-                <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg">
                   <FaChartLine className="w-6 h-6" />
                 </div>
                 <div>
@@ -3969,7 +3892,7 @@ const Home = () => {
                 <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-white">
+                      <div className="p-2 rounded-lg bg-gradient-to-r from-accent1 to-accent1 text-white">
                         <FaCode className="w-4 h-4" />
                       </div>
                       <div>
@@ -4094,7 +4017,7 @@ const Home = () => {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      className="px-3 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
+                      className="px-3 py-1 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
                     >
                 Fazer upgrade
                     </motion.button>
@@ -4106,7 +4029,7 @@ const Home = () => {
                       className="px-3 py-1 rounded-full text-sm font-medium"
                       style={{ 
                         backgroundColor: 'rgba(225, 102, 61, 0.1)',
-                        color: '#E1663D'
+                        color: '#8C4B35'
                       }}
                     >
                       {planData.name || 'Free Trial'}
@@ -4468,7 +4391,7 @@ const Home = () => {
               scale: 1.02
             }}
             whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-amber-600 to-amber-600 hover:bg-amber-700 text-white border-0 rounded-xl py-3 px-4 cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg mb-6"
+            className="w-full bg-gradient-to-r from-accent1 to-accent1 hover:bg-accent1/80 text-white border-0 rounded-xl py-3 px-4 cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg mb-6"
             onClick={() => {
               setLabShowNewChatModal(true);
             }}
@@ -4490,7 +4413,7 @@ const Home = () => {
             {labHistoryLoading ? (
               <div className="flex flex-col items-center justify-center p-8 space-y-4">
                 <div className="relative">
-                  <div className="w-12 h-12 border-4 border-amber-200 dark:border-amber-800 rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-accent1/20 dark:border-accent1 rounded-full animate-spin"></div>
                   <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-amber-500 rounded-full animate-spin"></div>
                 </div>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400 animate-pulse">Carregando seus chats...</p>
@@ -4503,7 +4426,7 @@ const Home = () => {
                 />
               </div>
             ) : (
-              <div className="space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-amber-300 dark:scrollbar-thumb-amber-600 scrollbar-track-transparent scrollbar-thumb-rounded-full">
+              <div className="space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-accent1/30 dark:scrollbar-thumb-accent1 scrollbar-track-transparent scrollbar-thumb-rounded-full">
                 {labChatHistory.map((session, idx) => (
                   <motion.div
                     key={session.session_id || session.id}
@@ -4513,7 +4436,7 @@ const Home = () => {
                     whileHover={{ scale: 1.02, x: 4 }}
                     className={`relative cursor-pointer transition-all duration-300 rounded-xl group overflow-hidden ${
                       labSelectedConversation === (session.session_id || session.id) 
-                        ? '!bg-gradient-to-r !from-amber-500 !via-amber-600 !to-amber-500 !text-white font-bold shadow-lg shadow-amber-500/30' 
+                        ? '!bg-gradient-to-r !from-accent1 !via-accent2 !to-accent1 !text-white font-bold shadow-lg shadow-accent1/30' 
                         : '!bg-gradient-to-r !from-white/60 !via-white/40 !to-white/60 dark:!from-neutral-700/60 dark:!via-neutral-700/40 dark:!to-neutral-700/60 !text-neutral-700 dark:!text-neutral-300 font-medium hover:!from-white/80 hover:!via-white/60 hover:!to-white/80 dark:hover:!from-neutral-600/80 dark:hover:!via-neutral-600/60 dark:hover:!to-neutral-600/80 hover:shadow-md'
                     }`}
                     onClick={() => {
@@ -4553,11 +4476,8 @@ const Home = () => {
                       </div>
                       
                       {/* Botão de remover */}
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        whileHover={{ scale: 1.1, rotate: 90 }}
-                        whileTap={{ scale: 0.9 }}
-                        className="opacity-0 group-hover:opacity-100 bg-red-500/20 hover:bg-red-500/30 border-0 text-red-400 hover:text-red-300 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center transition-all duration-200 ml-2"
+                      <button
+                        className="opacity-70 hover:opacity-100 group-hover:opacity-100 bg-red-600/30 hover:bg-red-600/50 dark:bg-red-500/30 dark:hover:bg-red-500/50 border-0 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center transition-opacity duration-200 ml-2 md:opacity-80 md:hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
@@ -4567,7 +4487,7 @@ const Home = () => {
                         title="Remover chat"
                       >
                         <FaTrash className="w-3 h-3" />
-                      </motion.button>
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -4581,12 +4501,12 @@ const Home = () => {
             <div className="flex flex-col xl:flex-row gap-4 mb-4">
               <div className="flex items-center justify-between gap-4 p-4 lg:p-2 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-2 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
                 <div className="flex items-center gap-2">
-                  <FaCog className="text-amber-500" />
+                  <FaCog className="text-accent1" />
                   <span>Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
                 </div>
                 <button 
                   onClick={() => setLabShowSetupModal(true)}
-                  className="!bg-amber-500 hover:!bg-amber-600 !text-white !border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                  className="!bg-accent1 hover:!bg-amber-600 !text-white !border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                 >
                   Alterar Setup
                 </button>
@@ -4605,15 +4525,15 @@ const Home = () => {
             >
               {/* Overlay de drag and drop */}
               {isDragOver && (
-                <div className="absolute inset-0 bg-amber-500/20 backdrop-blur-sm border-2 border-dashed border-amber-500 rounded-xl z-50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-accent1/20 backdrop-blur-sm border-2 border-dashed border-accent1 rounded-xl z-50 flex items-center justify-center">
                   <div className="text-center p-8">
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-amber-200 dark:border-amber-700"
+                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-accent1/20 dark:border-accent1"
                     >
                       <div className="text-6xl mb-4">📁</div>
-                      <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400 mb-2">
+                      <h3 className="text-xl font-bold text-accent1 dark:text-accent1 mb-2">
                         Solte o arquivo aqui
                       </h3>
                       <p className="text-neutral-600 dark:text-neutral-300 text-sm">
@@ -4647,23 +4567,15 @@ const Home = () => {
                         message.role === 'user' ? 'items-end' : 'items-start'
                       } fade-in`}
                     >
-                      <div className={`relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm border transition-all duration-300 ${
+                      <div className={`relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 ${
                         message.role === 'user' 
-                          ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-400/30 shadow-amber-500/20' 
+                          ? 'bg-gradient-to-br from-accent1 to-accent1 text-white shadow-accent1/20' 
                           : message.role === 'error'
-                          ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
-                          : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600'
+                          ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                          : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600'
                       } md:max-w-[90%] sm:max-w-[95%]`}>
                         <div className="whitespace-pre-wrap break-words leading-relaxed">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span>{message.content}</span>
-                            {message.file && (
-                              <div className="inline-flex items-center gap-1 px-2 py-1 bg-white/20 dark:bg-black/20 rounded-lg text-xs">
-                                <FaFileAlt className="w-3 h-3" />
-                                <span className="truncate max-w-[100px]">{message.file.name}</span>
-                              </div>
-                            )}
-                          </div>
+                          {message.content}
                         </div>
                         <div className={`text-xs opacity-60 mt-2 ${
                           message.role === 'user' 
@@ -4689,9 +4601,9 @@ const Home = () => {
                       <div className="relative max-w-[80%] p-2 rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300">
                         <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
                           <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
                           </div>
                           <span className="text-sm">IA está digitando...</span>
                         </div>
@@ -4703,24 +4615,24 @@ const Home = () => {
                 
                 {/* Indicador de arquivo anexado */}
                 {labSelectedFile && (
-                  <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+                  <div className="px-4 py-2 bg-accent1/5 dark:bg-accent1/90/20 border-t border-accent1/20 dark:border-accent1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-amber-100 dark:bg-amber-800 rounded-lg flex items-center justify-center">
-                          <FaFileAlt className="w-4 h-4 text-amber-600 dark:text-amber-300" />
+                        <div className="w-8 h-8 bg-accent1/10 dark:bg-accent1/80 rounded-lg flex items-center justify-center">
+                          <FaFileAlt className="w-4 h-4 text-accent1 dark:text-accent1/80" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                          <p className="text-sm font-medium text-accent1 dark:text-accent1/80">
                             {labSelectedFile.name}
                           </p>
-                          <p className="text-xs text-amber-600 dark:text-amber-400">
+                          <p className="text-xs text-accent1 dark:text-accent1">
                             {(labSelectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
                       </div>
                       <button
                         onClick={() => setLabSelectedFile(null)}
-                        className="w-6 h-6 bg-amber-200 dark:bg-amber-700 hover:bg-amber-300 dark:hover:bg-amber-600 rounded-full flex items-center justify-center text-amber-700 dark:text-amber-200 transition-all duration-200"
+                        className="w-6 h-6 bg-accent1/20 dark:bg-amber-700 hover:bg-accent1/30 dark:hover:bg-accent1/80 rounded-full flex items-center justify-center text-amber-700 dark:text-accent1/80 transition-all duration-200"
                       >
                         <FaTimes className="w-3 h-3" />
                       </button>
@@ -4745,12 +4657,12 @@ const Home = () => {
                         handleLabSendMessage();
                       }
                     }}
-                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-3 text-sm resize-none min-h-[2.25rem] max-h-20 leading-4 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 focus:shadow-lg focus:shadow-amber-200/20 dark:focus:shadow-amber-800/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 flex items-center"
+                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-3 text-sm resize-none min-h-[2.25rem] max-h-20 leading-4 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-accent1 focus:shadow-lg focus:shadow-accent1/20/20 dark:focus:shadow-accent1/80/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 flex items-center"
                   />
                   <button 
                     type="submit" 
                     disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
-                    className="bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none w-14 h-14"
+                    className="bg-accent1 hover:bg-accent1/80 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none w-14 h-14"
                   >
                     <FaPaperPlane />
                   </button>
@@ -4762,7 +4674,7 @@ const Home = () => {
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
                   <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
                     <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
-                      <FaCog className="text-amber-500" />
+                      <FaCog className="text-accent1" />
                       Selecione um Setup
                     </h2>
                     <button 
@@ -4808,7 +4720,7 @@ const Home = () => {
                     <button 
                       onClick={handleLabSetupConfirm}
                       disabled={!labSelectedSetupState}
-                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Confirmar Setup
                     </button>
@@ -4821,7 +4733,7 @@ const Home = () => {
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
                   <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
                     <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
-                      <FaPlus className="text-amber-500" />
+                      <FaPlus className="text-accent1" />
                       Nomear Novo Chat
                     </h2>
                     <button 
@@ -4843,7 +4755,7 @@ const Home = () => {
                       value={newChatName}
                       onChange={(e) => setNewChatName(e.target.value)}
                       placeholder="Digite o nome do chat..."
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300 focus:outline-none"
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4865,7 +4777,7 @@ const Home = () => {
                     <button 
                       onClick={handleCreateNewChat}
                       disabled={!newChatName.trim()}
-                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Criar Chat
                     </button>
@@ -4878,7 +4790,7 @@ const Home = () => {
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
                   <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
                     <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
-                      <FaFlask className="text-amber-500" />
+                      <FaFlask className="text-accent1" />
                       Bem-vindo ao Laboratório
                     </h2>
                     <button 
@@ -4903,7 +4815,7 @@ const Home = () => {
                       value={initialChatName}
                       onChange={(e) => setInitialChatName(e.target.value)}
                       placeholder="Digite o nome do seu chat..."
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300 focus:outline-none"
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4925,7 +4837,7 @@ const Home = () => {
                     <button 
                       onClick={handleInitializeChat}
                       disabled={!initialChatName.trim()}
-                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Iniciar Chat
                     </button>
@@ -5030,7 +4942,7 @@ const Home = () => {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.5, delay: 0.3 }}
-                      className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium"
+                      className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-accent2/10 dark:bg-accent2/30 text-accent2 dark:text-accent2 rounded-full text-xs font-medium"
                     >
                       <FaRobot className="w-3 h-3" />
                       <span>IA Ativa</span>

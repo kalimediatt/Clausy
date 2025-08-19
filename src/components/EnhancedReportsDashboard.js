@@ -809,7 +809,7 @@ const EnhancedReportsDashboard = () => {
             <button
               style={{ 
                 ...styles.button, 
-                background: '#E1663D',
+                background: '#8C4B35',
                 color: 'white',
                 border: 'none'
               }}
@@ -822,7 +822,7 @@ const EnhancedReportsDashboard = () => {
             <button
               style={{ 
                 ...styles.button, 
-                background: '#E1663D',
+                background: '#8C4B35',
                 color: 'white',
                 border: 'none'
               }}

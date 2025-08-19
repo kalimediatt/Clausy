@@ -86,9 +86,9 @@ const Config = () => {
     <motion.button
       onClick={onClick}
       className={`
-        relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-amber-500/20
+        relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-accent1/20
         ${isActive 
-          ? 'bg-gradient-to-r from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30' 
+          ? 'bg-gradient-to-r from-accent1 to-accent1 shadow-lg shadow-accent1/30' 
           : 'bg-neutral-200 dark:bg-neutral-700'}
       `}
       whileHover={{ scale: 1.05 }}
@@ -143,7 +143,7 @@ const Config = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={toggleTheme}
-                className="flex items-center px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                className="flex items-center px-4 py-2 bg-gradient-to-r from-accent1 to-accent1 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {theme === "dark" ? <FaSun className="w-4 h-4 mr-2" /> : <FaMoon className="w-4 h-4 mr-2" />}
                 {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
@@ -178,7 +178,7 @@ const Config = () => {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="flex items-center space-x-4"
             >
-              <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg">
+              <div className="p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg">
                 <FaCog className="w-6 h-6" />
               </div>
               <div>
@@ -291,7 +291,7 @@ const Config = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-accent1 to-accent1 text-white">
                     <FaLanguage className="w-4 h-4" />
                   </div>
                   <div>
@@ -308,7 +308,7 @@ const Config = () => {
                     onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-4 focus:ring-amber-500/20 transition-all duration-300 shadow-sm flex items-center justify-between min-w-[140px]"
+                    className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-4 py-2 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-4 focus:ring-accent1/20 transition-all duration-300 shadow-sm flex items-center justify-between min-w-[140px]"
                     aria-label="Select language"
                   >
                     <span>{getCurrentLanguageLabel()}</span>
@@ -339,7 +339,7 @@ const Config = () => {
                             onClick={() => updateLanguage(option.value)}
                             whileHover={{ backgroundColor: theme === 'dark' ? 'rgba(64, 64, 64, 0.5)' : 'rgba(249, 250, 251, 1)' }}
                             className={`w-full text-left px-4 py-3 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
-                              language === option.value ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : ''
+                              language === option.value ? 'bg-accent1/5 dark:bg-accent1/20 text-accent1 dark:text-accent1' : ''
                             }`}
                           >
                             {option.label}
@@ -363,7 +363,7 @@ const Config = () => {
           className="mt-8 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 transition-colors duration-500"
         >
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold text-lg">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-accent1 to-accent1 flex items-center justify-center text-white font-bold text-lg">
               {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
             </div>
             <div>

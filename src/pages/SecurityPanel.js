@@ -34,8 +34,8 @@ const securitySelectStyles = `
   }
   
   .security-select:focus {
-    border-color: #f59e0b !important;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+    border-color: #8C4B35 !important;
+    box-shadow: 0 0 0 3px rgba(140, 75, 53, 0.1) !important;
     outline: none !important;
   }
   
@@ -232,7 +232,7 @@ export default function SecurityPanel({
             whileTap={{ scale: 0.95 }}
             className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
               i === page 
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                 : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
             }`}
             onClick={() => setPage(i)}
@@ -253,7 +253,7 @@ export default function SecurityPanel({
               whileTap={{ scale: 0.95 }}
               className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
               }`}
               onClick={() => setPage(i)}
@@ -296,7 +296,7 @@ export default function SecurityPanel({
               whileTap={{ scale: 0.95 }}
               className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
               }`}
               onClick={() => setPage(i)}
@@ -327,7 +327,7 @@ export default function SecurityPanel({
               whileTap={{ scale: 0.95 }}
               className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
               }`}
               onClick={() => setPage(i)}
@@ -452,7 +452,7 @@ export default function SecurityPanel({
 
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-amber-500"
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-accent1"
           >
             <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
               Usuários Únicos
@@ -481,7 +481,7 @@ export default function SecurityPanel({
               <select
                 value={tempFilter}
                 onChange={(e) => setTempFilter(e.target.value)}
-                className="security-select px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                className="security-select px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300"
               >
               <option value="all">Todos</option>
               <option value="success">Bem-sucedidos</option>
@@ -498,7 +498,7 @@ export default function SecurityPanel({
               placeholder="Usuário ou IP..."
               value={tempSearch}
               onChange={(e) => setTempSearch(e.target.value)}
-                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300"
             />
             </div>
 
