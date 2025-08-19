@@ -1,6 +1,77 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaShieldAlt, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaFilter, FaDownload } from 'react-icons/fa';
+
+// Estilos CSS para compatibilidade cross-browser dos selects
+const securitySelectStyles = `
+  .security-select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23374151' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.7rem center !important;
+    background-size: 0.65rem auto !important;
+    padding-right: 2.5rem !important;
+  }
+  
+  .security-select::-ms-expand {
+    display: none;
+  }
+  
+  .dark .security-select {
+    background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23f9fafb' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>") !important;
+  }
+  
+  .security-select:hover {
+    border-color: #d1d5db !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1) !important;
+  }
+  
+  .dark .security-select:hover {
+    border-color: #6b7280 !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+  }
+  
+  .security-select:focus {
+    border-color: #f59e0b !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1) !important;
+    outline: none !important;
+  }
+  
+  .security-select option {
+    background-color: white;
+    color: #374151;
+    padding: 8px 12px;
+  }
+  
+  .dark .security-select option {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  
+  /* Fallback para navegadores mais antigos */
+  @supports not (backdrop-filter: blur(4px)) {
+    .security-select {
+      background-color: white !important;
+    }
+    .dark .security-select {
+      background-color: #1f2937 !important;
+    }
+  }
+`;
+
+// Injetar estilos CSS
+const injectSecurityStyles = () => {
+  // Verificar se já foi injetado para evitar duplicatas
+  if (document.getElementById('security-select-styles')) return;
+  
+  const styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.id = "security-select-styles";
+  styleSheet.innerText = securitySelectStyles;
+  document.head.appendChild(styleSheet);
+};
 
 
 
@@ -20,6 +91,11 @@ export default function SecurityPanel({
   const [showDetails, setShowDetails] = useState(false);
   const [tempFilter, setTempFilter] = useState(filter);
   const [tempSearch, setTempSearch] = useState('');
+
+  // Injetar estilos CSS para compatibilidade
+  useEffect(() => {
+    injectSecurityStyles();
+  }, []);
 
   // Aplicar filtros quando mudar
   const handleApplyFilters = () => {
@@ -405,7 +481,7 @@ export default function SecurityPanel({
               <select
                 value={tempFilter}
                 onChange={(e) => setTempFilter(e.target.value)}
-                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                className="security-select px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
               >
               <option value="all">Todos</option>
               <option value="success">Bem-sucedidos</option>

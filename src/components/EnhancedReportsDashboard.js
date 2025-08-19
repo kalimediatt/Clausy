@@ -28,6 +28,51 @@ import {
   FaRedo
 } from 'react-icons/fa';
 
+// Estilos CSS para compatibilidade cross-browser
+const selectStyles = `
+  .enhanced-select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+  }
+  
+  .enhanced-select::-ms-expand {
+    display: none;
+  }
+  
+  .enhanced-select:hover {
+    border-color: var(--hover-border-color) !important;
+    box-shadow: var(--hover-shadow) !important;
+  }
+  
+  .enhanced-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    outline: none !important;
+  }
+  
+  .enhanced-select option {
+    background-color: var(--option-bg);
+    color: var(--option-color);
+    padding: 8px 12px;
+  }
+  
+  /* Fallback para navegadores mais antigos */
+  @supports not (backdrop-filter: blur(4px)) {
+    .enhanced-select {
+      background: var(--select-fallback-bg) !important;
+    }
+  }
+`;
+
+// Injetar estilos CSS
+const injectStyles = () => {
+  const styleSheet = document.createElement("style");
+  styleSheet.type = "text/css";
+  styleSheet.innerText = selectStyles;
+  document.head.appendChild(styleSheet);
+};
+
 // Registrar componentes do Chart.js
 ChartJS.register(
   CategoryScale,
@@ -95,12 +140,34 @@ const getThemeStyles = (isDarkMode) => ({
     padding: '0.5rem 1rem',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     borderRadius: '8px',
-    background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
+    background: isDarkMode ? '#404040' : '#ffffff',
+    // Fallback para navegadores que não suportam backdrop-filter
+    backgroundColor: isDarkMode ? 'rgba(64, 64, 64, 0.95)' : 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(4px)',
+    WebkitBackdropFilter: 'blur(4px)', // Safari support
     color: isDarkMode ? '#f9fafb' : '#374151',
     fontSize: '0.9rem',
     minWidth: '150px',
     cursor: 'pointer',
+    outline: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    backgroundImage: isDarkMode 
+      ? `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23f9fafb' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>")` 
+      : `url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23374151' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 0.7rem center',
+    backgroundSize: '0.65rem auto',
+    paddingRight: '2.5rem',
+    transition: 'all 0.2s ease-in-out',
+    boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+    // CSS Variables para compatibilidade com pseudo-seletores
+    '--hover-border-color': isDarkMode ? '#6b7280' : '#d1d5db',
+    '--hover-shadow': isDarkMode ? '0 4px 8px rgba(0,0,0,0.4)' : '0 2px 6px rgba(0,0,0,0.15)',
+    '--option-bg': isDarkMode ? '#374151' : '#ffffff',
+    '--option-color': isDarkMode ? '#f9fafb' : '#374151',
+    '--select-fallback-bg': isDarkMode ? '#404040' : '#ffffff',
   },
   summaryGrid: {
     display: 'grid',
@@ -242,6 +309,11 @@ const EnhancedReportsDashboard = () => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const isMobile = useIsMobile();
+
+  // Injetar estilos CSS para compatibilidade
+  useEffect(() => {
+    injectStyles();
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -697,6 +769,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.controls}>
           <select
             style={styles.select}
+            className="enhanced-select"
             value={selectedCompany || ''}
             onChange={(e) => setSelectedCompany(e.target.value)}
           >
@@ -714,6 +787,7 @@ const EnhancedReportsDashboard = () => {
           
           <select
             style={styles.select}
+            className="enhanced-select"
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
           >
