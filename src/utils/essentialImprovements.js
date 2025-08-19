@@ -200,12 +200,15 @@ export const EmptyState = ({ type, action }) => {
   const { icon, title, description, actionText } = getEmptyState();
   
   return (
-    <div className="empty-state">
-      <div className="empty-icon">{icon}</div>
-      <h3>{title}</h3>
-      <p>{description}</p>
+    <div className="empty-state flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-white/60 to-neutral-50/60 dark:from-neutral-800/60 dark:to-neutral-900/60 backdrop-blur-sm rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-lg transition-all duration-500">
+      <div className="empty-icon text-6xl mb-4 opacity-70">{icon}</div>
+      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">{title}</h3>
+      <p className="text-neutral-600 dark:text-neutral-400 mb-6 max-w-sm leading-relaxed">{description}</p>
       {action && (
-        <button onClick={action} className="empty-action">
+        <button 
+          onClick={action} 
+          className="empty-action bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 border-0"
+        >
           {actionText}
         </button>
       )}

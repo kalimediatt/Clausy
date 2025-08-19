@@ -44,7 +44,8 @@ import {
   FaFlask,
   FaSearch,
   FaEdit,
-  FaFileAlt
+  FaFileAlt,
+  FaComments
 } from 'react-icons/fa';
 import { BsThreeDots, BsArrowsFullscreen } from 'react-icons/bs';
 import { HiLightBulb } from 'react-icons/hi';
@@ -4285,21 +4286,41 @@ const Home = () => {
     return (
       <div className="flex h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500">
         {/* Sidebar de sessões */}
-        <div className="w-48 !bg-white/40 dark:!bg-neutral-800/40 !text-neutral-900 dark:!text-white !border-r !border-neutral-200 dark:!border-neutral-700 flex flex-col items-stretch p-4 min-h-full box-border gap-4 backdrop-blur-sm">
-          <button
-            className="btn-primary hover-lift bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 border-0 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 mb-4 w-full py-3"
+        <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-r-2 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch p-5 min-h-full box-border gap-5 backdrop-blur-md shadow-inner">
+          <motion.button
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ 
+              scale: 1.02
+            }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full bg-gradient-to-r from-amber-600 to-amber-600 hover:bg-amber-700 text-white border-0 rounded-xl py-3 px-4 cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg mb-6"
             onClick={() => {
-              // Abrir modal para nomear o novo chat
               setLabShowNewChatModal(true);
             }}
           >
             <FaPlus className="w-4 h-4" />
             <span>Novo Chat</span>
-          </button>
+          </motion.button>
           <div className="flex-1 overflow-hidden">
+            <div className="mb-4">
+              <div className="flex items-center justify-center mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center space-x-2">
+                  <FaHistory className="w-3 h-3" />
+                  <span>Histórico </span>
+                </h4>
+              </div>
+              <div className="h-px bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-600 to-transparent"></div>
+            </div>
+            
             {labHistoryLoading ? (
-              <div className="flex justify-center p-8">
-                <LoadingSpinner message="Carregando chats..." />
+              <div className="flex flex-col items-center justify-center p-8 space-y-4">
+                <div className="relative">
+                  <div className="w-12 h-12 border-4 border-amber-200 dark:border-amber-800 rounded-full animate-spin"></div>
+                  <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-amber-500 rounded-full animate-spin"></div>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 animate-pulse">Carregando seus chats...</p>
               </div>
             ) : labChatHistory.length === 0 ? (
               <div className="p-4">
@@ -4309,68 +4330,95 @@ const Home = () => {
                 />
               </div>
             ) : (
-              labChatHistory.map((session, idx) => (
-                <div
-                  key={session.session_id || session.id}
-                  className={`p-2 mb-2 cursor-pointer text-sm transition-all duration-300 relative hover:!bg-white/20 dark:hover:!bg-neutral-700/50 group ${
-                    labSelectedConversation === (session.session_id || session.id) 
-                      ? '!bg-amber-500 !text-white font-bold' 
-                      : '!bg-transparent !text-neutral-700 dark:!text-neutral-300 font-normal'
-                  } ${session.is_current_session ? 'border-l-4 border-emerald-500' : ''}`}
-                  onClick={() => {
-                    const chatName = session.chat_name || session.name;
-                    const sessionId = session.session_id || session.id;
-                    
-                    console.log('Clicou no chat:', chatName, 'Session ID:', sessionId);
-                    
-                    setLabSelectedConversation(sessionId);
-                    setLabSelectedChatName(chatName);
-                    
-                    // Buscar mensagens do chat específico da API externa
-                    loadChatMessages(chatName, true); // use sempre o nome do chat
-                    
-                    setLabInput('');
-                    setLabSelectedFile(null);
-                  }}
-                  title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
-                >
-                  <span className="flex-1">
-                    {session.chat_name || session.session_id || session.name}
-                    {session.is_current_session && (
-                      <span className="text-xs ml-1 opacity-70">
-                        (atual)
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    className="opacity-0 group-hover:opacity-100 bg-transparent border-0 text-red-400 hover:text-red-300 cursor-pointer text-xs p-1 rounded absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-200 hover:bg-red-500/20"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
-                        handleHideChat(session.session_id || session.id);
-                      }
+              <div className="space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-amber-300 dark:scrollbar-thumb-amber-600 scrollbar-track-transparent scrollbar-thumb-rounded-full">
+                {labChatHistory.map((session, idx) => (
+                  <motion.div
+                    key={session.session_id || session.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.1, duration: 0.3 }}
+                    whileHover={{ scale: 1.02, x: 4 }}
+                    className={`relative cursor-pointer transition-all duration-300 rounded-xl group overflow-hidden ${
+                      labSelectedConversation === (session.session_id || session.id) 
+                        ? '!bg-gradient-to-r !from-amber-500 !via-amber-600 !to-amber-500 !text-white font-bold shadow-lg shadow-amber-500/30' 
+                        : '!bg-gradient-to-r !from-white/60 !via-white/40 !to-white/60 dark:!from-neutral-700/60 dark:!via-neutral-700/40 dark:!to-neutral-700/60 !text-neutral-700 dark:!text-neutral-300 font-medium hover:!from-white/80 hover:!via-white/60 hover:!to-white/80 dark:hover:!from-neutral-600/80 dark:hover:!via-neutral-600/60 dark:hover:!to-neutral-600/80 hover:shadow-md'
+                    }`}
+                    onClick={() => {
+                      const chatName = session.chat_name || session.name;
+                      const sessionId = session.session_id || session.id;
+                      
+                      console.log('Clicou no chat:', chatName, 'Session ID:', sessionId);
+                      
+                      setLabSelectedConversation(sessionId);
+                      setLabSelectedChatName(chatName);
+                      
+                      // Buscar mensagens do chat específico da API externa
+                      loadChatMessages(chatName, true); // use sempre o nome do chat
+                      
+                      setLabInput('');
+                      setLabSelectedFile(null);
                     }}
-                    title="Remover chat"
+                    title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
                   >
-                    ×
-                  </button>
-                </div>
-              ))
+                    {/* Efeito de brilho no hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    
+
+                    
+                    <div className="relative z-10 p-2 flex items-center justify-between">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium truncate">
+                              {session.chat_name || session.session_id || session.name}
+                            </span>
+
+                          </div>
+                          
+
+                        </div>
+                      </div>
+                      
+                      {/* Botão de remover */}
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        whileHover={{ scale: 1.1, rotate: 90 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="opacity-0 group-hover:opacity-100 bg-red-500/20 hover:bg-red-500/30 border-0 text-red-400 hover:text-red-300 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center transition-all duration-200 ml-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
+                            handleHideChat(session.session_id || session.id);
+                          }
+                        }}
+                        title="Remover chat"
+                      >
+                        <FaTrash className="w-3 h-3" />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             )}
           </div>
         </div>
         {/* Chat principal do laboratório (igual IA, mas usando estados do laboratório) */}
         <div className="flex-1 min-w-0 !bg-white/30 dark:!bg-neutral-900/30 backdrop-blur-sm">
-          <AIContainer>
-            <div className="flex flex-col lg:flex-row gap-4 mb-4">
-              <CurrentSetup>
-                <FaCog />
-                Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}
-                <SetupButton onClick={() => setLabShowSetupModal(true)}>
+          <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] !bg-white/60 dark:!bg-neutral-800/60 p-6 pb-8 gap-6 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-3rem)] md:max-h-[calc(100vh-3rem)] sm:p-3 sm:pb-4 sm:gap-3 backdrop-blur-sm">
+            <div className="flex flex-col xl:flex-row gap-4 mb-4">
+              <div className="flex items-center justify-between gap-4 p-4 lg:p-6 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-3 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
+                <div className="flex items-center gap-2">
+                  <FaCog className="text-amber-500" />
+                  <span>Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
+                </div>
+                <button 
+                  onClick={() => setLabShowSetupModal(true)}
+                  className="!bg-amber-500 hover:!bg-amber-600 !text-white !border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                >
                   Alterar Setup
-                </SetupButton>
-              </CurrentSetup>
-              <div className="flex items-center gap-4 p-3 !bg-white/40 dark:!bg-neutral-800/40 rounded-xl !border !border-neutral-200 dark:!border-neutral-700 backdrop-blur-sm lg:min-w-fit hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300">
+                </button>
+              </div>
+              <div className="flex items-center gap-4 p-3 !bg-white/40 dark:!bg-neutral-800/40 rounded-xl !border !border-neutral-200 dark:!border-neutral-700 backdrop-blur-sm hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:min-w-fit">
                 <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium whitespace-nowrap">Manter arquivo anexado após envio</span>
                 <ToggleSwitchStyled
                   type="button"
@@ -4386,59 +4434,84 @@ const Home = () => {
                   <SwitchCircle data-active={labKeepFileAttached} />
                 </ToggleSwitchStyled>
               </div>
+              <div className="xl:min-w-fit">
+                <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
+              </div>
             </div>
-            <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
-            <AIChatSection>
-              <ChatContainer>
-                <ChatHeader>
-                  <h3>Chat do Laboratório</h3>
+            <div className="flex flex-col bg-white dark:bg-neutral-800 rounded-xl shadow-md h-full overflow-hidden border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm mb-8 md:mb-6 sm:mb-4">
+              <div className="flex flex-col h-full min-h-0 gap-0">
+                <div className="flex justify-between items-center p-5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm">
+                  <h3 className="text-xl text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2 md:text-lg">Chat do Laboratório</h3>
                   <div className="flex gap-2">
-                    <ClearChatButton onClick={handleLabClearChat}>
-                      <FaTrash /> Limpar Chat
-                    </ClearChatButton>
+                    <button 
+                      onClick={handleLabClearChat}
+                      className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-2 cursor-pointer transition-all duration-200 text-sm flex items-center gap-2 font-medium hover:shadow-md"
+                    >
+                      <FaTrash className="w-3 h-3" /> Limpar Chat
+                    </button>
                   </div>
-                </ChatHeader>
-                <ChatMessages ref={chatScrollRef} className="chat-messages">
+                </div>
+                <div ref={chatScrollRef} className="chat-messages flex-1 overflow-y-auto p-6 flex flex-col gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent">
                   {(safeGet(labMessagesByChat, getCurrentLabChatKey(), [])).map((message, index) => (
-                    <MessageItemWrapper 
-                    key={`${message.role}-${index}-${message.timestamp}`} 
-                    isUser={message.role === 'user'}
-                    className="fade-in"
-                  >
-                      <MessageBubble isUser={message.role === 'user'} isError={message.role === 'error'}>
-                        {message.content}
-                        <MessageTimeWrapper isUser={message.role === 'user'}>
+                    <div 
+                      key={`${message.role}-${index}-${message.timestamp}`}
+                      className={`flex flex-col w-full mb-4 group ${
+                        message.role === 'user' ? 'items-end' : 'items-start'
+                      } fade-in`}
+                    >
+                      <div className={`relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm border transition-all duration-300 ${
+                        message.role === 'user' 
+                          ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white border-amber-400/30 shadow-amber-500/20' 
+                          : message.role === 'error'
+                          ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+                          : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600'
+                      } md:max-w-[90%] sm:max-w-[95%]`}>
+                        <div className="whitespace-pre-wrap break-words leading-relaxed">
+                          {message.content}
+                        </div>
+                        <div className={`text-xs opacity-60 mt-2 ${
+                          message.role === 'user' 
+                            ? 'text-right text-white/80' 
+                            : 'text-left text-neutral-500 dark:text-neutral-400'
+                        }`}>
                           {formatChatTime(message.timestamp)}
-                        </MessageTimeWrapper>
-                      </MessageBubble>
-                      <MessageActions>
-                        <MessageActionButton 
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button 
                           onClick={() => handleCopyMessage(message.content)}
                           title="Copiar mensagem"
+                          className="bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-700 border-0 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer p-2 rounded-lg text-xs flex items-center gap-1 transition-all duration-200"
                         >
-                          <FaCopy /> Copiar
-                        </MessageActionButton>
-                      </MessageActions>
-                    </MessageItemWrapper>
+                          <FaCopy className="w-3 h-3" /> Copiar
+                        </button>
+                      </div>
+                    </div>
                   ))}
                   {isLabTyping && (
-                    <MessageItemWrapper isUser={false}>
-                      <MessageBubble isUser={false}>
-                        <AiTypingIndicator>
-                          <DotAnimation $delay={0} />
-                          <DotAnimation $delay={0.2} />
-                          <DotAnimation $delay={0.4} />
-                        </AiTypingIndicator>
-                      </MessageBubble>
-                    </MessageItemWrapper>
+                    <div className="flex flex-col w-full mb-4 items-start">
+                      <div className="relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300">
+                        <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                          </div>
+                          <span className="text-sm">IA está digitando...</span>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   <div ref={labChatEndRef} />
-                </ChatMessages>
-                <ChatInputContainer onSubmit={(e) => {
-                  e.preventDefault();
-                  handleLabSendMessage();
-                }}>
-                  <ChatInput
+                </div>
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleLabSendMessage();
+                  }}
+                  className="flex gap-4 p-6 bg-white dark:bg-neutral-800 rounded-b-xl shadow-md flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 sticky bottom-0 backdrop-blur-sm md:gap-3 md:p-4 sm:gap-2 sm:p-3"
+                >
+                  <textarea
                     value={labInput}
                     onChange={(e) => setLabInput(e.target.value)}
                     placeholder="Digite sua mensagem aqui..."
@@ -4448,67 +4521,97 @@ const Home = () => {
                         handleLabSendMessage();
                       }
                     }}
+                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg p-4 text-base resize-none min-h-12 max-h-32 leading-6 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-amber-500 focus:shadow-lg focus:shadow-amber-200/20 dark:focus:shadow-amber-800/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 md:p-3.5 md:text-sm md:min-h-12 sm:p-3 sm:text-sm sm:min-h-13"
                   />
-                  <SendButton type="submit" disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}>
+                  <button 
+                    type="submit" 
+                    disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
+                    className="bg-amber-500 hover:bg-amber-600 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none md:p-3.5 md:min-w-12 md:min-h-12 md:text-sm sm:p-4 sm:min-w-13 sm:min-h-13 sm:text-sm"
+                  >
                     <FaPaperPlane />
-                  </SendButton>
-                </ChatInputContainer>
-              </ChatContainer>
-            </AIChatSection>
+                  </button>
+                </form>
+              </div>
+            </div>
             {labShowSetupModal && (
-              <SetupModal>
-                <SetupModalContent>
-                  <SetupHeader>
-                    <SetupTitle>Selecione um Setup</SetupTitle>
-                    <CloseButton onClick={() => setLabShowSetupModal(false)}>×</CloseButton>
-                  </SetupHeader>
-                  <SetupGrid>
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
+                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
+                      <FaCog className="text-amber-500" />
+                      Selecione um Setup
+                    </h2>
+                    <button 
+                      onClick={() => setLabShowSetupModal(false)}
+                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
                     {setups.map((setup, index) => (
-                      <SetupCard 
+                      <div
                         key={index}
-                        selected={labSelectedSetupState?.title === setup.title}
                         onClick={() => handleLabSetupSelect(setup)}
+                        className={`p-6 rounded-xl cursor-pointer transition-all duration-300 border-2 hover:shadow-lg hover:-translate-y-1 ${
+                          labSelectedSetupState?.title === setup.title
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                            : 'border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 hover:border-blue-300 dark:hover:border-blue-600'
+                        }`}
                       >
-                        <SetupCardTitle>{setup.title}</SetupCardTitle>
-                        <SetupCardDescription>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
+                          {setup.title}
+                        </h3>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-4 leading-relaxed">
                           {setup.when_to_use}
-                        </SetupCardDescription>
-                        <SetupCardFeatures>
-                          <li>
-                            <FaCheck /> 
+                        </p>
+                        <ul className="list-none p-0 m-0">
+                          <li className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200">
+                            <FaCheck className="text-green-500 flex-shrink-0" />
                             {setup.prompt.split('.')[0]}
                           </li>
-                        </SetupCardFeatures>
-                      </SetupCard>
+                        </ul>
+                      </div>
                     ))}
-                  </SetupGrid>
-                  <SetupActions>
-                    <SetupButton onClick={() => setLabShowSetupModal(false)}>
+                  </div>
+                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
+                    <button 
+                      onClick={() => setLabShowSetupModal(false)}
+                      className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
+                    >
                       Cancelar
-                    </SetupButton>
-                    <SetupButton 
-                      primary="true"
+                    </button>
+                    <button 
                       onClick={handleLabSetupConfirm}
                       disabled={!labSelectedSetupState}
+                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Confirmar Setup
-                    </SetupButton>
-                  </SetupActions>
-                </SetupModalContent>
-              </SetupModal>
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
             {labShowNewChatModal && (
-              <SetupModal>
-                <SetupModalContent>
-                  <SetupHeader>
-                    <SetupTitle>Nomear Novo Chat</SetupTitle>
-                    <CloseButton onClick={() => {
-                      setLabShowNewChatModal(false);
-                      setNewChatName('');
-                    }}>×</CloseButton>
-                  </SetupHeader>
-                  <div className="p-4">
-                    <label className="block mb-2 font-semibold text-neutral-700 dark:text-neutral-300">
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
+                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
+                      <FaPlus className="text-amber-500" />
+                      Nomear Novo Chat
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        setLabShowNewChatModal(false);
+                        setNewChatName('');
+                      }}
+                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="p-6">
+                    <label className="block mb-3 font-semibold text-neutral-700 dark:text-neutral-300">
                       Nome do Chat:
                     </label>
                     <input
@@ -4516,7 +4619,7 @@ const Home = () => {
                       value={newChatName}
                       onChange={(e) => setNewChatName(e.target.value)}
                       placeholder="Digite o nome do chat..."
-                      className="input-enhanced w-full mb-4 px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300"
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300 focus:outline-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4526,39 +4629,49 @@ const Home = () => {
                       autoFocus
                     />
                   </div>
-                  <SetupActions>
-                    <SetupButton onClick={() => {
+                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
+                    <button onClick={() => {
                       setLabShowNewChatModal(false);
                       setNewChatName('');
-                    }}>
+                    }}
+                    className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
+                    >
                       Cancelar
-                    </SetupButton>
-                    <SetupButton 
-                      primary="true"
+                    </button>
+                    <button 
                       onClick={handleCreateNewChat}
                       disabled={!newChatName.trim()}
+                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Criar Chat
-                    </SetupButton>
-                  </SetupActions>
-                </SetupModalContent>
-              </SetupModal>
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
             {labShowInitialChatModal && (
-              <SetupModal>
-                <SetupModalContent>
-                  <SetupHeader>
-                    <SetupTitle>Bem-vindo ao Laboratório</SetupTitle>
-                    <CloseButton onClick={() => {
-                      setLabShowInitialChatModal(false);
-                      setInitialChatName('');
-                    }}>×</CloseButton>
-                  </SetupHeader>
-                  <div className="p-4">
-                    <p className="mb-4 text-neutral-700 dark:text-neutral-300 text-base leading-relaxed">
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
+                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
+                      <FaFlask className="text-amber-500" />
+                      Bem-vindo ao Laboratório
+                    </h2>
+                    <button 
+                      onClick={() => {
+                        setLabShowInitialChatModal(false);
+                        setInitialChatName('');
+                      }}
+                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="p-6">
+                    <p className="mb-6 text-neutral-700 dark:text-neutral-300 text-base leading-relaxed">
                       Para começar a usar o Laboratório, você precisa definir um nome para o seu primeiro chat.
                     </p>
-                    <label className="block mb-2 font-semibold text-neutral-700 dark:text-neutral-300">
+                    <label className="block mb-3 font-semibold text-neutral-700 dark:text-neutral-300">
                       Nome do Chat:
                     </label>
                     <input
@@ -4566,7 +4679,7 @@ const Home = () => {
                       value={initialChatName}
                       onChange={(e) => setInitialChatName(e.target.value)}
                       placeholder="Digite o nome do seu chat..."
-                      className="input-enhanced w-full mb-4"
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300 focus:outline-none"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4576,25 +4689,27 @@ const Home = () => {
                       autoFocus
                     />
                   </div>
-                  <SetupActions>
-                    <SetupButton onClick={() => {
+                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
+                    <button onClick={() => {
                       setLabShowInitialChatModal(false);
                       setInitialChatName('');
-                    }}>
+                    }}
+                    className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
+                    >
                       Cancelar
-                    </SetupButton>
-                    <SetupButton 
-                      primary="true"
+                    </button>
+                    <button 
                       onClick={handleInitializeChat}
                       disabled={!initialChatName.trim()}
+                      className="bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                     >
                       Iniciar Chat
-                    </SetupButton>
-                  </SetupActions>
-                </SetupModalContent>
-              </SetupModal>
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
-          </AIContainer>
+          </div>
         </div>
       </div>
     );
