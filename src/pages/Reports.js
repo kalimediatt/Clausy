@@ -157,7 +157,7 @@ const Reports = () => {
             className="relative bg-white/40 dark:bg-neutral-900/40 backdrop-blur-xl rounded-3xl border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl overflow-hidden"
           >
             {/* Background decoration */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-purple-50/30 dark:from-blue-900/10 dark:via-transparent dark:to-purple-900/10"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-50/30 via-transparent to-indigo-50/30 dark:from-neutral-950/10 dark:via-transparent dark:to-neutral-950/10"></div>
             
             {/* Content */}
             <div className="relative p-6">
