@@ -19,8 +19,7 @@ import {
 } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import WhiteLogo from '../logos/white.png';
-import BlackLogo from '../logos/black.png';
+
 
 // Animation variants for framer-motion
 const fadeInUp = {
@@ -75,6 +74,7 @@ const AdminPanel = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: '',
     company_name: '',
     plan_name: 'free',
     credits: 0,
@@ -176,6 +176,7 @@ const AdminPanel = () => {
     setFormData({
       name: '',
       email: '',
+      password: '',
       company_name: '',
       plan_name: 'free',
       credits: 0,
@@ -190,6 +191,7 @@ const AdminPanel = () => {
     setFormData({
       name: user.name || '',
       email: user.email || '',
+      password: '', // Deixar vazio para não mostrar senha atual
       company_name: user.company_name || '',
       plan_name: user.plan_name || 'free',
       credits: user.credits || 0,
@@ -224,21 +226,54 @@ const AdminPanel = () => {
     
     try {
       if (modalType === 'add') {
-        await addUser(formData);
-        toast.success('Usuário adicionado com sucesso!');
+        // Mapear plan_name para plan_id para o backend
+        const planMap = {
+          'free': 'FREE_TRIAL',
+          'premium': 'STANDARD', 
+          'business': 'PRO'
+        };
+        
+        const userData = {
+          ...formData,
+          plan: planMap[formData.plan_name] || 'FREE_TRIAL'
+        };
+        
+        const result = await addUser(userData);
+        if (result.success) {
+          toast.success('Usuário adicionado com sucesso!');
+          setModalOpen(false);
+          await loadUsers();
+        } else {
+          toast.error(result.message || 'Erro ao adicionar usuário');
+        }
       } else if (modalType === 'edit') {
-        await updateUser(selectedUser.id, formData);
-        toast.success('Usuário atualizado com sucesso!');
+        const result = await updateUser(selectedUser.id, formData);
+        if (result.success) {
+          toast.success('Usuário atualizado com sucesso!');
+          setModalOpen(false);
+          await loadUsers();
+        } else {
+          toast.error(result.message || 'Erro ao atualizar usuário');
+        }
       } else if (modalType === 'credits') {
-        await addCredits(selectedUser.id, parseInt(formData.credits));
-        toast.success('Créditos adicionados com sucesso!');
+        const result = await addCredits(selectedUser.id, parseInt(formData.credits));
+        if (result.success) {
+          toast.success('Créditos adicionados com sucesso!');
+          setModalOpen(false);
+          await loadUsers();
+        } else {
+          toast.error(result.message || 'Erro ao adicionar créditos');
+        }
       } else if (modalType === 'plan') {
-        await changePlan(selectedUser.id, formData.plan_name);
-        toast.success('Plano alterado com sucesso!');
+        const result = await changePlan(selectedUser.id, formData.plan_name);
+        if (result.success) {
+          toast.success('Plano alterado com sucesso!');
+          setModalOpen(false);
+          await loadUsers();
+        } else {
+          toast.error(result.message || 'Erro ao alterar plano');
+        }
       }
-      
-      setModalOpen(false);
-      await loadUsers();
     } catch (error) {
       console.error('Erro ao processar:', error);
       toast.error(error.message || 'Erro ao processar operação');
@@ -328,6 +363,21 @@ const AdminPanel = () => {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
                     required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                    Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    required={modalType === 'add'}
+                    minLength="6"
+                    placeholder="Mínimo 6 caracteres"
                   />
                 </div>
 
@@ -471,11 +521,6 @@ const AdminPanel = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="flex items-center space-x-3"
             >
-              <img 
-                src={theme === "dark" ? WhiteLogo : BlackLogo}
-                alt="Clausy Logo" 
-                className="h-8 w-auto"
-              />
               <div>
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   Painel de Administração

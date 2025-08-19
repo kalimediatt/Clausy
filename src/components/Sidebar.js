@@ -15,6 +15,7 @@ import {
   FaBars, 
   FaTimes
 } from 'react-icons/fa';
+import WhiteLogo from '../logos/white.png';
 
 const defaultMenuItems = [
   { id: 'dashboard', text: 'Home', icon: <FaHome /> },
@@ -109,8 +110,12 @@ const Sidebar = ({
           animate={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
           transition={{ duration: 0.3 }}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold shadow-lg">
-            C
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg p-2">
+            <img 
+              src={WhiteLogo} 
+              alt="Clausy Logo" 
+              className="w-full h-full object-contain filter brightness-0 invert"
+            />
           </div>
           <motion.div
             initial={false}

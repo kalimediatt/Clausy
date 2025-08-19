@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaSun, FaMoon, FaBell, FaSave, FaLanguage, FaCog, FaToggleOn, FaToggleOff, FaChevronDown } from "react-icons/fa";
-import WhiteLogo from '../logos/white.png';
-import BlackLogo from '../logos/black.png';
 import { useAuth } from '../contexts/AuthContext';
 
 const Config = () => {
@@ -124,11 +122,6 @@ const Config = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="flex items-center space-x-3"
             >
-              <img 
-                src={theme === "dark" ? WhiteLogo : BlackLogo}
-                alt="Clausy Logo" 
-                className="h-8 w-auto"
-              />
               <div>
                 <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   Configurações
