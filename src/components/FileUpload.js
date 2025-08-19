@@ -73,7 +73,7 @@ const FileUpload = ({ onFileUpload, file }) => {
                         </button>
                     </div>
                 ) : (
-                    <p>Arraste um arquivo ou clique para selecionar</p>
+                    null
                 )}
             </div>
             {error && <p className="error-message">{error}</p>}

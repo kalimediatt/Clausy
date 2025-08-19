@@ -104,24 +104,34 @@ const Sidebar = ({
       </motion.button>
 
       {/* Logo Section */}
-      <div className="p-6 border-b border-neutral-700/50">
+      <div className={`${isOpen ? 'p-5' : 'p-5'} border-b border-neutral-700/50 transition-all duration-300`}>
         <motion.div 
-          className="flex items-center space-x-3"
+          className="flex items-center"
           animate={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
           transition={{ duration: 0.3 }}
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg p-2">
+          <motion.div 
+            className="rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg flex-shrink-0"
+            animate={{ 
+              width: isOpen ? '40px' : '32px',
+              height: isOpen ? '40px' : '32px',
+              padding: isOpen ? '8px' : '6px'
+            }}
+            transition={{ duration: 0.3 }}
+          >
             <img 
               src={WhiteLogo} 
               alt="Clausy Logo" 
               className="w-full h-full object-contain filter brightness-0 invert"
             />
-          </div>
+          </motion.div>
+          
           <motion.div
             initial={false}
             animate={{ 
               opacity: isOpen ? 1 : 0,
-              width: isOpen ? 'auto' : 0
+              width: isOpen ? 'auto' : 0,
+              marginLeft: isOpen ? '12px' : 0
             }}
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
@@ -239,13 +249,21 @@ const Sidebar = ({
             whileHover={{ x: 5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <div className={`
-              w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white text-sm font-bold transition-all duration-300
-              ${isOpen ? 'mr-3' : 'mx-auto'}
-              ${activeItem === 'profile' ? 'text-amber-400' : 'group-hover:text-amber-400'}
-            `}>
+            <motion.div 
+              className="rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
+              animate={{ 
+                width: isOpen ? '32px' : '28px',
+                height: isOpen ? '32px' : '28px',
+                fontSize: isOpen ? '14px' : '12px'
+              }}
+              transition={{ duration: 0.3 }}
+              style={{
+                marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
+                marginLeft: isOpen ? 0 : 'auto'
+              }}
+            >
               {currentUser.name?.charAt(0).toUpperCase() || 'U'}
-            </div>
+            </motion.div>
             <motion.div
               initial={false}
               animate={{ 

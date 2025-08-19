@@ -2416,49 +2416,68 @@ const NewConversationButtonSmall = styled.button`
 const ToggleSwitchStyled = styled.button.withConfig({
   shouldForwardProp: (prop) => prop !== 'data-active'
 })`
-  width: 60px;
-  height: 28px;
-  border-radius: 14px;
-  background: ${props => props['data-active'] ? '#22c55e' : '#e5e7eb'};
+  width: 52px;
+  height: 26px;
+  border-radius: 13px;
+  background: ${props => props['data-active'] ? '#f59e0b' : '#e5e7eb'};
   border: none;
   position: relative;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   padding: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    background: ${props => props['data-active'] ? '#d97706' : '#d1d5db'};
+  }
+
+  // Dark mode support
+  .dark & {
+    background: ${props => props['data-active'] ? '#f59e0b' : '#374151'};
+    
+    &:hover {
+      background: ${props => props['data-active'] ? '#d97706' : '#4b5563'};
+    }
+  }
 `;
 
 const SwitchCircle = styled.span.withConfig({
   shouldForwardProp: (prop) => prop !== 'data-active'
 })`
   position: absolute;
-  left: ${props => props['data-active'] ? '32px' : '2px'};
+  left: ${props => props['data-active'] ? '28px' : '2px'};
   top: 2px;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  transition: left 0.2s;
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
 `;
 
 const SwitchLabel = styled.span`
   position: absolute;
-  left: 10px;
-  font-size: 0.7rem;
-  color: #fff;
-  font-weight: bold;
+  left: 6px;
+  font-size: 0.6rem;
+  color: #ffffff;
+  font-weight: 500;
   user-select: none;
 `;
 
 const SwitchLabelOff = styled.span`
   position: absolute;
-  right: 8.5px;
-  font-size: 0.7rem;
-  color: #888;
-  font-weight: bold;
+  right: 6px;
+  font-size: 0.6rem;
+  color: #6b7280;
+  font-weight: 500;
   user-select: none;
+
+  // Dark mode support
+  .dark & {
+    color: #9ca3af;
+  }
 `;
 
 // Componentes para o Laboratório
@@ -4286,7 +4305,7 @@ const Home = () => {
     return (
       <div className="flex h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500">
         {/* Sidebar de sessões */}
-        <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-r-2 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch p-5 min-h-full box-border gap-5 backdrop-blur-md shadow-inner">
+        <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-r-1 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch p-5 min-h-full box-border gap-5 backdrop-blur-md shadow-inner">
           <motion.button
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -4406,7 +4425,7 @@ const Home = () => {
         <div className="flex-1 min-w-0 !bg-white/30 dark:!bg-neutral-900/30 backdrop-blur-sm">
           <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] !bg-white/60 dark:!bg-neutral-800/60 p-6 pb-8 gap-6 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-3rem)] md:max-h-[calc(100vh-3rem)] sm:p-3 sm:pb-4 sm:gap-3 backdrop-blur-sm">
             <div className="flex flex-col xl:flex-row gap-4 mb-4">
-              <div className="flex items-center justify-between gap-4 p-4 lg:p-6 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-3 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
+              <div className="flex items-center justify-between gap-4 p-4 lg:p-2 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-2 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
                 <div className="flex items-center gap-2">
                   <FaCog className="text-amber-500" />
                   <span>Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
@@ -4418,25 +4437,10 @@ const Home = () => {
                   Alterar Setup
                 </button>
               </div>
-              <div className="flex items-center gap-4 p-3 !bg-white/40 dark:!bg-neutral-800/40 rounded-xl !border !border-neutral-200 dark:!border-neutral-700 backdrop-blur-sm hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:min-w-fit">
-                <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium whitespace-nowrap">Manter arquivo anexado após envio</span>
-                <ToggleSwitchStyled
-                  type="button"
-                  data-active={labKeepFileAttached}
-                  aria-pressed={labKeepFileAttached}
-                  onClick={() => setLabKeepFileAttached(v => !v)}
-                >
-                  {labKeepFileAttached ? (
-                    <SwitchLabel>ON</SwitchLabel>
-                  ) : (
-                    <SwitchLabelOff>OFF</SwitchLabelOff>
-                  )}
-                  <SwitchCircle data-active={labKeepFileAttached} />
-                </ToggleSwitchStyled>
-              </div>
-              <div className="xl:min-w-fit">
+
+              {/* <div className="xl:min-w-fit">
                 <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
-              </div>
+              </div> */}
             </div>
             <div className="flex flex-col bg-white dark:bg-neutral-800 rounded-xl shadow-md h-full overflow-hidden border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm mb-8 md:mb-6 sm:mb-4">
               <div className="flex flex-col h-full min-h-0 gap-0">
@@ -4775,16 +4779,43 @@ const Home = () => {
                     </p>
                   </div>
                   
-                  {/* Status Badge */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5, delay: 0.3 }}
-                    className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium"
-                  >
-                    <FaRobot className="w-3 h-3" />
-                    <span>IA Ativa</span>
-                  </motion.div>
+                  <div className="flex items-center gap-4">
+                    {/* Toggle para manter arquivo anexado */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                      className="flex items-center gap-3 px-4 py-2 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-white/80 dark:hover:bg-neutral-800/80 transition-all duration-300"
+                    >
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium whitespace-nowrap">
+                        Manter arquivo anexado
+                      </span>
+                      <ToggleSwitchStyled
+                        type="button"
+                        data-active={labKeepFileAttached}
+                        aria-pressed={labKeepFileAttached}
+                        onClick={() => setLabKeepFileAttached(v => !v)}
+                      >
+                        {labKeepFileAttached ? (
+                          <SwitchLabel>ON</SwitchLabel>
+                        ) : (
+                          <SwitchLabelOff>OFF</SwitchLabelOff>
+                        )}
+                        <SwitchCircle data-active={labKeepFileAttached} />
+                      </ToggleSwitchStyled>
+                    </motion.div>
+                    
+                    {/* Status Badge */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                      className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium"
+                    >
+                      <FaRobot className="w-3 h-3" />
+                      <span>IA Ativa</span>
+                    </motion.div>
+                  </div>
                 </motion.div>
               </div>
             </motion.header>
