@@ -269,6 +269,10 @@ const AdminPanel = () => {
         toast.error('Quantidade de créditos deve ser maior que 0');
         return false;
       }
+      if (formData.credits > 10000) {
+        toast.error('Quantidade máxima é 10.000 créditos');
+        return false;
+      }
     } else if (modalType === 'plan') {
       if (!selectedUser?.email) {
         toast.error('Usuário selecionado inválido');
@@ -545,16 +549,22 @@ const AdminPanel = () => {
             {modalType === 'credits' && (
               <div>
                 <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  Créditos para adicionar
+                  Quantidade de créditos para adicionar
                 </label>
-                <input
-                  type="number"
-                  value={formData.credits}
-                  onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
-                  min="1"
-                  required
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.credits || ''}
+                    onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-accent2 transition-all duration-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  
+                    placeholder="Digite a quantidade (ex: 100)"
+                    required
+                  />
+                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                    Mínimo: 1 crédito • Máximo: 10.000 créditos
+                  </div>
+                </div>
               </div>
             )}
 

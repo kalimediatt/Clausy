@@ -1,382 +1,8 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { FaShieldAlt, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaFilter, FaDownload, FaEye, FaEyeSlash } from 'react-icons/fa';
-
-const SecurityContainer = styled.div`
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
-`;
-
-const SecurityHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
-  color: white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-`;
-
-const HeaderContent = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 15px;
-`;
-
-const SecurityIcon = styled(FaShieldAlt)`
-  font-size: 2.5rem;
-  color: #ffd700;
-`;
-
-const HeaderText = styled.div`
-  h1 {
-    margin: 0;
-    font-size: 1.8rem;
-    font-weight: 600;
-  }
-  p {
-    margin: 5px 0 0 0;
-    opacity: 0.9;
-    font-size: 0.95rem;
-  }
-`;
-
-const SecurityStats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
-`;
-
-const StatCard = styled.div`
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-left: 4px solid ${props => props.color || '#3b82f6'};
-  transition: transform 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-`;
-
-const StatTitle = styled.div`
-  font-size: 0.9rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-bottom: 8px;
-`;
-
-const StatValue = styled.div`
-  font-size: 2rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 5px;
-`;
-
-const StatChange = styled.div`
-  font-size: 0.85rem;
-  color: ${props => props.positive ? '#10b981' : '#ef4444'};
-  font-weight: 500;
-`;
-
-const FiltersContainer = styled.div`
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-`;
-
-const FiltersRow = styled.div`
-  display: flex;
-  gap: 15px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-`;
-
-const FilterGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-`;
-
-const FilterLabel = styled.label`
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-`;
-
-const FilterSelect = styled.select`
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  background: white;
-  min-width: 120px;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const SearchInput = styled.input`
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  min-width: 200px;
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const ActionButton = styled.button`
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  height: 36px;
-
-  &.primary {
-    background: #3b82f6;
-    color: white;
-
-    &:hover {
-      background: #2563eb;
-    }
-  }
-
-  &.secondary {
-    background: #f1f5f9;
-    color: #64748b;
-
-    &:hover {
-      background: #e2e8f0;
-    }
-  }
-
-  &.apply {
-    background: #10b981;
-    color: white;
-
-    &:hover {
-      background: #059669;
-    }
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const LogsContainer = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-`;
-
-const LogsHeader = styled.div`
-  padding: 20px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const LogsTitle = styled.h3`
-  margin: 0;
-  color: #1e293b;
-  font-size: 1.2rem;
-`;
-
-const LogsTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-`;
-
-const LogsTableHeader = styled.thead`
-  background: #f8fafc;
-`;
-
-const LogsTableRow = styled.tr`
-  border-bottom: 1px solid #e2e8f0;
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background: #f8fafc;
-  }
-`;
-
-const LogsTableCell = styled.td`
-  padding: 15px 20px;
-  font-size: 0.9rem;
-  color: #374151;
-`;
-
-const LogsTableHeaderCell = styled.th`
-  padding: 15px 20px;
-  text-align: left;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-`;
-
-const StatusBadge = styled.span`
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  &.success {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  &.failed {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-`;
-
-const UserInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const UserAvatar = styled.div`
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: ${props => props.color || '#3b82f6'};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 0.8rem;
-`;
-
-const UserDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Username = styled.span`
-  font-weight: 500;
-  color: #1e293b;
-`;
-
-const IpAddress = styled.span`
-  font-size: 0.8rem;
-  color: #64748b;
-`;
-
-const Timestamp = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-`;
-
-const DateText = styled.span`
-  font-weight: 500;
-  color: #1e293b;
-`;
-
-const TimeText = styled.span`
-  font-size: 0.8rem;
-  color: #64748b;
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-top: 1px solid #e2e8f0;
-  background: #f8fafc;
-`;
-
-const PaginationInfo = styled.div`
-  font-size: 0.9rem;
-  color: #64748b;
-`;
-
-const PaginationControls = styled.div`
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-`;
-
-const PaginationButton = styled.button`
-  padding: 8px 12px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 40px;
-
-  &:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-  }
-`;
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaShieldAlt, FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaFilter, FaDownload } from 'react-icons/fa';
 
 
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #64748b;
-`;
-
-const EmptyIcon = styled(FaShieldAlt)`
-  font-size: 3rem;
-  margin-bottom: 20px;
-  opacity: 0.5;
-`;
-
-const LoadingState = styled.div`
-  text-align: center;
-  padding: 40px 20px;
-  color: #64748b;
-`;
 
 export default function SecurityPanel({ 
   logs = [], 
@@ -487,7 +113,7 @@ export default function SecurityPanel({
 
   const getStatusColor = (log) => {
     const isSuccess = log.success === 1 || log.success === true || log.status === 'success';
-    return isSuccess ? '#10b981' : '#ef4444';
+    return isSuccess ? 'bg-green-500' : 'bg-red-500';
   };
 
   const getStatusText = (log) => {
@@ -524,13 +150,19 @@ export default function SecurityPanel({
       // Mostrar todas as páginas se couberem
       for (let i = 1; i <= totalPages; i++) {
         buttons.push(
-          <PaginationButton
+          <motion.button
             key={i}
-            className={i === page ? 'active' : ''}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+              i === page 
+                ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+            }`}
             onClick={() => setPage(i)}
           >
             {i}
-          </PaginationButton>
+          </motion.button>
         );
       }
     } else {
@@ -539,76 +171,106 @@ export default function SecurityPanel({
         // Mostrar primeiras páginas + ellipsis + última
         for (let i = 1; i <= 5; i++) {
           buttons.push(
-            <PaginationButton
+            <motion.button
               key={i}
-              className={i === page ? 'active' : ''}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+                i === page 
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
               onClick={() => setPage(i)}
             >
               {i}
-            </PaginationButton>
+            </motion.button>
           );
         }
-        buttons.push(<span key="ellipsis1" style={{ padding: '8px 12px', color: '#64748b' }}>...</span>);
+        buttons.push(<span key="ellipsis1" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
         buttons.push(
-          <PaginationButton
+          <motion.button
             key={totalPages}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
             onClick={() => setPage(totalPages)}
           >
             {totalPages}
-          </PaginationButton>
+          </motion.button>
         );
       } else if (page >= totalPages - 3) {
         // Mostrar primeira + ellipsis + últimas páginas
         buttons.push(
-          <PaginationButton
+          <motion.button
             key={1}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
             onClick={() => setPage(1)}
           >
             1
-          </PaginationButton>
+          </motion.button>
         );
-        buttons.push(<span key="ellipsis2" style={{ padding: '8px 12px', color: '#64748b' }}>...</span>);
+        buttons.push(<span key="ellipsis2" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
         for (let i = totalPages - 4; i <= totalPages; i++) {
           buttons.push(
-            <PaginationButton
+            <motion.button
               key={i}
-              className={i === page ? 'active' : ''}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+                i === page 
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
               onClick={() => setPage(i)}
             >
               {i}
-            </PaginationButton>
+            </motion.button>
           );
         }
       } else {
         // Mostrar primeira + ellipsis + página atual + ellipsis + última
         buttons.push(
-          <PaginationButton
+          <motion.button
             key={1}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
             onClick={() => setPage(1)}
           >
             1
-          </PaginationButton>
+          </motion.button>
         );
-        buttons.push(<span key="ellipsis3" style={{ padding: '8px 12px', color: '#64748b' }}>...</span>);
+        buttons.push(<span key="ellipsis3" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
         for (let i = page - 1; i <= page + 1; i++) {
           buttons.push(
-            <PaginationButton
+            <motion.button
               key={i}
-              className={i === page ? 'active' : ''}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+                i === page 
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white border-amber-500' 
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              }`}
               onClick={() => setPage(i)}
             >
               {i}
-            </PaginationButton>
+            </motion.button>
           );
         }
-        buttons.push(<span key="ellipsis4" style={{ padding: '8px 12px', color: '#64748b' }}>...</span>);
+        buttons.push(<span key="ellipsis4" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
         buttons.push(
-          <PaginationButton
+          <motion.button
             key={totalPages}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
             onClick={() => setPage(totalPages)}
           >
             {totalPages}
-          </PaginationButton>
+          </motion.button>
         );
       }
     }
@@ -618,210 +280,336 @@ export default function SecurityPanel({
 
   if (loading) {
     return (
-      <SecurityContainer>
-        <LoadingState>
-          <div>Carregando logs de segurança...</div>
-        </LoadingState>
-      </SecurityContainer>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center py-20"
+          >
+            <div className="text-neutral-500 dark:text-neutral-400">
+              Carregando logs de segurança...
+            </div>
+          </motion.div>
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <SecurityContainer>
-        <div style={{ color: '#ef4444', textAlign: 'center', padding: '40px' }}>
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center py-20"
+          >
+            <div className="text-red-500 dark:text-red-400">
           Erro ao carregar logs de segurança: {error}
+            </div>
+          </motion.div>
         </div>
-      </SecurityContainer>
+      </div>
     );
   }
 
   return (
-    <SecurityContainer>
-      <SecurityHeader>
-        <HeaderContent>
-          <SecurityIcon />
-          <HeaderText>
-            <h1>Painel de Segurança</h1>
-            <p>Monitoramento de acessos e atividades de autenticação</p>
-          </HeaderText>
-        </HeaderContent>
-        <ActionButton 
-          className="secondary" 
-          onClick={() => setShowDetails(!showDetails)}
+    <div>
+      <div className="space-y-8">
+        
+
+
+        {/* Estatísticas */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
-          {showDetails ? <FaEyeSlash /> : <FaEye />}
-          {showDetails ? 'Ocultar Detalhes' : 'Mostrar Detalhes'}
-        </ActionButton>
-      </SecurityHeader>
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-blue-500"
+          >
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+              Total de Logs
+            </div>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              {stats.totalLogs}
+            </div>
+            <div className="text-sm text-green-500 font-medium">
+              +{stats.totalLogs} hoje
+            </div>
+          </motion.div>
 
-      <SecurityStats>
-        <StatCard color="#3b82f6">
-          <StatTitle>Total de Logs</StatTitle>
-          <StatValue>{stats.totalLogs}</StatValue>
-          <StatChange positive={true}>+{stats.totalLogs} hoje</StatChange>
-        </StatCard>
-        <StatCard color="#10b981">
-          <StatTitle>Logins Bem-sucedidos</StatTitle>
-          <StatValue>{stats.successfulLogins}</StatValue>
-          <StatChange positive={true}>{stats.successRate}% taxa de sucesso</StatChange>
-        </StatCard>
-        <StatCard color="#ef4444">
-          <StatTitle>Logins Falhados</StatTitle>
-          <StatValue>{stats.failedLogins}</StatValue>
-          <StatChange positive={false}>{(100 - stats.successRate).toFixed(1)}% taxa de falha</StatChange>
-        </StatCard>
-        <StatCard color="#f59e0b">
-          <StatTitle>Usuários Únicos</StatTitle>
-          <StatValue>{stats.uniqueUsers}</StatValue>
-          <StatChange positive={true}>Ativos no período</StatChange>
-        </StatCard>
-      </SecurityStats>
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-green-500"
+          >
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+              Logins Bem-sucedidos
+            </div>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              {stats.successfulLogins}
+            </div>
+            <div className="text-sm text-green-500 font-medium">
+              {stats.successRate}% taxa de sucesso
+            </div>
+          </motion.div>
 
-      <FiltersContainer>
-        <FiltersRow>
-          <FilterGroup>
-            <FilterLabel>Status</FilterLabel>
-            <FilterSelect value={tempFilter} onChange={(e) => setTempFilter(e.target.value)}>
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-red-500"
+          >
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+              Logins Falhados
+            </div>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              {stats.failedLogins}
+            </div>
+            <div className="text-sm text-red-500 font-medium">
+              {(100 - stats.successRate).toFixed(1)}% taxa de falha
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-amber-500"
+          >
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+              Usuários Únicos
+            </div>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              {stats.uniqueUsers}
+            </div>
+            <div className="text-sm text-green-500 font-medium">
+              Ativos no período
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Filtros */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6"
+        >
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex flex-col">
+              <label className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                Status
+              </label>
+              <select
+                value={tempFilter}
+                onChange={(e) => setTempFilter(e.target.value)}
+                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+              >
               <option value="all">Todos</option>
               <option value="success">Bem-sucedidos</option>
               <option value="failed">Falhados</option>
-            </FilterSelect>
-          </FilterGroup>
-          
-          <FilterGroup>
-            <FilterLabel>Buscar</FilterLabel>
-            <SearchInput
+              </select>
+            </div>
+            
+            <div className="flex flex-col">
+              <label className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+                Buscar
+              </label>
+              <input
               type="text"
               placeholder="Usuário ou IP..."
               value={tempSearch}
               onChange={(e) => setTempSearch(e.target.value)}
+                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
             />
-          </FilterGroup>
+            </div>
 
-          <ActionButton 
-            style={{ background: '#10b981', color: 'white' }}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             onClick={handleApplyFilters}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300"
           >
-            <FaFilter />
+              <FaFilter className="w-4 h-4 mr-2" />
             Aplicar Filtros
-          </ActionButton>
+            </motion.button>
 
-          <ActionButton 
-            className="secondary" 
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             onClick={handleResetFilters}
+              className="flex items-center px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300"
           >
             Limpar
-          </ActionButton>
+            </motion.button>
 
-          <ActionButton className="primary" onClick={handleExport}>
-            <FaDownload />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExport}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+            >
+              <FaDownload className="w-4 h-4 mr-2" />
             Exportar CSV
-          </ActionButton>
-        </FiltersRow>
-      </FiltersContainer>
-
-      <LogsContainer>
-        <LogsHeader>
-          <LogsTitle>Logs de Autenticação</LogsTitle>
-          <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
-            {filteredLogs.length} registros encontrados
+            </motion.button>
           </div>
-        </LogsHeader>
+        </motion.div>
+
+        {/* Tabela de Logs */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+        >
+          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
+            <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              Logs de Autenticação
+            </h3>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+            {filteredLogs.length} registros encontrados
+            </div>
+          </div>
 
         {filteredLogs.length === 0 ? (
-          <EmptyState>
-            <EmptyIcon />
-            <h3>Nenhum log encontrado</h3>
-            <p>Tente ajustar os filtros ou verificar se há dados disponíveis</p>
-          </EmptyState>
+            <div className="text-center py-20">
+              <FaShieldAlt className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium text-neutral-500 dark:text-neutral-400 mb-2">
+                Nenhum log encontrado
+              </h3>
+              <p className="text-neutral-400 dark:text-neutral-500">
+                Tente ajustar os filtros ou verificar se há dados disponíveis
+              </p>
+            </div>
         ) : (
           <>
-            <LogsTable>
-              <LogsTableHeader>
-                <LogsTableRow>
-                  <LogsTableHeaderCell>Usuário</LogsTableHeaderCell>
-                  <LogsTableHeaderCell>Endereço IP</LogsTableHeaderCell>
-                  <LogsTableHeaderCell>Status</LogsTableHeaderCell>
-                  <LogsTableHeaderCell>Data/Hora</LogsTableHeaderCell>
-                  {showDetails && <LogsTableHeaderCell>Detalhes</LogsTableHeaderCell>}
-                </LogsTableRow>
-              </LogsTableHeader>
-              <tbody>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-neutral-50 dark:bg-neutral-800/50">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Usuário
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Endereço IP
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        Data/Hora
+                      </th>
+                      {showDetails && (
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                          Detalhes
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
                 {filteredLogs.map((log, index) => {
                   const { date, time } = formatDate(log.timestamp);
                   const isSuccess = log.success === 1 || log.success === true || log.status === 'success';
                   return (
-                    <LogsTableRow key={log.id || index}>
-                      <LogsTableCell>
-                        <UserInfo>
-                          <UserAvatar color={getStatusColor(log)}>
+                        <motion.tr
+                          key={log.id || index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-200"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm ${getStatusColor(log)}`}>
                             {getInitials(log.username)}
-                          </UserAvatar>
-                          <UserDetails>
-                            <Username>{log.username}</Username>
-                            <IpAddress>ID: {log.id}</IpAddress>
-                          </UserDetails>
-                        </UserInfo>
-                      </LogsTableCell>
-                      <LogsTableCell>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <FaMapMarkerAlt style={{ color: '#64748b', fontSize: '0.8rem' }} />
-                          {log.ip_address}
+                              </div>
+                              <div>
+                                <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                                  {log.username}
+                                </div>
+                                <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                                  ID: {log.id}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-2 text-neutral-700 dark:text-neutral-300">
+                              <FaMapMarkerAlt className="w-3 h-3 text-neutral-400" />
+                              <span>{log.ip_address}</span>
                         </div>
-                      </LogsTableCell>
-                      <LogsTableCell>
-                        <StatusBadge className={isSuccess ? 'success' : 'failed'}>
-                          {isSuccess ? <FaCheckCircle /> : <FaTimesCircle />}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${
+                              isSuccess 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                            }`}>
+                              {isSuccess ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
                           {getStatusText(log)}
-                        </StatusBadge>
-                      </LogsTableCell>
-                      <LogsTableCell>
-                        <Timestamp>
-                          <DateText>{date}</DateText>
-                          <TimeText>{time}</TimeText>
-                        </Timestamp>
-                      </LogsTableCell>
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div>
+                              <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                                {date}
+                              </div>
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                                {time}
+                              </div>
+                            </div>
+                          </td>
                       {showDetails && (
-                        <LogsTableCell>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
                             <div>Success: {log.success ? 'Sim' : 'Não'}</div>
                             <div>Status: {log.status || 'N/A'}</div>
                             <div>ID: {log.id}</div>
                           </div>
-                        </LogsTableCell>
+                            </td>
                       )}
-                    </LogsTableRow>
+                        </motion.tr>
                   );
                 })}
               </tbody>
-            </LogsTable>
+                </table>
+              </div>
 
-            <PaginationContainer>
-              <PaginationInfo>
+              {/* Paginação */}
+              <div className="flex justify-between items-center px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
+                <div className="text-sm text-neutral-500 dark:text-neutral-400">
                 Mostrando {filteredLogs.length} de {totalItems} registros
-              </PaginationInfo>
-              <PaginationControls>
-                <PaginationButton
+                </div>
+                <div className="flex items-center space-x-2">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page <= 1}
+                    className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
                 >
                   Anterior
-                </PaginationButton>
+                  </motion.button>
                 
                 {renderPaginationButtons()}
                 
-                <PaginationButton
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page >= totalPages}
+                    className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
                 >
                   Próximo
-                </PaginationButton>
-              </PaginationControls>
-            </PaginationContainer>
+                  </motion.button>
+                </div>
+              </div>
           </>
         )}
-      </LogsContainer>
-    </SecurityContainer>
+        </motion.div>
+      </div>
+    </div>
   );
 } 

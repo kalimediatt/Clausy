@@ -4613,20 +4613,59 @@ const Home = () => {
         )}
         
         {activeItem === 'security' && (
-          <div>
-            <WelcomeText>Segurança</WelcomeText>
-            <SecurityPanel
-              logs={authLogs}
-              loading={securityLoading}
-              error={securityError}
-              filter={securityFilter}
-              setFilter={setSecurityFilter}
-              page={securityPage}
-              setPage={setSecurityPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              debugData={authLogs}
-            />
+          <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+            {/* Header */}
+            <motion.header 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="flex items-center justify-between"
+                >
+                  <div>
+                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      Segurança e Logs
+                    </h1>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Monitoramento de acessos e atividades de autenticação
+                    </p>
+                  </div>
+                  
+                  {/* Status Badge */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"
+                  >
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Sistema Online</span>
+                  </motion.div>
+                </motion.div>
+              </div>
+            </motion.header>
+
+            {/* Main Content */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              <SecurityPanel
+                logs={authLogs}
+                loading={securityLoading}
+                error={securityError}
+                filter={securityFilter}
+                setFilter={setSecurityFilter}
+                page={securityPage}
+                setPage={setSecurityPage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                debugData={authLogs}
+              />
+            </main>
           </div>
         )}
         
