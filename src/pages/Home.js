@@ -4283,42 +4283,26 @@ const Home = () => {
   const renderLaboratoryPanel = () => {
     // Sidebar de sessões do laboratório
     return (
-      <div style={{ display: 'flex', height: '100%' }}>
+      <div className="flex h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500">
         {/* Sidebar de sessões */}
-        <div style={{
-          width: 180,
-          background: '#23272f',
-          color: '#fff',
-          borderRight: '1px solid #ADADAD',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'stretch',
-          padding: '1rem 0.5rem',
-          minHeight: '100%',
-          boxSizing: 'border-box',
-          gap: '1rem',
-        }}>
+        <div className="w-48 !bg-white/40 dark:!bg-neutral-800/40 !text-neutral-900 dark:!text-white !border-r !border-neutral-200 dark:!border-neutral-700 flex flex-col items-stretch p-4 min-h-full box-border gap-4 backdrop-blur-sm">
           <button
-            className="btn-primary hover-lift"
-            style={{
-              marginBottom: '1rem',
-              width: '100%',
-              padding: '0.75rem'
-            }}
+            className="btn-primary hover-lift bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center space-x-2 border-0 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 mb-4 w-full py-3"
             onClick={() => {
               // Abrir modal para nomear o novo chat
               setLabShowNewChatModal(true);
             }}
           >
-            + Novo Chat
+            <FaPlus className="w-4 h-4" />
+            <span>Novo Chat</span>
           </button>
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div className="flex-1 overflow-hidden">
             {labHistoryLoading ? (
-              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+              <div className="flex justify-center p-8">
                 <LoadingSpinner message="Carregando chats..." />
               </div>
             ) : labChatHistory.length === 0 ? (
-              <div style={{ padding: '1rem' }}>
+              <div className="p-4">
                 <EmptyState 
                   type="chats" 
                   action={() => setLabShowNewChatModal(true)} 
@@ -4328,19 +4312,11 @@ const Home = () => {
               labChatHistory.map((session, idx) => (
                 <div
                   key={session.session_id || session.id}
-                  style={{
-                    background: labSelectedConversation === (session.session_id || session.id) ? '#3b82f6' : 'transparent',
-                    color: labSelectedConversation === (session.session_id || session.id) ? '#fff' : '#ADADAD',
-                    borderRadius: 5,
-                    padding: '0.5rem',
-                    marginBottom: 6,
-                    cursor: 'pointer',
-                    fontWeight: labSelectedConversation === (session.session_id || session.id) ? 700 : 400,
-                    fontSize: 14,
-                    transition: 'background 0.2s',
-                    position: 'relative',
-                    borderLeft: session.is_current_session ? '3px solid #10b981' : 'none',
-                  }}
+                  className={`p-2 mb-2 cursor-pointer text-sm transition-all duration-300 relative hover:!bg-white/20 dark:hover:!bg-neutral-700/50 group ${
+                    labSelectedConversation === (session.session_id || session.id) 
+                      ? '!bg-amber-500 !text-white font-bold' 
+                      : '!bg-transparent !text-neutral-700 dark:!text-neutral-300 font-normal'
+                  } ${session.is_current_session ? 'border-l-4 border-emerald-500' : ''}`}
                   onClick={() => {
                     const chatName = session.chat_name || session.name;
                     const sessionId = session.session_id || session.id;
@@ -4358,36 +4334,21 @@ const Home = () => {
                   }}
                   title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
                 >
-                  <span style={{ flex: 1 }}>
+                  <span className="flex-1">
                     {session.chat_name || session.session_id || session.name}
                     {session.is_current_session && (
-                      <span style={{ fontSize: '10px', marginLeft: '5px', opacity: 0.7 }}>
+                      <span className="text-xs ml-1 opacity-70">
                         (atual)
                       </span>
                     )}
                   </span>
                   <button
+                    className="opacity-0 group-hover:opacity-100 bg-transparent border-0 text-red-400 hover:text-red-300 cursor-pointer text-xs p-1 rounded absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center justify-center transition-all duration-200 hover:bg-red-500/20"
                     onClick={(e) => {
                       e.stopPropagation();
                       if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
                         handleHideChat(session.session_id || session.id);
                       }
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#ff6b6b',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      padding: '2px 6px',
-                      borderRadius: 3,
-                      position: 'absolute',
-                      right: '5px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                     }}
                     title="Remover chat"
                   >
@@ -4399,37 +4360,39 @@ const Home = () => {
           </div>
         </div>
         {/* Chat principal do laboratório (igual IA, mas usando estados do laboratório) */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex-1 min-w-0 !bg-white/30 dark:!bg-neutral-900/30 backdrop-blur-sm">
           <AIContainer>
-            <CurrentSetup>
-              <FaCog />
-              Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}
-              <SetupButton onClick={() => setLabShowSetupModal(true)}>
-                Alterar Setup
-              </SetupButton>
-            </CurrentSetup>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-              <span style={{ fontSize: '0.95rem', color: '#334155' }}>Manter arquivo anexado após envio</span>
-              <ToggleSwitchStyled
-                type="button"
-                data-active={labKeepFileAttached}
-                aria-pressed={labKeepFileAttached}
-                onClick={() => setLabKeepFileAttached(v => !v)}
-              >
-                {labKeepFileAttached ? (
-                  <SwitchLabel>ON</SwitchLabel>
-                ) : (
-                  <SwitchLabelOff>OFF</SwitchLabelOff>
-                )}
-                <SwitchCircle data-active={labKeepFileAttached} />
-              </ToggleSwitchStyled>
+            <div className="flex flex-col lg:flex-row gap-4 mb-4">
+              <CurrentSetup>
+                <FaCog />
+                Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}
+                <SetupButton onClick={() => setLabShowSetupModal(true)}>
+                  Alterar Setup
+                </SetupButton>
+              </CurrentSetup>
+              <div className="flex items-center gap-4 p-3 !bg-white/40 dark:!bg-neutral-800/40 rounded-xl !border !border-neutral-200 dark:!border-neutral-700 backdrop-blur-sm lg:min-w-fit hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300">
+                <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium whitespace-nowrap">Manter arquivo anexado após envio</span>
+                <ToggleSwitchStyled
+                  type="button"
+                  data-active={labKeepFileAttached}
+                  aria-pressed={labKeepFileAttached}
+                  onClick={() => setLabKeepFileAttached(v => !v)}
+                >
+                  {labKeepFileAttached ? (
+                    <SwitchLabel>ON</SwitchLabel>
+                  ) : (
+                    <SwitchLabelOff>OFF</SwitchLabelOff>
+                  )}
+                  <SwitchCircle data-active={labKeepFileAttached} />
+                </ToggleSwitchStyled>
+              </div>
             </div>
             <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
             <AIChatSection>
               <ChatContainer>
                 <ChatHeader>
                   <h3>Chat do Laboratório</h3>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="flex gap-2">
                     <ClearChatButton onClick={handleLabClearChat}>
                       <FaTrash /> Limpar Chat
                     </ClearChatButton>
@@ -4544,13 +4507,8 @@ const Home = () => {
                       setNewChatName('');
                     }}>×</CloseButton>
                   </SetupHeader>
-                  <div style={{ padding: '1rem' }}>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '0.5rem', 
-                      fontWeight: 600,
-                      color: '#374151'
-                    }}>
+                  <div className="p-4">
+                    <label className="block mb-2 font-semibold text-neutral-700 dark:text-neutral-300">
                       Nome do Chat:
                     </label>
                     <input
@@ -4558,11 +4516,7 @@ const Home = () => {
                       value={newChatName}
                       onChange={(e) => setNewChatName(e.target.value)}
                       placeholder="Digite o nome do chat..."
-                      className="input-enhanced"
-                      style={{
-                        width: '100%',
-                        marginBottom: '1rem'
-                      }}
+                      className="input-enhanced w-full mb-4 px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 focus:border-amber-500 dark:focus:border-amber-400 transition-all duration-300"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4600,21 +4554,11 @@ const Home = () => {
                       setInitialChatName('');
                     }}>×</CloseButton>
                   </SetupHeader>
-                  <div style={{ padding: '1rem' }}>
-                    <p style={{ 
-                      marginBottom: '1rem', 
-                      color: '#374151',
-                      fontSize: '1rem',
-                      lineHeight: '1.5'
-                    }}>
+                  <div className="p-4">
+                    <p className="mb-4 text-neutral-700 dark:text-neutral-300 text-base leading-relaxed">
                       Para começar a usar o Laboratório, você precisa definir um nome para o seu primeiro chat.
                     </p>
-                    <label style={{ 
-                      display: 'block', 
-                      marginBottom: '0.5rem', 
-                      fontWeight: 600,
-                      color: '#374151'
-                    }}>
+                    <label className="block mb-2 font-semibold text-neutral-700 dark:text-neutral-300">
                       Nome do Chat:
                     </label>
                     <input
@@ -4622,11 +4566,7 @@ const Home = () => {
                       value={initialChatName}
                       onChange={(e) => setInitialChatName(e.target.value)}
                       placeholder="Digite o nome do seu chat..."
-                      className="input-enhanced"
-                      style={{
-                        width: '100%',
-                        marginBottom: '1rem'
-                      }}
+                      className="input-enhanced w-full mb-4"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
@@ -4691,13 +4631,50 @@ const Home = () => {
         activeItem={activeItem} 
         setActiveItem={setActiveItem} 
       />
-      <div className="flex-1  overflow-y-auto bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
+      <div className="flex-1 overflow-hidden bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
         {activeItem === 'dashboard' && renderDashboard()}
         
         
         {activeItem === 'laboratory' && (
-          <div>
-            <WelcomeText>Laboratório</WelcomeText>
+          <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+            {/* Header */}
+            <motion.header 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="relative bg-white/40 dark:bg-neutral-800/40 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-700"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                  className="flex items-center justify-between"
+                >
+                  <div>
+                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                      Laboratório de IA
+                    </h1>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      Explore e experimente com nossa inteligência artificial jurídica
+                    </p>
+                  </div>
+                  
+                  {/* Status Badge */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 0.3 }}
+                    className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs font-medium"
+                  >
+                    <FaRobot className="w-3 h-3" />
+                    <span>IA Ativa</span>
+                  </motion.div>
+                </motion.div>
+              </div>
+            </motion.header>
+
+            {/* Original Content */}
             {renderLaboratoryPanel()}
           </div>
         )}
