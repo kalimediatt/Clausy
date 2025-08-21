@@ -86,8 +86,8 @@ ChartJS.register(
   ArcElement
 );
 
-// Função para gerar estilos dinâmicos baseados no tema
-const getThemeStyles = (isDarkMode) => ({
+// Função para gerar estilos dinâmicos baseados no tema e tamanho da tela
+const getThemeStyles = (isDarkMode, isMobile) => ({
   container: {
     width: '100%',
     maxWidth: 1200,
@@ -171,68 +171,90 @@ const getThemeStyles = (isDarkMode) => ({
   },
   summaryGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: isMobile ? '1rem' : '1.5rem',
     marginBottom: '2rem',
   },
   summaryCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: '1.5rem',
+    padding: isMobile ? '1rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     transition: 'all 0.3s',
+    minHeight: isMobile ? '100px' : '120px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
   summaryCardHover: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.6)' : 'rgba(255, 255, 255, 0.6)',
     transform: 'translateY(-2px)',
   },
   summaryTitle: {
-    fontSize: '0.9rem',
+    fontSize: isMobile ? '0.8rem' : '0.9rem',
     color: isDarkMode ? '#9ca3af' : '#6b7280',
     fontWeight: 600,
     marginBottom: '0.5rem',
     display: 'flex',
     alignItems: 'center',
     gap: '0.5rem',
+    flexWrap: 'wrap',
+    wordBreak: 'break-word',
+  },
+  summaryIcon: {
+    fontSize: isMobile ? '1rem' : '1.1rem',
+    minWidth: isMobile ? '1rem' : '1.1rem',
   },
   summaryValue: {
-    fontSize: '2rem',
+    fontSize: isMobile ? '1.5rem' : '2rem',
     fontWeight: 700,
     color: isDarkMode ? '#f9fafb' : '#1f2937',
     marginBottom: '0.25rem',
+    lineHeight: '1.2',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   },
   summarySubtitle: {
-    fontSize: '0.8rem',
+    fontSize: isMobile ? '0.7rem' : '0.8rem',
     color: isDarkMode ? '#6b7280' : '#9ca3af',
+    lineHeight: '1.3',
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   },
   chartsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
+    gap: isMobile ? '1rem' : '1.5rem',
     marginBottom: '2rem',
   },
   chartCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: '1.5rem',
+    padding: isMobile ? '1rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
-    height: '400px',
+    minHeight: isMobile ? '300px' : '400px',
     display: 'flex',
     flexDirection: 'column',
     transition: 'all 0.3s',
   },
   chartTitle: {
-    fontSize: '1.1rem',
+    fontSize: isMobile ? '1rem' : '1.1rem',
     fontWeight: 600,
     color: isDarkMode ? '#f9fafb' : '#1f2937',
     marginBottom: '1rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '0.5rem',
+  },
+  chartIcon: {
+    fontSize: isMobile ? '1.1rem' : '1.2rem',
+    minWidth: isMobile ? '1.1rem' : '1.2rem',
   },
   chartContainer: {
     flex: 1,
@@ -241,32 +263,36 @@ const getThemeStyles = (isDarkMode) => ({
   tableCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: '1.5rem',
+    padding: isMobile ? '1rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     marginBottom: '2rem',
     transition: 'all 0.3s',
+    overflow: 'auto',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontSize: '0.9rem',
+    fontSize: isMobile ? '0.8rem' : '0.9rem',
+    minWidth: isMobile ? '600px' : 'auto',
   },
   tableHeader: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.2)' : '#f9fafb',
     borderBottom: isDarkMode ? '2px solid #525252' : '2px solid #e5e7eb',
   },
   tableHeaderCell: {
-    padding: '0.75rem',
+    padding: isMobile ? '0.5rem' : '0.75rem',
     textAlign: 'left',
     fontWeight: 600,
     color: isDarkMode ? '#f9fafb' : '#374151',
+    whiteSpace: 'nowrap',
   },
   tableCell: {
-    padding: '0.75rem',
+    padding: isMobile ? '0.5rem' : '0.75rem',
     borderBottom: isDarkMode ? '1px solid rgba(64, 64, 64, 0.3)' : '1px solid #f3f4f6',
     color: isDarkMode ? '#d1d5db' : '#374151',
+    whiteSpace: 'nowrap',
   },
   loading: {
     textAlign: 'center',
@@ -682,7 +708,7 @@ const EnhancedReportsDashboard = () => {
 
 
   // Definir estilos primeiro para usar nos returns de loading/error
-  const styles = getThemeStyles(isDarkMode);
+  const styles = getThemeStyles(isDarkMode, isMobile);
 
   if (loading) return <div style={styles.loading}>Carregando dashboard...</div>;
   if (error) return <div style={styles.error}>Erro: {error}</div>;
@@ -847,7 +873,7 @@ const EnhancedReportsDashboard = () => {
           onMouseLeave={() => setHoveredCard(-1)}
         >
           <div style={styles.summaryTitle}>
-            <FaUsers />
+            <FaUsers style={styles.summaryIcon} />
             Total de Usuários
           </div>
           <div style={styles.summaryValue}>
@@ -867,7 +893,7 @@ const EnhancedReportsDashboard = () => {
           onMouseLeave={() => setHoveredCard(-1)}
         >
           <div style={styles.summaryTitle}>
-            <FaChartLine />
+            <FaChartLine style={styles.summaryIcon} />
             Total de Tokens
           </div>
           <div style={styles.summaryValue}>
@@ -887,7 +913,7 @@ const EnhancedReportsDashboard = () => {
           onMouseLeave={() => setHoveredCard(-1)}
         >
           <div style={styles.summaryTitle}>
-            <FaClock />
+            <FaClock style={styles.summaryIcon} />
             Média por Requisição
           </div>
           <div style={styles.summaryValue}>
@@ -907,7 +933,7 @@ const EnhancedReportsDashboard = () => {
           onMouseLeave={() => setHoveredCard(-1)}
         >
           <div style={styles.summaryTitle}>
-            <FaTrophy />
+            <FaTrophy style={styles.summaryIcon} />
             Usuário Top
           </div>
           <div style={styles.summaryValue}>
@@ -924,7 +950,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
             Consumo por {selectedPeriod === 'daily' ? 'Dia' : selectedPeriod === 'weekly' ? 'Semana' : 'Mês'}
-            <FaCalendarAlt />
+            <FaCalendarAlt style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
             {periodChartData ? (
@@ -947,7 +973,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
             Consumo por Dia da Semana
-            <FaCalendarAlt />
+            <FaCalendarAlt style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
             <Bar data={dailyChartData} options={chartOptions} />
@@ -957,7 +983,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
             Distribuição por Usuário
-            <FaUsers />
+            <FaUsers style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
             <Doughnut data={userDistributionData} options={{
@@ -976,7 +1002,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
             Top 5 Usuários
-            <FaTrophy />
+            <FaTrophy style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
             <Bar data={{
@@ -997,7 +1023,7 @@ const EnhancedReportsDashboard = () => {
         <div style={styles.tableCard}>
           <div style={styles.chartTitle}>
             Ranking de Usuários
-            <FaTrophy />
+            <FaTrophy style={styles.chartIcon} />
           </div>
           <table style={styles.table}>
             <thead style={styles.tableHeader}>

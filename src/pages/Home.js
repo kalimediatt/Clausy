@@ -4189,6 +4189,79 @@ const Home = () => {
     showSuccessToast(`Chat "${chatName}" inicializado com sucesso!`);
   };
 
+  // Função para renderizar mensagem com arquivo
+  const renderMessageWithFile = (content) => {
+    if (!content || typeof content !== 'string') {
+      return content;
+    }
+
+    // Detectar diferentes padrões de arquivo
+    const patterns = [
+      /Arquivo enviado: (.+?)(?:\n|$)/,
+      /Conteúdo do arquivo "(.+?)":\s*/,
+      /--- DOCUMENTO ANEXADO: (.+?) ---/,
+      /\(Arquivo anexado: (.+?)\)/
+    ];
+
+    let fileName = '';
+    let cleanContent = content;
+    let hasFile = false;
+
+    // Verificar cada padrão
+    for (const pattern of patterns) {
+      const match = content.match(pattern);
+      if (match) {
+        fileName = match[1];
+        hasFile = true;
+        
+        if (pattern.source.includes('Conteúdo do arquivo')) {
+          // Para padrão "Conteúdo do arquivo", remover tudo até a pergunta do usuário
+          const userQuestionMatch = content.match(/Pergunta do usuário:\s*(.+?)$/s);
+          if (userQuestionMatch) {
+            cleanContent = userQuestionMatch[1].trim();
+          } else {
+            // Se não encontrar "Pergunta do usuário", tentar pegar só as últimas linhas
+            const lines = content.split('\n');
+            const lastLines = lines.slice(-3).join('\n').trim();
+            cleanContent = lastLines;
+          }
+        } else if (pattern.source.includes('DOCUMENTO ANEXADO')) {
+          // Para padrão "--- DOCUMENTO ANEXADO: nome ---", remover tudo até "--- FIM DO DOCUMENTO ---"
+          cleanContent = content.replace(/--- DOCUMENTO ANEXADO:.*?--- FIM DO DOCUMENTO ---\s*/gs, '');
+          // Remover também instruções para a IA
+          cleanContent = cleanContent.replace(/Por favor, analise o documento anexado.*?Base sua resposta no documento acima\.\s*/gs, '');
+          cleanContent = cleanContent.trim();
+        } else {
+          // Para outros padrões, apenas remover a linha do arquivo
+          cleanContent = content.replace(pattern, '').trim();
+        }
+        break;
+      }
+    }
+    
+    if (hasFile) {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 px-3 py-2 bg-neutral-100 dark:bg-neutral-700 rounded-lg text-sm text-neutral-600 dark:text-neutral-300">
+            <FaFileAlt className="w-4 h-4 text-accent1" />
+            <span className="font-medium">{fileName}</span>
+          </div>
+          {cleanContent && (
+            <div className="whitespace-pre-wrap break-words leading-relaxed">
+              {cleanContent}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="whitespace-pre-wrap break-words leading-relaxed">
+        {content}
+      </div>
+    );
+  };
+
   // [4] Atualize loadChatMessages para segmentar por chat
   const loadChatMessages = async (chatName, isSwitchingChat = false) => {
     try {
@@ -4525,15 +4598,15 @@ const Home = () => {
             >
               {/* Overlay de drag and drop */}
               {isDragOver && (
-                <div className="absolute inset-0 bg-accent1/20 backdrop-blur-sm border-2 border-dashed border-accent1 rounded-xl z-50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-accent2/20 backdrop-blur-sm border-2 border-dashed border-accent2 rounded-xl z-50 flex items-center justify-center">
                   <div className="text-center p-8">
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-accent1/20 dark:border-accent1"
+                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-accent2/20 dark:border-accent2"
                     >
                       <div className="text-6xl mb-4">📁</div>
-                      <h3 className="text-xl font-bold text-accent1 dark:text-accent1 mb-2">
+                      <h3 className="text-xl font-bold text-accent2 dark:text-accent2 mb-2">
                         Solte o arquivo aqui
                       </h3>
                       <p className="text-neutral-600 dark:text-neutral-300 text-sm">
@@ -4574,9 +4647,7 @@ const Home = () => {
                           ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
                           : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600'
                       } md:max-w-[90%] sm:max-w-[95%]`}>
-                        <div className="whitespace-pre-wrap break-words leading-relaxed">
-                          {message.content}
-                        </div>
+                        {renderMessageWithFile(message.content)}
                         <div className={`text-xs opacity-60 mt-2 ${
                           message.role === 'user' 
                             ? 'text-right text-white/80' 
@@ -4882,7 +4953,7 @@ const Home = () => {
         activeItem={activeItem} 
         setActiveItem={setActiveItem} 
       />
-      <div className="flex-1 overflow-hidden bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50">
+      <div className={`flex-1 ${activeItem === 'security' || activeItem === 'reports' ? 'overflow-auto' : 'overflow-hidden'} bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50`}>
         {activeItem === 'dashboard' && renderDashboard()}
         
         

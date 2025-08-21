@@ -1320,7 +1320,7 @@ const validateFile = (req, res, next) => {
   next();
 };
 
-// Rota para processar consultas à IA
+// Rota para processar consultas à IA (PROCESSAMENTO LOCAL)
 app.post('/api/ai/query', 
   authenticateToken,
   upload.single('file'),
@@ -1338,7 +1338,8 @@ app.post('/api/ai/query',
 
     const { prompt, maxTokens = 500 } = req.body;
     let setup = req.body.setup;
-    let fileContent = null;
+    let processedContext = null;
+    let userPrompt = prompt || '';
     const isDevelopment = process.env.NODE_ENV !== 'production';
 
     if (setup && typeof setup === 'string') {
@@ -1350,164 +1351,106 @@ app.post('/api/ai/query',
       }
     }
 
-    // Process file if it exists
+    // Processar arquivo localmente se existir
     if (req.file) {
       try {
-        console.log('Starting file processing:', req.file.originalname);
+        console.log('Processando arquivo localmente:', req.file.originalname);
         
-        // Get file extension
-        const fileExt = path.extname(req.file.originalname).toLowerCase();
-        console.log('File extension:', fileExt);
-        
-        // Process file based on type
-        if (fileExt === '.pdf') {
-          console.log('Processing PDF file');
-          const pdf = require('pdf-parse');
-          const pdfData = await pdf(req.file.buffer);
-          fileContent = pdfData.text;
-        } else if (fileExt === '.docx') {
-          console.log('Processing DOCX file');
-          const mammoth = require('mammoth');
-          const result = await mammoth.extractRawText({ buffer: req.file.buffer });
-          fileContent = result.value;
-        } else if (fileExt === '.txt') {
-          console.log('Processing text file');
-          fileContent = req.file.buffer.toString('utf-8');
-        }
-
-        if (!fileContent || fileContent.trim().length === 0) {
-          throw new Error('File content is empty after processing');
-        }
-
-        console.log('File processed successfully. Content length:', fileContent.length);
-
-        // Validação de Tokens
-        const TOKEN_LIMIT = 64000;
-        const promptTokens = encode(prompt).length;
-        const fileTokens = encode(fileContent).length;
-        const setupTokens = setup ? encode(JSON.stringify(setup)).length : 0;
-        const totalInputTokens = promptTokens + fileTokens + setupTokens;
-
-        console.log(`Token estimation: prompt=${promptTokens}, file=${fileTokens}, setup=${setupTokens}, total=${totalInputTokens}`);
-
-        if (totalInputTokens > TOKEN_LIMIT) {
-          return res.status(400).json({
-            success: false,
-            message: `O arquivo é muito grande e excede o limite de ${TOKEN_LIMIT} tokens. (Estimativa: ${totalInputTokens} tokens)`,
-            code: 'TOKEN_LIMIT_EXCEEDED'
-          });
-        }
-
-        // Get user for credit calculation
-        const user = await userService.getUserById(req.user.user_id);
-        if (!user) {
-          throw new Error('User not found');
+        // Verificar se o arquivo pode ser processado
+        if (!fileProcessor.canProcessFile(req.file.originalname)) {
+          throw new Error(`Tipo de arquivo não suportado: ${req.file.originalname}`);
         }
         
-        // Process the query with the file content and setup
-        const setupPrompt = setup ? `[Setup: ${setup.title}]\\n${setup.prompt}\\n\\n` : '';
-        const requestTimestamp = Date.now();
-        const aiResponse = await monicaAIService.sendQuery(
-          `${setupPrompt}Conteúdo do arquivo "${req.file.originalname}":\\n${fileContent}\\n\\nPergunta do usuário: ${prompt}`,
-          maxTokens
+        // Processar arquivo e criar contexto
+        const fileContext = await fileProcessor.processFileForContext(
+          req.file.buffer, 
+          req.file.originalname
         );
-        const responseTimestamp = Date.now();
-
-        if (!aiResponse.success) {
-          return res.status(500).json({
-            success: false,
-            message: aiResponse.message || 'Erro ao processar consulta com a IA'
-          });
-        }
-
-        // Atualizar uso de tokens
-        const estimatedTokens = totalInputTokens + (aiResponse.usage?.completion_tokens || Number(maxTokens));
-        console.log('DEBUG: server.js - Antes de chamar updateTokenUsage', {
-          userId: req.user.user_id,
-          tokens: estimatedTokens,
-          companyId: req.user.company_id,
-          requestTimestamp,
-          responseTimestamp
+        
+        // Criar prompt contextual
+        userPrompt = fileProcessor.createContextualPrompt(prompt, fileContext);
+        
+        // Estimar tokens do contexto
+        const contextTokens = fileProcessor.estimateContextTokens(fileContext);
+        
+        console.log('Contexto criado:', {
+          fileName: fileContext.fileName,
+          documentType: fileContext.documentType,
+          summaryLength: fileContext.summary.length,
+          keyPointsCount: fileContext.keyPoints.length,
+          estimatedTokens: contextTokens
         });
-
-        await tokenUsageService.updateTokenUsage(
-          req.user.user_id, 
-          estimatedTokens,
-          req.user.company_id,
-          requestTimestamp,
-          responseTimestamp
-        );
-
-        console.log('DEBUG: server.js - Depois de chamar updateTokenUsage');
-
-        // Return the response
-        res.json({
-          success: true,
-          message: aiResponse.content,
-          usage: {
-            tokens: estimatedTokens,
-            remaining_credits: isDevelopment ? 9999 : (user.credits - estimatedTokens),
-            limit: req.tokenUsage.limit,
-            used: req.tokenUsage.current + estimatedTokens,
-            remaining: req.tokenUsage.limit === Infinity ? Infinity : req.tokenUsage.limit - (req.tokenUsage.current + estimatedTokens)
-          }
-        });
-
+        
+        processedContext = fileContext;
+        
       } catch (error) {
-        console.error('Error processing file:', error);
+        console.error('Erro ao processar arquivo localmente:', error);
         return res.status(400).json({
           success: false,
-          message: 'Erro ao processar o arquivo: ' + error.message
+          message: `Erro ao processar arquivo: ${error.message}`
         });
       }
-    } else {
-      // Process query without file
-      const user = await userService.getUserById(req.user.user_id);
-      if (!user) {
-        throw new Error('User not found');
-      }
+    }
 
-      // Include setup in the prompt if available
-      const setupPrompt = setup ? `[Setup: ${setup.title}]\n${setup.prompt}\n\n` : '';
-      const aiResponse = await monicaAIService.sendQuery(
-        `${setupPrompt}${prompt}`,
-        maxTokens
-      );
+    // Get user for credit calculation
+    const user = await userService.getUserById(req.user.user_id);
+    if (!user) {
+      throw new Error('User not found');
+    }
 
-      if (!aiResponse.success) {
-        return res.status(500).json({
-          success: false,
-          message: aiResponse.message || 'Erro ao processar consulta com a IA'
-        });
-      }
+    // Include setup in the prompt if available
+    const setupPrompt = setup ? `[Setup: ${setup.title}]\n${setup.prompt}\n\n` : '';
+    const finalPrompt = `${setupPrompt}${userPrompt}`;
+    
+    const requestTimestamp = Date.now();
+    const aiResponse = await monicaAIService.sendQuery(
+      finalPrompt,
+      maxTokens
+    );
+    const responseTimestamp = Date.now();
 
-      // Atualizar uso de tokens
-      console.log('DEBUG: server.js - Antes de chamar updateTokenUsage (sem arquivo)', {
-        userId: req.user.user_id,
-        tokens: aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)),
-        companyId: req.user.company_id
-      });
-
-      await tokenUsageService.updateTokenUsage(
-        req.user.user_id, 
-        aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)), 
-        req.user.company_id
-      );
-
-      console.log('DEBUG: server.js - Depois de chamar updateTokenUsage (sem arquivo)');
-
-      res.json({
-        success: true,
-        message: aiResponse.content,
-        usage: {
-          tokens: aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)),
-          remaining_credits: isDevelopment ? 9999 : (user.credits - (aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens)))),
-          limit: req.tokenUsage.limit,
-          used: req.tokenUsage.current + (aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens))),
-          remaining: req.tokenUsage.limit - (req.tokenUsage.current + (aiResponse.usage?.total_tokens || (encode(prompt).length + (setup ? encode(typeof setup === 'string' ? setup : (setup.title + (setup.prompt || ''))).length : 0) + Number(maxTokens))))
-        }
+    if (!aiResponse.success) {
+      return res.status(500).json({
+        success: false,
+        message: aiResponse.message || 'Erro ao processar consulta com a IA'
       });
     }
+
+    // Calcular tokens usados (baseado no contexto processado)
+    const promptTokens = Math.ceil(finalPrompt.length / 4);
+    const estimatedTokens = promptTokens + (aiResponse.usage?.completion_tokens || Number(maxTokens));
+
+    // Atualizar uso de tokens
+    await tokenUsageService.updateTokenUsage(
+      req.user.user_id, 
+      estimatedTokens,
+      req.user.company_id,
+      requestTimestamp,
+      responseTimestamp
+    );
+
+    // Limpar a resposta da IA se contiver conteúdo de arquivo
+    let cleanedContent = aiResponse.content;
+    if (aiResponse.content && typeof aiResponse.content === 'string') {
+      const { cleanAIResponse } = require('./src/utils/messageCleaner');
+      cleanedContent = cleanAIResponse(aiResponse.content);
+    }
+
+    // Return the response
+    res.json({
+      success: true,
+      message: cleanedContent,
+      usage: {
+        tokens: estimatedTokens,
+        remaining_credits: isDevelopment ? 9999 : (user.credits - estimatedTokens),
+        limit: req.tokenUsage.limit,
+        used: req.tokenUsage.current + estimatedTokens,
+        remaining: req.tokenUsage.limit === Infinity ? Infinity : req.tokenUsage.limit - (req.tokenUsage.current + estimatedTokens),
+        fileProcessed: !!processedContext,
+        contextTokens: processedContext ? fileProcessor.estimateContextTokens(processedContext) : 0
+      }
+    });
+
   } catch (error) {
     console.error('Erro ao processar consulta de IA:', error);
     res.status(500).json({
