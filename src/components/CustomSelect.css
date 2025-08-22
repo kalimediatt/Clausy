@@ -1,0 +1,147 @@
+/* CSS para melhorar compatibilidade dos dropdowns entre navegadores */
+
+/* Reset de estilos nativos do select */
+.custom-select-native {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none !important;
+}
+
+/* Fallback para navegadores que não suportam CSS Grid */
+.custom-select-fallback {
+  display: block;
+  width: 100%;
+}
+
+/* Suporte para navegadores mais antigos */
+@supports not (display: grid) {
+  .custom-select-container {
+    display: block;
+  }
+  
+  .custom-select-options {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+}
+
+/* Melhorias para Safari */
+@supports (-webkit-appearance: none) {
+  .custom-select-container {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  .custom-select-option {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Melhorias para Firefox */
+@-moz-document url-prefix() {
+  .custom-select-container {
+    position: relative;
+  }
+  
+  .custom-select-options {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Melhorias para Edge/IE */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .custom-select-container {
+    display: block;
+  }
+  
+  .custom-select-options {
+    display: block;
+    position: absolute;
+  }
+}
+
+/* Suporte para navegadores móveis */
+@media (max-width: 768px) {
+  .custom-select-container {
+    touch-action: manipulation;
+  }
+  
+  .custom-select-option {
+    min-height: 44px; /* Tamanho mínimo para touch */
+    padding: 12px 16px;
+  }
+}
+
+/* Melhorias de acessibilidade */
+.custom-select-container:focus-within {
+  outline: 2px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+.custom-select-option:focus {
+  outline: 2px solid #f59e0b;
+  outline-offset: -2px;
+}
+
+/* Suporte para modo de alto contraste */
+@media (prefers-contrast: high) {
+  .custom-select-container {
+    border: 2px solid currentColor;
+  }
+  
+  .custom-select-options {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Suporte para modo reduzido de movimento */
+@media (prefers-reduced-motion: reduce) {
+  .custom-select-container * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Fallback para navegadores sem suporte a CSS customizado */
+@supports not (--custom-property: value) {
+  .custom-select-container {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+  }
+  
+  .custom-select-options {
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+  }
+}
+
+/* Melhorias para navegadores com suporte limitado a flexbox */
+@supports not (display: flex) {
+  .custom-select-header {
+    display: block;
+  }
+  
+  .custom-select-header > * {
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
+
+/* Suporte para navegadores sem backdrop-filter */
+@supports not (backdrop-filter: blur(10px)) {
+  .custom-select-options {
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+  
+  .dark .custom-select-options {
+    background-color: rgba(23, 23, 23, 0.95);
+  }
+}
