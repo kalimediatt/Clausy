@@ -2837,10 +2837,20 @@ const Home = () => {
 
   const chatEndRef = useRef(null);
   const labChatEndRef = useRef(null);
+  const labChatContainerRef = useRef(null);
   
   // Auto-scroll inteligente
   const chatScrollRef = useAutoScroll([safeGet(labMessagesByChat, labSelectedChatName || labSelectedConversation || 'default', [])]);
   const aiScrollRef = useAutoScroll([messages]);
+
+  // Função para fazer scroll do lab chat
+  const scrollLabChatToBottom = () => {
+    setTimeout(() => {
+      if (labChatContainerRef.current) {
+        labChatContainerRef.current.scrollTop = labChatContainerRef.current.scrollHeight;
+      }
+    }, 100);
+  };
 
   const loadTasks = useCallback(async () => {
     try {
@@ -2950,10 +2960,18 @@ const Home = () => {
 
   // Efeito para rolar o chat do laboratório para baixo quando novas mensagens são adicionadas
   useEffect(() => {
-    if (labChatEndRef.current) {
-      labChatEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollLabChatToBottom();
   }, [labMessages]);
+
+  // Efeito para rolar o chat do laboratório quando as mensagens são carregadas
+  useEffect(() => {
+    const currentChatKey = getCurrentLabChatKey();
+    const currentMessages = safeGet(labMessagesByChat, currentChatKey, []);
+    
+    if (currentMessages.length > 0) {
+      scrollLabChatToBottom();
+    }
+  }, [labMessagesByChat, labSelectedChatName, labSelectedConversation]);
 
   // Efeito para carregar históricos do laboratório quando acessar o painel
   useEffect(() => {
@@ -4191,6 +4209,7 @@ const Home = () => {
 
   // Função para renderizar mensagem com arquivo
   const renderMessageWithFile = (content) => {
+    console.log('🎨 DEBUG: Renderizando conteúdo:', content);
     if (!content || typeof content !== 'string') {
       return content;
     }
@@ -4334,6 +4353,11 @@ const Home = () => {
         safeSet(newState, chatKey, mergedMessages);
         return newState;
       });
+
+      // Scroll para o final após carregar as mensagens
+      setTimeout(() => {
+        scrollLabChatToBottom();
+      }, 150);
     } catch (error) {
       handleError(error, 'carregamento de mensagens do chat');
       if (isSwitchingChat) setLabMessages([]);
@@ -4632,7 +4656,7 @@ const Home = () => {
                     </button>
                   </div>
                 </div>
-                <div ref={chatScrollRef} className="chat-messages flex-1 overflow-y-auto p-6 flex flex-col gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent">
+                <div ref={labChatContainerRef} className="chat-messages flex-1 overflow-y-auto p-6 flex flex-col gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent">
                   {(safeGet(labMessagesByChat, getCurrentLabChatKey(), [])).map((message, index) => (
                     <div 
                       key={`${message.role}-${index}-${message.timestamp}`}
