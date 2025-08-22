@@ -3315,17 +3315,29 @@ const Home = () => {
 
   // [3] Atualize handleLabSendMessage para usar o chat atual
   const handleLabSendMessage = async () => {
-    if (!labInput.trim() && !labSelectedFile) return;
+    console.log('🚀 DEBUG: Iniciando handleLabSendMessage');
+    console.log('📝 DEBUG: labInput:', labInput);
+    console.log('📁 DEBUG: labSelectedFile:', labSelectedFile);
+    
+    if (!labInput.trim() && !labSelectedFile) {
+      console.log('❌ DEBUG: Nenhum input ou arquivo, saindo...');
+      return;
+    }
     
     // Validação da mensagem (apenas se houver texto)
     if (labInput.trim()) {
+      console.log('✅ DEBUG: Validando mensagem...');
       const validation = validateMessage(labInput);
       if (!validation.valid) {
+        console.log('❌ DEBUG: Validação falhou:', validation.error);
         showInfoToast(validation.error);
         return;
       }
+      console.log('✅ DEBUG: Validação passou');
     }
     const chatKey = getCurrentLabChatKey();
+    console.log('🔑 DEBUG: Chat Key:', chatKey);
+    
     const userMessage = {
       id: Date.now(),
       role: 'user',
@@ -3334,21 +3346,36 @@ const Home = () => {
         : labInput,
       timestamp: new Date().toISOString()
     };
+    
+    console.log('👤 DEBUG: Mensagem do usuário criada:', userMessage);
+    console.log('💾 DEBUG: Salvando mensagem do usuário no estado...');
     setLabMessagesByChat(prev => {
       const newState = { ...prev };
       const currentMessages = safeGet(newState, chatKey, []);
-      safeSet(newState, chatKey, [...currentMessages, userMessage]);
+      const updatedMessages = [...currentMessages, userMessage];
+      console.log('📊 DEBUG: Mensagens atualizadas:', updatedMessages.length);
+      safeSet(newState, chatKey, updatedMessages);
       return newState;
     });
+    
+    console.log('🧹 DEBUG: Limpando input e iniciando typing...');
     setLabInput('');
     setIsLabTyping(true);
     try {
+      console.log('🌐 DEBUG: Preparando dados para API...');
       // Montar os dados para a API
       // Usar o índice do setup + 1 como ID, ou 1 como padrão se não houver setup selecionado
       const promptId = labSelectedSetupState ? setups.findIndex(s => s.title === labSelectedSetupState.title) + 1 : 1;
       const conteudo = userMessage.content;
       const userPlan = currentUser?.plan_id || currentUser?.plan_name || '';
       const userId = currentUser?.user_id || currentUser?.id || '';
+      
+      console.log('📋 DEBUG: Dados preparados:', {
+        promptId,
+        conteudo,
+        userPlan,
+        userId
+      });
       
       // Usar chat_name como chave principal para identificar o chat
       let session_id;
@@ -3376,14 +3403,14 @@ const Home = () => {
         chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
       }
       
-      console.log('Setup selecionado:', labSelectedSetupState?.title, 'Prompt ID:', promptId);
-      console.log('Chat name:', chat_name, 'Session ID:', session_id);
-      console.log('labSelectedChatName:', labSelectedChatName);
-      console.log('labSelectedConversation:', labSelectedConversation);
+      console.log('🎯 DEBUG: Setup selecionado:', labSelectedSetupState?.title, 'Prompt ID:', promptId);
+      console.log('💬 DEBUG: Chat name:', chat_name, 'Session ID:', session_id);
+      console.log('📝 DEBUG: labSelectedChatName:', labSelectedChatName);
+      console.log('🔄 DEBUG: labSelectedConversation:', labSelectedConversation);
 
       let response;
       if (labSelectedFile) {
-        console.log('Sending lab message with file:', labSelectedFile.name);
+        console.log('📁 DEBUG: Enviando mensagem com arquivo:', labSelectedFile.name);
         // Envia como FormData se houver arquivo
         const formData = new FormData();
         formData.append('prompt', promptId);
@@ -3395,7 +3422,7 @@ const Home = () => {
         formData.append('session_id', session_id);
         formData.append('file', labSelectedFile);
 
-        console.log('FormData contents for lab:', {
+        console.log('📦 DEBUG: FormData contents for lab:', {
           prompt: promptId,
           conteudo: conteudo,
           fileName: labSelectedFile.name,
@@ -3413,7 +3440,7 @@ const Home = () => {
           body: formData
         });
       } else {
-        console.log('Sending lab message without file');
+        console.log('📝 DEBUG: Enviando mensagem sem arquivo');
         // Envia como JSON se não houver arquivo
         const body = {
           prompt: promptId,
@@ -3441,8 +3468,8 @@ const Home = () => {
       }
 
       const data = await response.json();
-      console.log('Resposta recebida da API:', data);
-      console.log('Chat atual:', labSelectedChatName, 'Session:', labSelectedConversation);
+      console.log('📨 DEBUG: Resposta recebida da API:', data);
+      console.log('💬 DEBUG: Chat atual:', labSelectedChatName, 'Session:', labSelectedConversation);
       
       // Processamento universal e robusto da resposta da IA
       let content = 'Resposta recebida da API, mas sem mensagem.';
@@ -4207,12 +4234,33 @@ const Home = () => {
     showSuccessToast(`Chat "${chatName}" inicializado com sucesso!`);
   };
 
+  // Função para cortar texto antes de "Conteúdo do arquivo"
+  function cortarAntesDeConteudo(texto) {
+    const marcador = "Conteúdo do arquivo";
+    const index = texto.indexOf(marcador);
+
+    let resultado;
+    if (index !== -1) {
+      // Pega apenas o que vem antes do marcador
+      resultado = texto.slice(0, index).trim();
+    } else {
+      // Se não encontrar, retorna o texto inteiro
+      resultado = texto;
+    }
+
+    console.log(resultado); // imprime automaticamente
+    return resultado;       // ainda retorna, caso precise usar depois
+  }
+
   // Função para renderizar mensagem com arquivo
   const renderMessageWithFile = (content) => {
     console.log('🎨 DEBUG: Renderizando conteúdo:', content);
     if (!content || typeof content !== 'string') {
       return content;
     }
+
+    // Aplicar a função cortarAntesDeConteudo
+    content = cortarAntesDeConteudo(content);
 
     // Detectar diferentes padrões de arquivo
     const patterns = [
