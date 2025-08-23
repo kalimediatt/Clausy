@@ -85,7 +85,9 @@ export default function SecurityPanel({
   setPage, 
   totalPages = 1, 
   totalItems = 0,
-  debugData = []
+  debugData = [],
+  todayStats = null,
+  companyName = null
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDetails, setShowDetails] = useState(false);
@@ -115,13 +117,18 @@ export default function SecurityPanel({
 
   // Calcular estatísticas dos logs
   const stats = React.useMemo(() => {
+    console.log('DEBUG: Calculando estatísticas - logs:', logs?.length, 'todayStats:', todayStats);
+    
     if (!logs || logs.length === 0) {
       return {
         totalLogs: 0,
         successfulLogins: 0,
         failedLogins: 0,
         uniqueUsers: 0,
-        successRate: 0
+        successRate: 0,
+        todayLogins: 0,
+        todaySuccessfulLogins: 0,
+        todayFailedLogins: 0
       };
     }
 
@@ -138,14 +145,65 @@ export default function SecurityPanel({
     const uniqueUsers = new Set(logs.map(log => log.username)).size;
     const successRate = logs.length > 0 ? ((successfulLogins / logs.length) * 100).toFixed(1) : 0;
 
-    return {
+    // Usar estatísticas do backend se disponíveis, senão calcular localmente
+    // Calcular estatísticas de hoje
+    let todayLogins = todayStats?.totalLogs || 0;
+    let todaySuccessfulLogins = todayStats?.successfulLogins || 0;
+    let todayFailedLogins = todayStats?.failedLogins || 0;
+    
+    // Se não temos estatísticas do backend, calcular localmente
+    if (!todayStats || todayStats.totalLogs === 0) {
+      console.log('DEBUG: Usando cálculo local de estatísticas do dia');
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      
+      const todayLogs = logs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        return logDate >= startOfDay && logDate <= endOfDay;
+      });
+      
+      todayLogins = todayLogs.length;
+      todaySuccessfulLogins = todayLogs.filter(log => 
+        log.success === 1 || log.success === true || log.status === 'success'
+      ).length;
+      todayFailedLogins = todayLogs.filter(log => 
+        log.success === 0 || log.success === false || log.status === 'failed'
+      ).length;
+      
+      console.log('DEBUG: Cálculo local - logs de hoje:', todayLogs.length);
+    } else {
+      console.log('DEBUG: Usando estatísticas do backend');
+    }
+    
+    // Calcular estatísticas dos últimos 7 dias
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0); // Início do dia
+    
+    const last7DaysLogs = logs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= sevenDaysAgo;
+    });
+    
+    const last7DaysLogins = last7DaysLogs.length;
+    console.log('DEBUG: Cálculo local - logs dos últimos 7 dias:', last7DaysLogs.length);
+
+    const finalStats = {
       totalLogs: logs.length,
       successfulLogins,
       failedLogins,
       uniqueUsers,
-      successRate
+      successRate,
+      todayLogins,
+      todaySuccessfulLogins,
+      todayFailedLogins,
+      last7DaysLogins
     };
-  }, [logs]);
+    
+    console.log('DEBUG: Estatísticas finais:', finalStats);
+    return finalStats;
+  }, [logs, todayStats]);
 
   // Filtrar logs baseado no termo de busca e filtro
   const filteredLogs = React.useMemo(() => {
@@ -403,7 +461,7 @@ export default function SecurityPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
         >
           <motion.div
             whileHover={{ y: -2 }}
@@ -413,10 +471,10 @@ export default function SecurityPanel({
               Total de Logs
             </div>
             <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
-              {stats.totalLogs}
+              {stats.last7DaysLogins}
             </div>
             <div className="text-sm text-green-500 font-medium">
-              +{stats.totalLogs} hoje
+              +{stats.todayLogins} hoje
             </div>
           </motion.div>
 
@@ -431,7 +489,7 @@ export default function SecurityPanel({
               {stats.successfulLogins}
             </div>
             <div className="text-sm text-green-500 font-medium">
-              {stats.successRate}% taxa de sucesso
+              +{stats.todaySuccessfulLogins} hoje
             </div>
           </motion.div>
 
@@ -446,7 +504,7 @@ export default function SecurityPanel({
               {stats.failedLogins}
             </div>
             <div className="text-sm text-red-500 font-medium">
-              {(100 - stats.successRate).toFixed(1)}% taxa de falha
+              +{stats.todayFailedLogins} hoje
             </div>
           </motion.div>
 
@@ -455,13 +513,28 @@ export default function SecurityPanel({
             className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-accent1"
           >
             <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
-              Usuários Únicos
+              Usuários {companyName || 'N/A'}
             </div>
             <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
               {stats.uniqueUsers}
             </div>
             <div className="text-sm text-green-500 font-medium">
               Ativos no período
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -2 }}
+            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-purple-500"
+          >
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+              Taxa de Sucesso
+            </div>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+              {stats.successRate}%
+            </div>
+            <div className="text-sm text-purple-500 font-medium">
+              Geral
             </div>
           </motion.div>
         </motion.div>

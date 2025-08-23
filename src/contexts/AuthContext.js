@@ -1226,6 +1226,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loadUsageStats = async () => {
+    try {
+      if (!currentUser?.user_id) {
+        console.log('DEBUG: loadUsageStats - Usuário não autenticado');
+        return { success: false, message: 'Usuário não autenticado' };
+      }
+
+      console.log('DEBUG: loadUsageStats - Carregando estatísticas para usuário:', currentUser.user_id);
+      
+      const response = await api.get(`/user/${currentUser.user_id}/usage-stats`);
+      
+      if (response.success) {
+        console.log('DEBUG: loadUsageStats - Estatísticas carregadas:', response.data);
+        setUsageStats(response.data);
+        return { success: true, data: response.data };
+      } else {
+        console.error('DEBUG: loadUsageStats - Erro na resposta:', response.message);
+        return { success: false, message: response.message || 'Erro ao carregar estatísticas' };
+      }
+    } catch (error) {
+      console.error('DEBUG: loadUsageStats - Erro:', error);
+      return { success: false, message: 'Erro ao carregar estatísticas: ' + (error.message || 'Unknown error') };
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       isAuthenticated,
@@ -1263,6 +1288,7 @@ export const AuthProvider = ({ children }) => {
       saveSystemSettings,
       resetSystemSettings,
       getSettingsHistory,
+      loadUsageStats,
       currentPage,
       totalPages,
       totalItems,

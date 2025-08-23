@@ -491,32 +491,73 @@ app.get('/api/auth/verify', authenticateToken, async (req, res) => {
   }
 });
 
-// Rota para obter estatísticas de uso
-app.get('/api/user/:userId/usage-stats', authenticateToken, checkCompanyAccess, (req, res) => {
-  // Dados simulados para estatísticas de uso
-  const usageStats = {
-    queries_remaining: 220,
-    queries_used: 80,
-    tokens_remaining: 8500,
-    tokens_used: 1500,
-    quota_reset_date: "2023-06-01T00:00:00Z",
-    history: [
-      { date: "2023-05-20", queries: 12, tokens: 250 },
-      { date: "2023-05-21", queries: 8, tokens: 180 },
-      { date: "2023-05-22", queries: 15, tokens: 320 },
-      { date: "2023-05-23", queries: 10, tokens: 200 },
-      { date: "2023-05-24", queries: 20, tokens: 400 },
-      { date: "2023-05-25", queries: 5, tokens: 100 },
-      { date: "2023-05-26", queries: 10, tokens: 250 }
-    ],
-    last_query: {
-      timestamp: "2023-05-26T15:30:00Z",
-      prompt: "Pesquisa sobre direito tributário",
-      tokens: 48
-    }
-  };
-  
-  res.json({ success: true, data: usageStats });
+// Rota para obter estatísticas de uso do Redis
+app.get('/api/user/:userId/usage-stats', authenticateToken, checkCompanyAccess, async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const redis = require('./src/config/redis.config');
+    const tokenUsageService = require('./src/services/tokenUsage.service');
+
+    console.log('DEBUG: Obtendo estatísticas de uso para usuário:', userId);
+
+    // Obter histórico completo do Redis
+    const history = await tokenUsageService.getPermanentTokenHistory(userId);
+    
+    console.log('DEBUG: Histórico obtido do Redis:', history.length, 'registros');
+
+    // Calcular estatísticas
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    let queriesToday = 0;
+    let tokensToday = 0;
+    let queriesThisMonth = 0;
+    let tokensThisMonth = 0;
+    let totalQueries = 0;
+    let totalTokens = 0;
+
+    history.forEach(record => {
+      const recordDate = new Date(record.requestTimestamp);
+      
+      // Total geral
+      totalQueries++;
+      totalTokens += record.tokens || 0;
+      
+      // Hoje
+      if (recordDate >= startOfDay) {
+        queriesToday++;
+        tokensToday += record.tokens || 0;
+      }
+      
+      // Este mês
+      if (recordDate >= startOfMonth) {
+        queriesThisMonth++;
+        tokensThisMonth += record.tokens || 0;
+      }
+    });
+
+    const usageStats = {
+      queries_today: queriesToday,
+      tokens_today: tokensToday,
+      queries_this_month: queriesThisMonth,
+      tokens_this_month: tokensThisMonth,
+      total_queries: totalQueries,
+      total_tokens: totalTokens,
+      history_count: history.length
+    };
+
+    console.log('DEBUG: Estatísticas calculadas:', usageStats);
+    
+    res.json({ success: true, data: usageStats });
+  } catch (error) {
+    console.error('Erro ao obter estatísticas de uso:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao obter estatísticas de uso',
+      error: error.message 
+    });
+  }
 });
 
 // Rota para obter membros da equipe

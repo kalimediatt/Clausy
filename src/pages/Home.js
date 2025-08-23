@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -545,7 +545,7 @@ const UsageProgressBar = styled.div`
   }
 `;
 
-const UsageStatsContainer = styled.div`
+const StatsContainer = styled.div`
   margin-top: 0.5rem;
   display: flex;
   justify-content: space-between;
@@ -706,7 +706,7 @@ const AIHeader = styled.div`
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 `;
 
-const UsageStats = styled.div`
+const Stats = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
@@ -2729,7 +2729,9 @@ const Home = () => {
     hasAdminAccess,
     loadUsers,
     loadAuthLogs,
+    loadUsageStats,
     authLogs,
+    usageStats,
     currentPage,
     totalPages,
     totalItems
@@ -2764,12 +2766,7 @@ const Home = () => {
   const [logFilter, setLogFilter] = useState('all');
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
-  const [usageStats, setUsageStats] = useState({
-    queries_today: 0,
-    tokens_today: 0,
-    queries_this_month: 0,
-    total_queries: 0
-  });
+
   const [fileContent, setFileContent] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [showSetupModal, setShowSetupModal] = useState(false);
@@ -2883,8 +2880,12 @@ const Home = () => {
   useEffect(() => {
     if (currentUser) {
       loadInitialData();
+      // Carregar estatísticas de uso do Redis
+      loadUsageStats().catch(error => {
+        console.error('Erro ao carregar estatísticas de uso:', error);
+      });
     }
-  }, [currentUser, getDashboardStats, getUserTasks, getTeamMembers, getQueryDistribution]);
+  }, [currentUser, getDashboardStats, getUserTasks, getTeamMembers, getQueryDistribution, loadUsageStats]);
 
   // Efeito para carregar dados específicos da aba
   useEffect(() => {
@@ -4004,48 +4005,61 @@ const Home = () => {
 
 
 
-              {/* Plan Distribution */}
-        {queryDistributionData && queryDistributionData.planDistribution && (
+              {/* Plan Distribution - Comentado temporariamente */}
+              {/* {queryDistributionData && queryDistributionData.planDistribution && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.6 }}
                   className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
                 >
+                  Título da seção de distribuição de usuários por plano
                   <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
                     Usuários por Plano
                   </h3>
+                  
+                  Container para a lista de planos
                   <div className="space-y-3">
-              {queryDistributionData.planDistribution.map((plan, index) => {
-                const userCount = typeof plan.user_count === 'number' ? plan.user_count : parseInt(plan.user_count || '0', 10);
-                return (
+                    Mapeia cada plano para criar um item da lista
+                    {queryDistributionData.planDistribution.map((plan, index) => {
+                      // Converte o user_count para número, garantindo que seja um valor válido
+                      const userCount = typeof plan.user_count === 'number' ? plan.user_count : parseInt(plan.user_count || '0', 10);
+                      
+                      return (
                         <div key={index} className="flex items-center justify-between">
+                          Lado esquerdo: indicador de cor e nome do plano
                           <div className="flex items-center space-x-3">
+                            Quadrado colorido que representa o plano
                             <div 
                               className="w-4 h-4 rounded"
                               style={{ backgroundColor: plan.color || '#3b82f6' }}
                             />
+                            Nome do plano
                             <span className="text-sm text-neutral-900 dark:text-neutral-100">
-                    {plan.label || 'Plano'}
+                              {plan.label || 'Plano'}
                             </span>
                           </div>
+                          
+                          Lado direito: contador de usuários
                           <div className="flex items-center space-x-2">
+                            Círculo colorido com o número de usuários
                             <div 
                               className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
                               style={{ backgroundColor: plan.color || '#3b82f6' }}
                             >
-                      {userCount}
-                    </div>
+                              {userCount}
+                            </div>
+                            Texto descritivo (singular ou plural)
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {userCount === 1 ? 'usuário' : 'usuários'}
+                              {userCount === 1 ? 'usuário' : 'usuários'}
                             </span>
-                    </div>
-                  </div>
-                );
-              })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </motion.div>
-              )}
+              )} */}
 
               {/* Current Plan */}
               <motion.div

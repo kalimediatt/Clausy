@@ -283,7 +283,8 @@ const Config = () => {
             </motion.div>
 
             {/* Language Setting */}
-            <motion.div
+            {/* Seção de configuração de idioma - Comentada temporariamente */}
+      {/* <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.8 }}
@@ -350,7 +351,7 @@ const Config = () => {
                   </AnimatePresence>
                 </div>
               </div>
-            </motion.div>
+            </motion.div> */}
 
           </div>
         </motion.div>
