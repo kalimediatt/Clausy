@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -75,7 +74,7 @@ const Sidebar = ({
   };
 
   return (
-    <motion.div
+    <div
       className={`
         ${isOpen ? 'w-64' : 'w-20'} 
         bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900
@@ -88,53 +87,44 @@ const Sidebar = ({
         min-h-screen
         z-50
       `}
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.5 }}
     >
       {/* Toggle Button */}
-      <motion.button
+      <button
         onClick={() => setIsOpen && setIsOpen(!isOpen)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
         className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
         aria-label="Alternar sidebar"
       >
         {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
-      </motion.button>
+      </button>
 
       {/* Logo Section */}
       <div className={`${isOpen ? 'p-5' : 'p-5'} border-b border-neutral-700/50 transition-all duration-300`}>
-        <motion.div 
+        <div 
           className="flex items-center"
-          animate={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
-          transition={{ duration: 0.3 }}
+          style={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
         >
-          <motion.div 
+          <div 
             className="rounded-xl bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center shadow-lg flex-shrink-0"
-            animate={{ 
+            style={{ 
               width: isOpen ? '40px' : '32px',
               height: isOpen ? '40px' : '32px',
               padding: isOpen ? '8px' : '6px'
             }}
-            transition={{ duration: 0.3 }}
           >
             <img 
               src={WhiteLogo} 
               alt="Clausy Logo" 
               className="w-full h-full object-contain filter brightness-0 invert"
             />
-          </motion.div>
+          </div>
           
-          <motion.div
-            initial={false}
-            animate={{ 
+          <div
+            style={{ 
               opacity: isOpen ? 1 : 0,
               width: isOpen ? 'auto' : 0,
               marginLeft: isOpen ? '12px' : 0
             }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
+            className="overflow-hidden transition-all duration-300"
           >
             <h1 className="text-xl font-bold text-neutral-100 whitespace-nowrap">
               Clausy
@@ -142,18 +132,15 @@ const Sidebar = ({
             <p className="text-xs text-neutral-400 whitespace-nowrap">
               IA Jurídico
             </p>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2">
         {items.map((item, index) => (
-          <motion.div
+          <div
             key={item.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.05 }}
             className={`
               flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
               ${activeItem === item.id 
@@ -162,8 +149,6 @@ const Sidebar = ({
               }
             `}
             onClick={(e) => handleItemClick(item, e)}
-            whileHover={{ x: 5, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
             <div className={`
               text-lg transition-all duration-300
@@ -172,26 +157,21 @@ const Sidebar = ({
             `}>
               {item.icon}
             </div>
-            <motion.span
-              initial={false}
-              animate={{ 
+            <span
+              style={{ 
                 opacity: isOpen ? 1 : 0,
                 width: isOpen ? 'auto' : 0
               }}
-              transition={{ duration: 0.3 }}
-              className="whitespace-nowrap overflow-hidden font-medium"
+              className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
             >
               {item.text}
-            </motion.span>
-          </motion.div>
+            </span>
+          </div>
         ))}
 
         {/* Admin Panel - Only for admins */}
         {hasAdminAccess() && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: items.length * 0.05 }}
+          <div
             className={`
               flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
               ${activeItem === 'admin' 
@@ -205,8 +185,6 @@ const Sidebar = ({
               if (setActiveItem) setActiveItem('admin');
               navigate('/admin');
             }}
-            whileHover={{ x: 5, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
             <div className={`
               text-lg transition-all duration-300
@@ -215,18 +193,16 @@ const Sidebar = ({
             `}>
               <FaUserShield />
             </div>
-            <motion.span
-              initial={false}
-              animate={{ 
+            <span
+              style={{ 
                 opacity: isOpen ? 1 : 0,
                 width: isOpen ? 'auto' : 0
               }}
-              transition={{ duration: 0.3 }}
-              className="whitespace-nowrap overflow-hidden font-medium"
+              className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
             >
               Painel Admin
-            </motion.span>
-          </motion.div>
+            </span>
+          </div>
         )}
       </nav>
 
@@ -234,10 +210,7 @@ const Sidebar = ({
       <div className="p-4 border-t border-neutral-700/50 space-y-3">
         {/* User Profile Button */}
         {currentUser && (
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+          <div
             className={`
               flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
               ${activeItem === 'profile' 
@@ -246,32 +219,25 @@ const Sidebar = ({
               }
             `}
             onClick={(e) => handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e)}
-            whileHover={{ x: 5, scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
           >
-            <motion.div 
+            <div 
               className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
-              animate={{ 
+              style={{ 
                 width: isOpen ? '32px' : '28px',
                 height: isOpen ? '32px' : '28px',
-                fontSize: isOpen ? '14px' : '12px'
-              }}
-              transition={{ duration: 0.3 }}
-              style={{
+                fontSize: isOpen ? '14px' : '12px',
                 marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
                 marginLeft: isOpen ? 0 : 'auto'
               }}
             >
               {currentUser.name?.charAt(0).toUpperCase() || 'U'}
-            </motion.div>
-            <motion.div
-              initial={false}
-              animate={{ 
+            </div>
+            <div
+              style={{ 
                 opacity: isOpen ? 1 : 0,
                 width: isOpen ? 'auto' : 0
               }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
+              className="overflow-hidden transition-all duration-300"
             >
               <p className="text-sm font-medium text-inherit whitespace-nowrap">
                 {currentUser.name || 'Usuário'}
@@ -279,15 +245,13 @@ const Sidebar = ({
               <p className="text-xs text-neutral-400 whitespace-nowrap">
                 Ver Perfil
               </p>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         )}
 
         {/* Logout Button */}
-        <motion.button
+        <button
           onClick={handleLogout}
-          whileHover={{ scale: 1.02, x: 5 }}
-          whileTap={{ scale: 0.98 }}
           className={`
             w-full flex items-center p-3 rounded-xl transition-all duration-300 group
             text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-transparent hover:border-red-500/30
@@ -300,20 +264,18 @@ const Sidebar = ({
           `}>
             <FaSignOutAlt />
           </div>
-          <motion.span
-            initial={false}
-            animate={{ 
+          <span
+            style={{ 
               opacity: isOpen ? 1 : 0,
               width: isOpen ? 'auto' : 0
             }}
-            transition={{ duration: 0.3 }}
-            className="whitespace-nowrap overflow-hidden font-medium"
+            className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
           >
             Sair
-          </motion.span>
-        </motion.button>
+          </span>
+        </button>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
