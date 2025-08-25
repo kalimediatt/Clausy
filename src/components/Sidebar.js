@@ -19,7 +19,6 @@ import WhiteLogo from '../logos/white.png';
 const defaultMenuItems = [
   { id: 'dashboard', text: 'Home', icon: <FaHome /> },
   { id: 'laboratory', text: 'Laboratório', icon: <FaFlask /> },
-  { id: 'security', text: 'Segurança', icon: <FaLock /> },
   { id: 'settings', text: 'Configurações', icon: <FaCog /> },
   { id: 'reports', text: 'Relatórios', icon: <FaChartBar /> },
 ];
@@ -168,6 +167,42 @@ const Sidebar = ({
             </span>
           </div>
         ))}
+
+        {/* Security Panel - Only for admins */}
+        {hasAdminAccess() && (
+          <div
+            className={`
+              flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
+              ${activeItem === 'security' 
+                ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+              }
+            `}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (setActiveItem) setActiveItem('security');
+              navigate('/');
+            }}
+          >
+            <div className={`
+              text-lg transition-all duration-300
+              ${isOpen ? 'mr-4' : 'mx-auto'}
+              ${activeItem === 'security' ? 'text-accent1' : 'group-hover:text-accent1'}
+            `}>
+              <FaLock />
+            </div>
+            <span
+              style={{ 
+                opacity: isOpen ? 1 : 0,
+                width: isOpen ? 'auto' : 0
+              }}
+              className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
+            >
+              Segurança
+            </span>
+          </div>
+        )}
 
         {/* Admin Panel - Only for admins */}
         {hasAdminAccess() && (
