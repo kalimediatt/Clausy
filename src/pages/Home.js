@@ -5069,7 +5069,7 @@ const Home = () => {
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    {/* Toggle para manter arquivo anexado */}
+                    {/* Toggle para manter arquivo anexado 
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -5092,7 +5092,7 @@ const Home = () => {
                         )}
                         <SwitchCircle data-active={labKeepFileAttached} />
                       </ToggleSwitchStyled>
-                    </motion.div>
+                    </motion.div>*/}
                     
                     {/* Status Badge */}
                     <motion.div
