@@ -45,17 +45,10 @@ try {
 }
 
 // Log de todas as variáveis de ambiente para debug
-console.log('Variáveis de ambiente carregadas:');
-console.log('PORT:', process.env.PORT);
-console.log('DB_HOST:', process.env.DB_HOST);
-console.log('DB_USER:', process.env.DB_USER);
-console.log('DB_NAME:', process.env.DB_NAME);
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('API_KEY:', process.env.API_KEY ? 'Disponível' : 'Não disponível');
+
 
 // Verificar se a API_KEY está disponível
-console.log('API_KEY disponível:', process.env.API_KEY ? 'Sim' : 'Não');
-console.log('PORT do .env:', process.env.PORT);
+
 
 // Definir chave JWT com fallback para desenvolvimento
 const JWT_SECRET = process.env.JWT_SECRET || 'IkttY9U89HmcwVu42HO7GSTv8QzxWcTG1ClGLjQ66HFrEeKjSp';
@@ -70,8 +63,7 @@ const chatHistoryRouter = require('./src/routes/chatHistory.routes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || '0.0.0.0';
-console.log('Porta final que será usada:', PORT);
-console.log('Host que será usado:', HOST);
+
 
 // Configurar trust proxy antes de qualquer middleware
 app.set('trust proxy', '127.0.0.1');  // Apenas confiar no proxy local
@@ -194,7 +186,7 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ success: false, message: 'Token inválido' });
     }
-    console.log('DEBUG: authenticateToken - User data:', user);
+
     req.user = user;
     next();
   });
@@ -202,7 +194,7 @@ const authenticateToken = (req, res, next) => {
 
 // Middleware de logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  
   next();
 });
 
@@ -391,7 +383,7 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
     
     let logs, totalCount;
     try {
-      console.log('Executando queries com parâmetros:', {
+  
         query,
         queryParams,
         countQuery,
@@ -498,12 +490,12 @@ app.get('/api/user/:userId/usage-stats', authenticateToken, checkCompanyAccess, 
     const redis = require('./src/config/redis.config');
     const tokenUsageService = require('./src/services/tokenUsage.service');
 
-    console.log('DEBUG: Obtendo estatísticas de uso para usuário:', userId);
+
 
     // Obter histórico completo do Redis
     const history = await tokenUsageService.getPermanentTokenHistory(userId);
     
-    console.log('DEBUG: Histórico obtido do Redis:', history.length, 'registros');
+
 
     // Calcular estatísticas
     const today = new Date();
@@ -547,7 +539,7 @@ app.get('/api/user/:userId/usage-stats', authenticateToken, checkCompanyAccess, 
       history_count: history.length
     };
 
-    console.log('DEBUG: Estatísticas calculadas:', usageStats);
+
     
     res.json({ success: true, data: usageStats });
   } catch (error) {
@@ -802,8 +794,7 @@ app.use('/api/admin/', authenticateToken, (req, res, next) => {
 app.get('/api/users', authenticateToken, async (req, res) => {
   let connection;
   try {
-    console.log('DEBUG /api/users');
-    console.log('req.user:', req.user);
+
     connection = await dbService.getConnection();
     // Se for superadmin, retorna todos os usuários
     if (req.user.role === 'superadmin') {
@@ -814,7 +805,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
         'JOIN subscription_plans sp ON u.plan_id = sp.plan_id ' +
         'JOIN companies c ON u.company_id = c.company_id'
       );
-      console.log('Resultado da query users (superadmin):', users);
+
       return res.json({ success: true, data: users });
     }
     // Se for admin, retorna apenas usuários da mesma empresa
@@ -827,7 +818,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
       'WHERE u.company_id = ?',
       [req.user.company_id]
     );
-    console.log('Resultado da query users (admin):', users);
+    
     res.json({ success: true, data: users });
   } catch (error) {
     console.error('Erro ao listar usuários:', error);

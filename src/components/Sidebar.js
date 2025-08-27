@@ -18,7 +18,7 @@ import WhiteLogo from '../logos/white.png';
 
 const defaultMenuItems = [
   { id: 'dashboard', text: 'Home', icon: <FaHome /> },
-  { id: 'laboratory', text: 'Laboratório', icon: <FaFlask /> },
+  { id: 'laboratory', text: 'Central Jurídica', icon: <FaFlask /> },
   { id: 'settings', text: 'Configurações', icon: <FaCog /> },
   { id: 'reports', text: 'Relatórios', icon: <FaChartBar /> },
 ];

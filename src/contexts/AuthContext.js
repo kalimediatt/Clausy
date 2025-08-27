@@ -420,16 +420,14 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     const storedUser = getStoredUser();
     const token = getStoredToken();
-    console.log('🔄 AuthProvider: Inicializando com dados armazenados');
-    console.log('🔄 AuthProvider: storedUser:', storedUser);
-    console.log('🔄 AuthProvider: token presente:', !!token);
+
     return (storedUser && token) ? storedUser : null;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     const token = getStoredToken();
     const storedUser = getStoredUser();
     const isAuth = !!(token && storedUser);
-    console.log('🔄 AuthProvider: isAuthenticated inicial:', isAuth);
+
     return isAuth;
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -447,29 +445,28 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar autenticação ao iniciar
   useEffect(() => {
-    console.log('🔄 AuthContext: Iniciando verificação de autenticação');
+
     checkAuth();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Limpar cache quando company_id mudar
   useEffect(() => {
     if (currentUser?.company_id) {
-      console.log('DEBUG: Company ID mudou, limpando cache');
+  
       setUsersCache([]);
       setLastUsersLoad(null);
     }
   }, [currentUser?.company_id]);
   
   const checkAuth = async () => {
-    console.log('🔍 CheckAuth: Iniciando verificação');
+
     try {
       const token = getStoredToken();
       const storedUser = getStoredUser();
-      console.log('🔍 CheckAuth: Token encontrado?', !!token);
-      console.log('🔍 CheckAuth: Usuário armazenado?', !!storedUser);
+      
       
       if (!token) {
-        console.log('❌ CheckAuth: Sem token, definindo como não autenticado');
+    
         setIsAuthenticated(false);
         setCurrentUser(null);
         setIsLoading(false);
@@ -478,25 +475,19 @@ export const AuthProvider = ({ children }) => {
 
       // Se já temos dados válidos do usuário armazenados localmente, usar eles
       if (storedUser && storedUser.user_id && storedUser.email && storedUser.name) {
-        console.log('✅ CheckAuth: Dados válidos já armazenados, usando cache');
+    
         setIsAuthenticated(true);
         setCurrentUser(storedUser);
         setIsLoading(false);
         return;
       }
       
-      console.log('🌐 CheckAuth: Verificando token com servidor');
+  
       const response = await api.get('/auth/verify');
-      console.log('🌐 CheckAuth: Resposta do servidor:', response);
+      
       
       if (response.success) {
-        console.log('✅ CheckAuth: Token válido, usuário completo:', response.user);
-        console.log('✅ CheckAuth: Campos disponíveis:', Object.keys(response.user));
-        console.log('✅ CheckAuth: Nome:', response.user.name);
-        console.log('✅ CheckAuth: Email:', response.user.email);
-        console.log('✅ CheckAuth: Company:', response.user.company_name || response.user.company);
-        console.log('✅ CheckAuth: Plano:', response.user.plan_name || response.user.plan);
-        console.log('✅ CheckAuth: Créditos:', response.user.credits);
+        
         
         // Garantir que todos os campos necessários estão presentes
         const completeUser = {
@@ -531,7 +522,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Error loading usage stats:', error);
         }
       } else {
-        console.log('❌ CheckAuth: Token inválido, removendo');
+    
         removeStoredToken();
         setIsAuthenticated(false);
         setCurrentUser(null);
@@ -542,7 +533,7 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(false);
       setCurrentUser(null);
     } finally {
-      console.log('🏁 CheckAuth: Finalizando, setIsLoading(false)');
+  
       setIsLoading(false);
     }
   };
@@ -648,11 +639,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loadUsers = useCallback(async (forceRefresh = false) => {
-    console.log('DEBUG: loadUsers chamado com forceRefresh:', forceRefresh);
-    console.log('DEBUG: currentUser?.company_id:', currentUser?.company_id);
+
     
     if (!currentUser?.company_id) {
-      console.log('DEBUG: Sem company_id, limpando usuários');
+  
       setUsers([]);
       setUsersCache([]);
       setLastUsersLoad(null);
@@ -665,25 +655,25 @@ export const AuthProvider = ({ children }) => {
         usersCache.length > 0 && 
         lastUsersLoad && 
         (now - lastUsersLoad) < CACHE_DURATION) {
-      console.log('DEBUG: Usando cache, usuários em cache:', usersCache.length);
+  
       setUsers(usersCache);
       return usersCache;
     }
     
-    console.log('DEBUG: Fazendo requisição para carregar usuários');
+
     setIsLoadingUsers(true);
     try {
       const response = await api.get(`/company/${currentUser.company_id}/users`);
-      console.log('DEBUG: Resposta da API:', response);
+  
       
       if (response?.data) {
-        console.log('DEBUG: Usuários carregados:', response.data.length);
+    
         setUsers(response.data);
         setUsersCache(response.data);
         setLastUsersLoad(now);
         return response.data;
       }
-      console.log('DEBUG: Nenhum usuário encontrado');
+  
       setUsers([]);
       setUsersCache([]);
       return null;
@@ -707,7 +697,7 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: response.message || 'Failed to add user' };
     } catch (error) {
       console.error('Error adding user:', error);
-      console.log('Error message:', error.message);
+  
       // Extrair a mensagem de erro mais específica
       let errorMessage = 'Erro ao adicionar usuário';
       
@@ -1076,14 +1066,14 @@ export const AuthProvider = ({ children }) => {
   // Obter dados para gráficos
   const getQueryDistribution = async () => {
     if (!currentUser) {
-      console.log('No current user, returning null');
+  
       return null;
     }
     
     try {
-      console.log('Fetching query distribution for user:', currentUser.user_id);
+  
       const response = await api.get(`/user/${currentUser.user_id}/query-distribution`);
-      console.log('API response:', response);
+  
       
       if (response.success) {
         console.log('Returning successful response data');

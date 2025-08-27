@@ -108,7 +108,7 @@ useEffect(() => {
           </div>
           <div className="leading-tight">
             <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Clausy</p>
-            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">IA Jurídico</h1>
+            <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Copiloto Jurídico</h1>
           </div>
         </div>
 
@@ -153,15 +153,16 @@ useEffect(() => {
         <section className="order-2 hidden md:order-1 md:block">
           <div className="mx-auto max-w-md">
             <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-              Bem-vindo(a) à Clausy sua Central de IA Jurídica
+                Bem-vindo(a) à Clausy Sua Copilota Jurídica
             </h2>
             <p className="mb-6 text-neutral-600 dark:text-neutral-300">
-              Identifica riscos e automatiza tarefas repetitivas, aumentando eficiência e agilidade nos processos.
+            Mais que IA: sua parceira de confiança para criar, revisar, redigir e pesquisar com
+            precisão jurídica.
             </p>
             <ul className="space-y-3 text-sm text-neutral-700 dark:text-neutral-300">
               <li>✓ Criptografia em trânsito e em repouso</li>
               <li>✓ Políticas de senha & 2FA (opcional)</li>
-              <li>✓ Login social (Google, GitHub)</li>
+              {/* <li>✓ Login social (Google, GitHub)</li> */}
             </ul>
           </div>
         </section>

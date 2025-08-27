@@ -2622,7 +2622,7 @@ async function fetchLabChatsFromBackend() {
     }
     
     const data = await response.json();
-    console.log('Históricos recebidos da API:', data);
+    
     
     // Processar os dados recebidos da API
     if (Array.isArray(data)) {
@@ -2792,6 +2792,16 @@ const Home = () => {
   const [labSelectedSetupState, setLabSelectedSetupState] = useState(null);
   const [labShowNewChatModal, setLabShowNewChatModal] = useState(false);
   const [newChatName, setNewChatName] = useState('');
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  
+  // useEffect para garantir que o modal seja resetado corretamente
+  useEffect(() => {
+    if (!labShowNewChatModal) {
+      // Resetar o nome do chat quando o modal for fechado
+      setNewChatName('');
+      setIsCreatingChat(false);
+    }
+  }, [labShowNewChatModal]);
   const [labShowInitialChatModal, setLabShowInitialChatModal] = useState(true);
   const [initialChatName, setInitialChatName] = useState('');
   const [labKeepFileAttached, setLabKeepFileAttached] = useState(false);
@@ -2809,6 +2819,7 @@ const Home = () => {
   // [1] Estados segmentados por chat
   const [labMessagesByChat, setLabMessagesByChat] = useState({});
   const [labPendingMessagesByChat, setLabPendingMessagesByChat] = useState({});
+  const [dataLoaded, setDataLoaded] = useState(false); // Controla se os dados já foram carregados
 
   // Funções seguras para acessar propriedades de objetos
   const safeGet = (obj, key, defaultValue = null) => {
@@ -2828,7 +2839,7 @@ const Home = () => {
   // Função utilitária para obter a chave do chat
   const getCurrentLabChatKey = () => {
     const key = labSelectedChatName || labSelectedConversation || 'default';
-    console.log('Chave atual do chat:', key, 'labSelectedChatName:', labSelectedChatName, 'labSelectedConversation:', labSelectedConversation);
+    
     return key;
   };
 
@@ -2878,18 +2889,23 @@ const Home = () => {
 
   // Efeito único para carregar dados iniciais
   useEffect(() => {
-    if (currentUser) {
-      loadInitialData();
-      // Carregar estatísticas de uso do Redis
-      loadUsageStats().catch(error => {
-        console.error('Erro ao carregar estatísticas de uso:', error);
+    if (currentUser && !dataLoaded) {
+      // Carregar todos os dados necessários em paralelo para evitar requests simultâneos
+      Promise.all([
+        loadInitialData(),
+        loadUsageStats(),
+        loadAuthLogs()
+      ]).then(() => {
+        setDataLoaded(true); // Marca que os dados foram carregados
+      }).catch(error => {
+        console.error('Erro ao carregar dados iniciais:', error);
       });
     }
-  }, [currentUser, getDashboardStats, getUserTasks, getTeamMembers, getQueryDistribution, loadUsageStats]);
+  }, [currentUser, dataLoaded]); // Adicionado dataLoaded para evitar carregamentos duplicados
 
   // Efeito para carregar dados específicos da aba
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !dataLoaded) return; // Aguarda os dados iniciais serem carregados
 
     if (activeItem === 'users') {
       setIsLoadingUsers(true);
@@ -2910,8 +2926,8 @@ const Home = () => {
         })
         .finally(() => setIsLoadingUsers(false));
     } else if (activeItem === 'security') {
-      // Carregar logs apenas se ainda não foram carregados OU se mudou de página
-      if (!authLogs || authLogs.length === 0 || typeof currentPage !== 'undefined') {
+      // Carregar logs apenas se mudou de página (os dados já foram carregados no useEffect inicial)
+      if (currentPage !== undefined) {
         setIsLoading(true);
         loadAuthLogs(currentPage)
           .catch(error => {
@@ -2920,8 +2936,7 @@ const Home = () => {
           .finally(() => setIsLoading(false));
       }
     }
-    // eslint-disable-next-line
-  }, [activeItem, currentUser, currentPage, loadUsers, loadAuthLogs]);
+  }, [activeItem, currentUser, currentPage, dataLoaded]); // Adicionado dataLoaded para evitar requests prematuros
 
   // Efeito para rolar o chat para baixo quando novas mensagens são adicionadas
   useEffect(() => {
@@ -2974,17 +2989,26 @@ const Home = () => {
     }
   }, [labMessagesByChat, labSelectedChatName, labSelectedConversation]);
 
+  // Função para limpar todo o cache de mensagens
+  const clearMessageCache = useCallback(() => {
+    setLabMessagesByChat({});
+    setLabPendingMessagesByChat({});
+    console.log('🧹 Cache de mensagens limpo completamente');
+  }, []);
+
   // Efeito para carregar históricos do laboratório quando acessar o painel
   useEffect(() => {
     if (activeItem === 'laboratory' && currentUser) {
+      // Limpar cache ao acessar o painel
+      clearMessageCache();
+      
       setLabHistoryLoading(true);
       fetchLabChatsFromRedis(currentUser.user_id || currentUser.id).then(chats => {
         setLabChatHistory(chats);
         setLabHistoryLoading(false);
       });
     }
-    // eslint-disable-next-line
-  }, [activeItem, currentUser]);
+  }, [activeItem, currentUser, clearMessageCache]);
 
   // Função para carregar histórico de conversas
   const loadChatHistory = useCallback(async () => {
@@ -3005,15 +3029,30 @@ const Home = () => {
       // Carregar do Redis
       loadChatHistory();
     }
-  }, [activeItem, loadChatHistory]);
+  }, [activeItem]); // Removida dependência de função que causava re-renders
 
   // Efeito para recarregar mensagens quando o chat selecionado mudar
   useEffect(() => {
     if (labSelectedChatName && activeItem === 'laboratory') {
-      console.log('Chat selecionado mudou, recarregando mensagens:', labSelectedChatName);
+      // Limpar cache antes de carregar mensagens
+      setLabMessagesByChat(prev => {
+        const newState = { ...prev };
+        // Manter apenas o chat atual, limpar outros
+        const currentChatMessages = newState[labSelectedChatName] || [];
+        return { [labSelectedChatName]: currentChatMessages };
+      });
+      
+      setLabPendingMessagesByChat(prev => {
+        const newState = { ...prev };
+        // Manter apenas o chat atual, limpar outros
+        const currentPendingMessages = newState[labSelectedChatName] || [];
+        return { [labSelectedChatName]: currentPendingMessages };
+      });
+      
+      console.log('🧹 Cache limpo ao trocar para chat:', labSelectedChatName);
       loadChatMessages(labSelectedChatName, true);
     }
-  }, [labSelectedChatName, activeItem]);
+  }, [labSelectedChatName, activeItem]); // Mantidas apenas dependências essenciais
 
   // Atalhos de teclado
   useKeyboardShortcuts({
@@ -3022,7 +3061,23 @@ const Home = () => {
       else if (activeItem === 'ai') handleSendMessage();
     },
     newChat: () => {
-      if (activeItem === 'laboratory') setLabShowNewChatModal(true);
+      if (activeItem === 'laboratory') {
+        // Deselecionar chat atual
+        setLabSelectedConversation(null);
+        setLabSelectedChatName(null);
+        setLabMessages([]);
+        setLabInput('');
+        setLabSelectedFile(null);
+        
+        // Limpar cache de mensagens
+        setLabMessagesByChat({});
+        setLabPendingMessagesByChat({});
+        
+        console.log('🧹 Chat atual deselecionado via atalho de teclado');
+        
+        // Abrir modal de novo chat
+        setLabShowNewChatModal(true);
+      }
     },
     escape: () => {
       setLabShowSetupModal(false);
@@ -3030,6 +3085,8 @@ const Home = () => {
       setLabShowInitialChatModal(false);
     }
   });
+
+
 
   const loadInitialData = useCallback(async () => {
     if (!currentUser) return;
@@ -3107,20 +3164,20 @@ const Home = () => {
   const removeConversation = useCallback(async (conversationId, event) => {
     event.stopPropagation(); // Evita que o clique propague para o card
     
-    console.log('Tentando remover conversa:', conversationId);
+    
     
     if (window.confirm('Tem certeza que deseja remover esta conversa do histórico?')) {
       try {
-        console.log('Confirmado, removendo do Redis...');
+
         // Remover do Redis
         const success = await removeChatConversation(conversationId);
-        console.log('Resultado da remoção:', success);
+        
         
         if (success) {
           // Atualizar estado local
           setChatHistory(prev => {
             const filtered = prev.filter(conv => conv.id !== conversationId);
-            console.log('Estado local atualizado, conversas restantes:', filtered.length);
+
             return filtered;
           });
           
@@ -3226,7 +3283,7 @@ const Home = () => {
   }, [logout, navigate]);
 
   const handleFileUpload = (file) => {
-    console.log('File uploaded:', file);
+    
     setSelectedFile(file);
     // Se o arquivo for null, significa que foi removido
     if (!file) {
@@ -3236,7 +3293,7 @@ const Home = () => {
 
   // Funções para o Laboratório
   const handleLabFileUpload = (file) => {
-    console.log('Lab file uploaded:', file);
+    
     setLabSelectedFile(file);
     if (!file) {
       setLabSelectedFile(null);
@@ -3316,28 +3373,22 @@ const Home = () => {
 
   // [3] Atualize handleLabSendMessage para usar o chat atual
   const handleLabSendMessage = async () => {
-    console.log('🚀 DEBUG: Iniciando handleLabSendMessage');
-    console.log('📝 DEBUG: labInput:', labInput);
-    console.log('📁 DEBUG: labSelectedFile:', labSelectedFile);
+    
     
     if (!labInput.trim() && !labSelectedFile) {
-      console.log('❌ DEBUG: Nenhum input ou arquivo, saindo...');
+      
       return;
     }
     
     // Validação da mensagem (apenas se houver texto)
     if (labInput.trim()) {
-      console.log('✅ DEBUG: Validando mensagem...');
       const validation = validateMessage(labInput);
       if (!validation.valid) {
-        console.log('❌ DEBUG: Validação falhou:', validation.error);
         showInfoToast(validation.error);
         return;
       }
-      console.log('✅ DEBUG: Validação passou');
     }
     const chatKey = getCurrentLabChatKey();
-    console.log('🔑 DEBUG: Chat Key:', chatKey);
     
     const userMessage = {
       id: Date.now(),
@@ -3348,35 +3399,52 @@ const Home = () => {
       timestamp: new Date().toISOString()
     };
     
-    console.log('👤 DEBUG: Mensagem do usuário criada:', userMessage);
-    console.log('💾 DEBUG: Salvando mensagem do usuário no estado...');
     setLabMessagesByChat(prev => {
       const newState = { ...prev };
       const currentMessages = safeGet(newState, chatKey, []);
       const updatedMessages = [...currentMessages, userMessage];
-      console.log('📊 DEBUG: Mensagens atualizadas:', updatedMessages.length);
       safeSet(newState, chatKey, updatedMessages);
       return newState;
     });
     
-    console.log('🧹 DEBUG: Limpando input e iniciando typing...');
     setLabInput('');
     setIsLabTyping(true);
+    
+    // Mostrar indicador de processamento
+    showInfoToast('Processando sua mensagem...');
     try {
-      console.log('🌐 DEBUG: Preparando dados para API...');
-      // Montar os dados para a API
-      // Usar o índice do setup + 1 como ID, ou 1 como padrão se não houver setup selecionado
-      const promptId = labSelectedSetupState ? setups.findIndex(s => s.title === labSelectedSetupState.title) + 1 : 1;
+              // Montar os dados para a API
+      // Cada setup tem um promptId fixo
+      let promptId;
+      if (labSelectedSetupState?.title === "IA Clausy") {
+        promptId = 0;
+      } else if (labSelectedSetupState?.title === "Pesquisador de Jurisprudência Atualizada") {
+        promptId = 1;
+      } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
+        promptId = 2;
+      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
+        promptId = 3;
+      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
+        promptId = 4;
+      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
+        promptId = 5;
+      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
+        promptId = 6;
+      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
+        promptId = 7;
+      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
+        promptId = 8;
+      } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
+        promptId = 9;
+      } else {
+        promptId = 1; // Fallback padrão
+      }
       const conteudo = userMessage.content;
+      console.log('📤 DEBUG: Enviando para API - conteudo:', conteudo);
       const userPlan = currentUser?.plan_id || currentUser?.plan_name || '';
       const userId = currentUser?.user_id || currentUser?.id || '';
       
-      console.log('📋 DEBUG: Dados preparados:', {
-        promptId,
-        conteudo,
-        userPlan,
-        userId
-      });
+
       
       // Usar chat_name como chave principal para identificar o chat
       let session_id;
@@ -3399,19 +3467,28 @@ const Home = () => {
           session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         }
       } else {
-        // fallback para o estado atual
+        // Criar novo chat com nome baseado na primeira mensagem do usuário
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
-        chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
+        
+        // Usar a primeira mensagem do usuário como nome do chat
+        if (labInput.trim()) {
+          // Pegar as primeiras palavras da mensagem (máximo 30 caracteres)
+          const messageWords = labInput.trim().split(' ').slice(0, 5).join(' ');
+          chat_name = messageWords.length > 30 ? messageWords.substring(0, 30) + '...' : messageWords;
+        } else if (labSelectedFile) {
+          // Se não há texto mas há arquivo, usar o nome do arquivo
+          chat_name = labSelectedFile.name.length > 30 ? labSelectedFile.name.substring(0, 30) + '...' : labSelectedFile.name;
+        } else {
+          // Fallback para data
+          chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
+        }
       }
       
-      console.log('🎯 DEBUG: Setup selecionado:', labSelectedSetupState?.title, 'Prompt ID:', promptId);
-      console.log('💬 DEBUG: Chat name:', chat_name, 'Session ID:', session_id);
-      console.log('📝 DEBUG: labSelectedChatName:', labSelectedChatName);
-      console.log('🔄 DEBUG: labSelectedConversation:', labSelectedConversation);
+
 
       let response;
       if (labSelectedFile) {
-        console.log('📁 DEBUG: Enviando mensagem com arquivo:', labSelectedFile.name);
+
         // Envia como FormData se houver arquivo
         const formData = new FormData();
         formData.append('prompt', promptId);
@@ -3423,25 +3500,22 @@ const Home = () => {
         formData.append('session_id', session_id);
         formData.append('file', labSelectedFile);
 
-        console.log('📦 DEBUG: FormData contents for lab:', {
-          prompt: promptId,
-          conteudo: conteudo,
-          fileName: labSelectedFile.name,
-          fileSize: labSelectedFile.size,
-          fileType: labSelectedFile.type,
-          chat_name: chat_name,
-          session_id: session_id
-        });
+        // Timeout de 30 segundos para evitar espera infinita
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         response = await fetch('http://138.197.27.151:5000/api/lab-chats/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           },
-          body: formData
+          body: formData,
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
       } else {
-        console.log('📝 DEBUG: Enviando mensagem sem arquivo');
+
         // Envia como JSON se não houver arquivo
         const body = {
           prompt: promptId,
@@ -3453,14 +3527,21 @@ const Home = () => {
           session_id
         };
 
+        // Timeout de 30 segundos para evitar espera infinita
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         response = await fetch('http://138.197.27.151:5000/api/lab-chats/send', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
           },
-          body: JSON.stringify(body)
+          body: JSON.stringify(body),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
       }
 
       if (!response.ok) {
@@ -3468,17 +3549,19 @@ const Home = () => {
         throw new Error(errorData.message || 'Erro na resposta da API do laboratório');
       }
 
+      // Verificar se a resposta está vazia ou inválida
+      if (!response) {
+        throw new Error('Resposta vazia da API do laboratório');
+      }
+
       const data = await response.json();
-      console.log('📨 DEBUG: Resposta recebida da API:', data);
-      console.log('💬 DEBUG: Chat atual:', labSelectedChatName, 'Session:', labSelectedConversation);
       
-      // Processamento universal e robusto da resposta da IA
+      // Debug: verificar a estrutura da resposta
+      console.log('🔍 DEBUG: Estrutura da resposta da API:', data);
+      
+      // Processamento robusto da resposta da IA
       let content = 'Resposta recebida da API, mas sem mensagem.';
       let found = false;
-      
-      console.log('=== PROCESSANDO RESPOSTA DA IA ===');
-      console.log('Tipo de dados:', typeof data);
-      console.log('Estrutura recebida:', data);
       
       // Função auxiliar para extrair conteúdo de uma mensagem
       const extractContent = (item) => {
@@ -3548,7 +3631,7 @@ const Home = () => {
               content = item.message.content;
               found = true;
               console.log('✅ Encontrou resposta da IA na chave:', key, 'Conteúdo:', content.substring(0, 100) + '...');
-              break; // Para na primeira mensagem da IA encontrada (que será a mais recente devido à ordenação)
+              break;
             }
           }
         }
@@ -3564,39 +3647,9 @@ const Home = () => {
         }
       }
       
-      // Estratégia 4: Busca genérica em qualquer estrutura
-      if (!found && data && typeof data === 'object') {
-        console.log('🔍 Estratégia 4: Busca genérica em todas as propriedades');
-        
-        const searchInObject = (obj, path = '') => {
-          const keys = Object.keys(obj);
-          for (const key of keys) {
-            const currentPath = path ? `${path}.${key}` : key;
-            const item = obj[key];
-            
-            if (typeof item === 'object' && item !== null) {
-              // Verificar especificamente por mensagens da IA
-              if (item.message && item.message.type === 'ai' && item.message.content) {
-                content = item.message.content;
-                found = true;
-                console.log('✅ Encontrou resposta da IA em:', currentPath, 'Conteúdo:', content.substring(0, 100) + '...');
-                return true;
-              }
-              // Buscar recursivamente
-              if (searchInObject(item, currentPath)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        };
-        
-        searchInObject(data);
-      }
-      
-      // Estratégia 5: Fallbacks para estruturas específicas
+      // Estratégia 4: Fallbacks para estruturas específicas
       if (!found) {
-        console.log('🔄 Estratégia 5: Tentando fallbacks');
+        console.log('🔄 Estratégia 4: Tentando fallbacks');
         
         if (data && data.message && typeof data.message === 'string') {
           content = data.message;
@@ -3618,8 +3671,8 @@ const Home = () => {
         content = 'DEBUG: ' + JSON.stringify(data);
       } else {
         console.log('✅ Resposta da IA extraída com sucesso:', content.substring(0, 100) + '...');
-        console.log('📝 Conteúdo completo da resposta:', content);
       }
+     
       
       const labResponse = {
         id: Date.now() + 1,
@@ -3627,37 +3680,73 @@ const Home = () => {
         content: content,
         timestamp: new Date().toISOString()
       };
-      console.log('Adicionando resposta da IA ao chat:', labSelectedChatName, 'Conteúdo:', content.substring(0, 100) + '...');
+
+      // Atualização otimizada de estado - apenas uma vez
       setLabMessagesByChat(prev => {
         const newState = { ...prev };
         const currentMessages = safeGet(newState, chatKey, []);
         safeSet(newState, chatKey, [...currentMessages, labResponse]);
         return newState;
       });
-      setLabPendingMessagesByChat(prev => {
-        const newState = { ...prev };
-        const currentMessages = safeGet(newState, chatKey, []);
-        safeSet(newState, chatKey, [...currentMessages, labResponse]);
-        return newState;
-      });
       
-      // Recarregar mensagens da API para garantir sincronização
-      if (labSelectedChatName) {
+      // Salvar o chat no histórico se for um novo chat
+      if (!labSelectedChatName) {
         try {
-          console.log('Recarregando mensagens após envio bem-sucedido:', labSelectedChatName);
-          await loadChatMessages(labSelectedChatName, false);
+          // Criar objeto do chat para salvar no histórico
+          const chatToSave = {
+            id: Date.now(),
+            session_id: session_id,
+            chat_name: chat_name,
+            name: chat_name,
+            messages: [userMessage, labResponse],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          
+          // Adicionar ao histórico local
+          setLabChatHistory(prev => [chatToSave, ...prev]);
+          
+          // Definir como chat selecionado
+          setLabSelectedChatName(chat_name);
+          setLabSelectedConversation(session_id);
+          
+          // Limpar cache de mensagens para o novo chat
+          setLabMessagesByChat(prev => {
+            const newState = { ...prev };
+            // Remover mensagens em cache para o novo chat
+            delete newState[chat_name];
+            return newState;
+          });
+          
+          // Limpar cache de mensagens pendentes
+          setLabPendingMessagesByChat(prev => {
+            const newState = { ...prev };
+            // Remover mensagens pendentes em cache para o novo chat
+            delete newState[chat_name];
+            return newState;
+          });
+          
+          console.log('✅ Chat salvo no histórico:', chat_name);
+          console.log('🧹 Cache limpo para o novo chat');
+          showSuccessToast(`Chat "${chat_name}" criado com sucesso!`);
         } catch (error) {
-          console.error('Erro ao recarregar mensagens após envio:', error);
+          console.error('❌ Erro ao salvar chat no histórico:', error);
         }
-      } else {
-        console.warn('labSelectedChatName não definido, não foi possível recarregar mensagens');
       }
     } catch (error) {
+      let errorMessage = 'Erro ao processar a solicitação para o laboratório';
+      
+      if (error.name === 'AbortError') {
+        errorMessage = 'Tempo limite excedido. A requisição demorou mais de 30 segundos.';
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+      
       handleError(error, 'envio de mensagem do laboratório');
       const errorResponse = {
         id: Date.now() + 2,
         role: 'error',
-        content: error.message || 'Erro ao processar a solicitação para o laboratório',
+        content: errorMessage,
         timestamp: new Date().toISOString()
       };
       setLabMessagesByChat(prev => {
@@ -3696,7 +3785,7 @@ const Home = () => {
     try {
         let response;
         if (selectedFile) {
-          console.log('Sending message with file:', selectedFile.name);
+  
           // Envia como FormData se houver arquivo
           const formData = new FormData();
           formData.append('prompt', chatInput.trim() || 'Documento enviado');
@@ -3704,13 +3793,7 @@ const Home = () => {
           formData.append('file', selectedFile);
           formData.append('setup', JSON.stringify(selectedSetup));
 
-          console.log('FormData contents:', {
-            prompt: chatInput.trim() || 'Documento enviado',
-            fileName: selectedFile.name,
-            fileSize: selectedFile.size,
-            fileType: selectedFile.type,
-            setup: selectedSetup
-          });
+
 
           response = await fetch('/api/ai/query', {
             method: 'POST',
@@ -3720,7 +3803,7 @@ const Home = () => {
             body: formData
           });
         } else {
-          console.log('Sending message without file');
+
           // Envia como JSON se não houver arquivo
           response = await fetch('/api/ai/query', {
             method: 'POST',
@@ -4073,13 +4156,11 @@ const Home = () => {
                     Seu Plano Atual
                   </h3>
             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       className="px-3 py-1 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
                     >
                 Fazer upgrade
-                    </motion.button>
+                    </button>
                   )}
                 </div>
                 <div className="space-y-4">
@@ -4154,8 +4235,9 @@ const Home = () => {
 
   const handleLabSetupConfirm = () => {
     if (labSelectedSetupState) {
+      // O setup já está aplicado através do labSelectedSetupState
       setLabShowSetupModal(false);
-      // Não limpar o setup selecionado, apenas fechar o modal
+      toast.success(`Setup "${labSelectedSetupState.title}" aplicado com sucesso!`);
     }
   };
 
@@ -4163,33 +4245,64 @@ const Home = () => {
     setLabMessages([]);
     setLabInput('');
     setLabSelectedChatName(null);
-    toast.success('Chat do laboratório limpo com sucesso!');
+    toast.success('Chat da Central Jurídica limpo com sucesso!');
   };
 
   const handleCreateNewChat = async () => {
-    if (!newChatName.trim()) {
-      toast.error('Por favor, insira um nome para o chat');
-      return;
-    }
-    
-    const chatName = newChatName.trim();
-    const userId = currentUser?.user_id || currentUser?.id;
-    const sessionId = getCurrentSessionId(userId);
-    
-    setLabMessages([]);
-    setLabInput('');
-    setLabSelectedFile(null);
-    setLabSelectedConversation(sessionId); // Usar session_id único
-    setLabSelectedChatName(chatName); // Salvar o nome do chat
-    setNewChatName('');
-    setLabShowNewChatModal(false);
-    showSuccessToast(`Novo chat "${chatName}" criado com sucesso!`);
+    try {
+      if (!newChatName.trim()) {
+        toast.error('Por favor, insira um nome para o chat');
+        return;
+      }
+      
+      if (isCreatingChat) {
+        return; // Evitar múltiplas execuções
+      }
+      
+      setIsCreatingChat(true);
+      
+      const chatName = newChatName.trim();
+      const userId = currentUser?.user_id || currentUser?.id;
+      
+      if (!userId) {
+        toast.error('Usuário não identificado');
+        setIsCreatingChat(false);
+        return;
+      }
+      
+      // Gerar um novo sessionId único para cada novo chat
+      const sessionId = generateSessionId(userId);
+      
+      console.log('🆕 Criando novo chat:', { chatName, sessionId, userId });
+      
+      // Limpar estados
+      setLabMessages([]);
+      setLabInput('');
+      setLabSelectedFile(null);
+      setLabSelectedConversation(sessionId);
+      setLabSelectedChatName(chatName);
+      
+      // Fechar modal e limpar nome
+      setNewChatName('');
+      setLabShowNewChatModal(false);
+      
+      showSuccessToast(`Novo chat "${chatName}" criado com sucesso!`);
 
-    // Salvar no Redis com session_id único e chat_name separado
-    if (currentUser) {
-      await saveLabChatToRedis(userId, chatName, sessionId);
-      // Recarregar histórico
-      fetchLabChatsFromRedis(userId).then(chats => setLabChatHistory(chats));
+      // Salvar no Redis
+      if (currentUser) {
+        const savedChats = await saveLabChatToRedis(userId, chatName, sessionId);
+        console.log('💾 Chat salvo no Redis:', savedChats);
+        
+        // Recarregar histórico
+        const updatedChats = await fetchLabChatsFromRedis(userId);
+        setLabChatHistory(updatedChats);
+        console.log('📋 Histórico atualizado:', updatedChats);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao criar novo chat:', error);
+      toast.error('Erro ao criar novo chat. Tente novamente.');
+    } finally {
+      setIsCreatingChat(false);
     }
   };
 
@@ -4262,13 +4375,13 @@ const Home = () => {
       resultado = texto;
     }
 
-    console.log(resultado); // imprime automaticamente
+    
     return resultado;       // ainda retorna, caso precise usar depois
   }
 
   // Função para renderizar mensagem com arquivo
   const renderMessageWithFile = (content) => {
-    console.log('🎨 DEBUG: Renderizando conteúdo:', content);
+    
     if (!content || typeof content !== 'string') {
       return content;
     }
@@ -4346,7 +4459,7 @@ const Home = () => {
   // [4] Atualize loadChatMessages para segmentar por chat
   const loadChatMessages = async (chatName, isSwitchingChat = false) => {
     try {
-      console.log('Carregando mensagens do chat:', chatName, 'isSwitchingChat:', isSwitchingChat);
+      
       const response = await fetch('http://138.197.27.151:5000/api/lab-chats/messages', {
         method: 'POST',
         headers: {
@@ -4361,7 +4474,7 @@ const Home = () => {
         throw new Error('Erro ao buscar mensagens do chat');
       }
       const data = await response.json();
-      console.log('Mensagens recebidas da API:', data);
+      
       let messages = [];
       if (Array.isArray(data)) {
         messages = data.map(item => ({
@@ -4407,7 +4520,7 @@ const Home = () => {
       // Ordenar mensagens por timestamp para garantir ordem correta
       mergedMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       
-      console.log('Atualizando mensagens do chat:', chatKey, 'Total de mensagens:', mergedMessages.length);
+      
       
       // Sempre atualizar o estado das mensagens, não apenas quando trocando de chat
       setLabMessagesByChat(prev => {
@@ -4542,22 +4655,29 @@ const Home = () => {
       <div className="flex h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500">
         {/* Sidebar de sessões */}
         <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-r-1 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch p-5 min-h-full box-border gap-5 backdrop-blur-md shadow-inner">
-          <motion.button
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            whileHover={{ 
-              scale: 1.02
-            }}
-            whileTap={{ scale: 0.98 }}
+          <button
             className="w-full bg-gradient-to-r from-accent1 to-accent1 hover:bg-accent1/80 text-white border-0 rounded-xl py-3 px-4 cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg mb-6"
             onClick={() => {
+              // Deselecionar chat atual
+              setLabSelectedConversation(null);
+              setLabSelectedChatName(null);
+              setLabMessages([]);
+              setLabInput('');
+              setLabSelectedFile(null);
+              
+              // Limpar cache de mensagens
+              setLabMessagesByChat({});
+              setLabPendingMessagesByChat({});
+              
+              console.log('🧹 Chat atual deselecionado ao clicar em Novo Chat');
+              
+              // Abrir modal de novo chat
               setLabShowNewChatModal(true);
             }}
           >
             <FaPlus className="w-4 h-4" />
             <span>Novo Chat</span>
-          </motion.button>
+          </button>
           <div className="flex-1 overflow-hidden">
             <div className="mb-4">
               <div className="flex items-center justify-center mb-3">
@@ -4572,28 +4692,40 @@ const Home = () => {
             {labHistoryLoading ? (
               <div className="flex flex-col items-center justify-center p-8 space-y-4">
                 <div className="relative">
-                  <div className="w-12 h-12 border-4 border-accent1/20 dark:border-accent1 rounded-full animate-spin"></div>
-                  <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-amber-500 rounded-full animate-spin"></div>
+                  <div className="w-12 h-12 border-4 border-accent1/20 dark:border-accent1 rounded-full"></div>
+                  <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-amber-500 rounded-full"></div>
                 </div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 animate-pulse">Carregando seus chats...</p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">Carregando seus chats...</p>
               </div>
             ) : labChatHistory.length === 0 ? (
               <div className="p-4">
                 <EmptyState 
                   type="chats" 
-                  action={() => setLabShowNewChatModal(true)} 
+                  action={() => {
+                    // Deselecionar chat atual
+                    setLabSelectedConversation(null);
+                    setLabSelectedChatName(null);
+                    setLabMessages([]);
+                    setLabInput('');
+                    setLabSelectedFile(null);
+                    
+                    // Limpar cache de mensagens
+                    setLabMessagesByChat({});
+                    setLabPendingMessagesByChat({});
+                    
+                    console.log('🧹 Chat atual deselecionado via EmptyState');
+                    
+                    // Abrir modal de novo chat
+                    setLabShowNewChatModal(true);
+                  }} 
                 />
               </div>
             ) : (
               <div className="space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-accent1/30 dark:scrollbar-thumb-accent1 scrollbar-track-transparent scrollbar-thumb-rounded-full">
                 {labChatHistory.map((session, idx) => (
-                  <motion.div
+                  <div
                     key={session.session_id || session.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1, duration: 0.3 }}
-                    whileHover={{ scale: 1.02, x: 4 }}
-                    className={`relative cursor-pointer transition-all duration-300 rounded-xl group overflow-hidden ${
+                    className={`relative cursor-pointer rounded-xl group overflow-hidden ${
                       labSelectedConversation === (session.session_id || session.id) 
                         ? '!bg-gradient-to-r !from-accent1 !via-accent2 !to-accent1 !text-white font-bold shadow-lg shadow-accent1/30' 
                         : '!bg-gradient-to-r !from-white/60 !via-white/40 !to-white/60 dark:!from-neutral-700/60 dark:!via-neutral-700/40 dark:!to-neutral-700/60 !text-neutral-700 dark:!text-neutral-300 font-medium hover:!from-white/80 hover:!via-white/60 hover:!to-white/80 dark:hover:!from-neutral-600/80 dark:hover:!via-neutral-600/60 dark:hover:!to-neutral-600/80 hover:shadow-md'
@@ -4602,7 +4734,7 @@ const Home = () => {
                       const chatName = session.chat_name || session.name;
                       const sessionId = session.session_id || session.id;
                       
-                      console.log('Clicou no chat:', chatName, 'Session ID:', sessionId);
+              
                       
                       setLabSelectedConversation(sessionId);
                       setLabSelectedChatName(chatName);
@@ -4615,8 +4747,7 @@ const Home = () => {
                     }}
                     title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
                   >
-                    {/* Efeito de brilho no hover */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+
                     
 
                     
@@ -4636,7 +4767,7 @@ const Home = () => {
                       
                       {/* Botão de remover */}
                       <button
-                        className="opacity-70 hover:opacity-100 group-hover:opacity-100 bg-red-600/30 hover:bg-red-600/50 dark:bg-red-500/30 dark:hover:bg-red-500/50 border-0 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center transition-opacity duration-200 ml-2 md:opacity-80 md:hover:opacity-100"
+                        className="opacity-70 hover:opacity-100 group-hover:opacity-100 bg-red-600/30 hover:bg-red-600/50 dark:bg-red-500/30 dark:hover:bg-red-500/50 border-0 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center ml-2 md:opacity-80 md:hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
@@ -4648,7 +4779,7 @@ const Home = () => {
                         <FaTrash className="w-3 h-3" />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             )}
@@ -4708,7 +4839,7 @@ const Home = () => {
               
               <div className="flex flex-col h-full min-h-0 gap-0">
                 <div className="flex justify-between items-center p-5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                  <h3 className="text-xl text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2 md:text-lg">Chat do Laboratório</h3>
+                  <h3 className="text-xl text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2 md:text-lg">Chat da Central Jurídica</h3>
                   <div className="flex gap-2">
                     <button 
                       onClick={handleLabClearChat}
@@ -4762,7 +4893,7 @@ const Home = () => {
                             <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                             <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
                           </div>
-                          <span className="text-sm">IA está digitando...</span>
+                          <span className="text-sm">Clausy está digitando...</span>
                         </div>
                       </div>
                     </div>
@@ -4819,7 +4950,7 @@ const Home = () => {
                   <button 
                     type="submit" 
                     disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
-                    className="bg-accent1 hover:bg-accent1/80 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none w-14 h-14"
+                    className="bg-accent1 hover:bg-accent1/80 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none w-14 h-14"
                   >
                     <FaPaperPlane />
                   </button>
@@ -4827,60 +4958,118 @@ const Home = () => {
               </div>
             </div>
             {labShowSetupModal && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
-                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-[900px] h-[600px] border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+                  {/* Header */}
+                  <div className="flex justify-between items-center p-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                       <FaCog className="text-accent1" />
-                      Selecione um Setup
+                      Escolha um Setup
                     </h2>
-                    <button 
-                      onClick={() => setLabShowSetupModal(false)}
-                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                    {setups.map((setup, index) => (
-                      <div
-                        key={index}
-                        onClick={() => handleLabSetupSelect(setup)}
-                        className={`p-6 rounded-xl cursor-pointer transition-all duration-300 border-2 hover:shadow-lg hover:-translate-y-1 ${
-                          labSelectedSetupState?.title === setup.title
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
-                            : 'border-neutral-200 dark:border-neutral-600 bg-white dark:bg-neutral-700 hover:border-blue-300 dark:hover:border-blue-600'
-                        }`}
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={handleLabSetupConfirm}
+                        disabled={!labSelectedSetupState}
+                        className="px-3 py-1.5 bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
                       >
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
-                          {setup.title}
-                        </h3>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-300 mb-4 leading-relaxed">
-                          {setup.when_to_use}
-                        </p>
-                        <ul className="list-none p-0 m-0">
-                          <li className="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200">
-                            <FaCheck className="text-green-500 flex-shrink-0" />
-                            {setup.prompt.split('.')[0]}
-                          </li>
-                        </ul>
-                      </div>
-                    ))}
+                        Usar Setup
+                      </button>
+                      <button 
+                        onClick={() => setLabShowSetupModal(false)}
+                        className="text-lg text-neutral-400 hover:text-neutral-600 cursor-pointer p-1 rounded"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
-                    <button 
-                      onClick={() => setLabShowSetupModal(false)}
-                      className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
-                    >
-                      Cancelar
-                    </button>
-                    <button 
-                      onClick={handleLabSetupConfirm}
-                      disabled={!labSelectedSetupState}
-                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
-                    >
-                      Confirmar Setup
-                    </button>
+                  
+                                    {/* Conteúdo */}
+                  <div className="p-4 h-[calc(600px-80px)] overflow-y-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                      {/* Lista de Setups */}
+                      <div className="space-y-2">
+                        {setups.map((setup, index) => (
+                          <div
+                            key={index}
+                            onClick={() => {
+                              // Toggle dropdown para este setup
+                              if (labSelectedSetupState?.title === setup.title) {
+                                handleLabSetupSelect(null);
+                              } else {
+                                handleLabSetupSelect(setup);
+                              }
+                            }}
+                            className={`p-3 rounded-lg cursor-pointer border transition-colors ${
+                              labSelectedSetupState?.title === setup.title
+                                ? 'border-accent1 bg-accent1/5'
+                                : 'border-neutral-300 dark:border-neutral-600 hover:border-accent1/50'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <FaCog className="text-accent1 text-sm" />
+                                <span className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                                  {setup.title}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {labSelectedSetupState?.title === setup.title && (
+                                  <FaCheck className="text-accent1 text-sm" />
+                                )}
+                                <div className={`w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent transition-transform duration-200 ${
+                                  labSelectedSetupState?.title === setup.title 
+                                    ? 'border-t-accent1 rotate-180' 
+                                    : 'border-t-neutral-400'
+                                }`}></div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Área de Detalhes */}
+                      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 h-full overflow-y-auto">
+                        {labSelectedSetupState ? (
+                          <div>
+                            <div className="flex items-center gap-2 mb-4">
+                              <FaCog className="text-accent1 text-sm" />
+                              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-lg">
+                                {labSelectedSetupState.title}
+                              </h3>
+                            </div>
+                            
+                            <div className="mb-4">
+                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-sm mb-2">
+                                Quando usar:
+                              </h4>
+                              <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                                {labSelectedSetupState.when_to_use}
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-sm mb-2">
+                                Prompt:
+                              </h4>
+                              <div className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
+                                <p className="text-neutral-800 dark:text-neutral-200 text-sm font-mono leading-relaxed">
+                                  {labSelectedSetupState.prompt}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                              <FaCog className="text-neutral-400 text-2xl mx-auto mb-2" />
+                              <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                                Selecione um setup para ver os detalhes
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -4912,9 +5101,10 @@ const Home = () => {
                       value={newChatName}
                       onChange={(e) => setNewChatName(e.target.value)}
                       placeholder="Digite o nome do chat..."
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none"
+                      disabled={isCreatingChat}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
+                        if (e.key === 'Enter' && !isCreatingChat) {
                           e.preventDefault();
                           handleCreateNewChat();
                         }
@@ -4933,16 +5123,23 @@ const Home = () => {
                     </button>
                     <button 
                       onClick={handleCreateNewChat}
-                      disabled={!newChatName.trim()}
-                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
+                      disabled={!newChatName.trim() || isCreatingChat}
+                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md flex items-center gap-2"
                     >
-                      Criar Chat
+                      {isCreatingChat ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Criando...
+                        </>
+                      ) : (
+                        'Criar Chat'
+                      )}
                     </button>
                   </div>
                 </div>
               </div>
             )}
-            {labShowInitialChatModal && (
+            {/* {labShowInitialChatModal && (
               <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
                   <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
@@ -5001,7 +5198,7 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
@@ -5061,10 +5258,10 @@ const Home = () => {
                 >
                   <div>
                     <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                      Laboratório de IA
+                      Central Jurídica
                     </h1>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Explore e experimente com nossa inteligência artificial jurídica
+                      Explore e experimente com nossa inteligência artificial. 
                     </p>
                   </div>
                   
