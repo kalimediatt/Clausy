@@ -127,7 +127,7 @@ const Config = () => {
                   Configurações
                 </h1>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  Personalize sua experiência na plataforma
+                  Configure a Clausy para máxima eficiência, precisão e proteção.
                 </p>
               </div>
             </motion.div>
@@ -186,7 +186,7 @@ const Config = () => {
                   Configurações
                 </h1>
                 <p className="text-neutral-600 dark:text-neutral-300 mt-1">
-                  Personalize sua experiência no Clausy
+                  Configure a Clausy para máxima eficiência, precisão e proteção.
                 </p>
               </div>
             </motion.div>
@@ -212,7 +212,7 @@ const Config = () => {
                       Modo Escuro
                     </h3>
                     <p className="text-neutral-600 dark:text-neutral-300 text-sm">
-                      Alterna entre tema claro e escuro globalmente
+                      Conforto visual para longas horas de leitura.
                     </p>
                   </div>
                 </div>
@@ -241,7 +241,7 @@ const Config = () => {
                       Notificações
                     </h3>
                     <p className="text-neutral-600 dark:text-neutral-300 text-sm">
-                      Receber notificações sobre prazos e tarefas
+                      Alertas de prazos e tarefas, nunca mais perca um deadline.
                     </p>
                   </div>
                 </div>
@@ -270,7 +270,7 @@ const Config = () => {
                       Salvamento Automático
                     </h3>
                     <p className="text-neutral-600 dark:text-neutral-300 text-sm">
-                      Salvar as consultas automaticamente
+                      Seus rascunhos e peças ficam salvos em tempo real, sem risco de perda
                     </p>
                   </div>
                 </div>

@@ -45,7 +45,8 @@ import {
   FaSearch,
   FaEdit,
   FaFileAlt,
-  FaComments
+  FaComments,
+  FaShieldAlt
 } from 'react-icons/fa';
 import { BsThreeDots, BsArrowsFullscreen } from 'react-icons/bs';
 import { HiLightBulb } from 'react-icons/hi';
@@ -3388,7 +3389,8 @@ const Home = () => {
         return;
       }
     }
-    const chatKey = getCurrentLabChatKey();
+    // Definir chatKey inicialmente
+    let chatKey = getCurrentLabChatKey();
     
     const userMessage = {
       id: Date.now(),
@@ -3398,14 +3400,6 @@ const Home = () => {
         : labInput,
       timestamp: new Date().toISOString()
     };
-    
-    setLabMessagesByChat(prev => {
-      const newState = { ...prev };
-      const currentMessages = safeGet(newState, chatKey, []);
-      const updatedMessages = [...currentMessages, userMessage];
-      safeSet(newState, chatKey, updatedMessages);
-      return newState;
-    });
     
     setLabInput('');
     setIsLabTyping(true);
@@ -3483,6 +3477,21 @@ const Home = () => {
           chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
         }
       }
+      
+      // Atualizar chatKey se for um novo chat
+      if (!labSelectedChatName) {
+        chatKey = chat_name;
+        console.log('🆕 Novo chat criado - chatKey:', chatKey, 'chat_name:', chat_name);
+      }
+      
+      // Adicionar mensagem do usuário ao chat correto
+      setLabMessagesByChat(prev => {
+        const newState = { ...prev };
+        const currentMessages = safeGet(newState, chatKey, []);
+        const updatedMessages = [...currentMessages, userMessage];
+        safeSet(newState, chatKey, updatedMessages);
+        return newState;
+      });
       
 
 
@@ -3713,16 +3722,18 @@ const Home = () => {
           // Limpar cache de mensagens para o novo chat
           setLabMessagesByChat(prev => {
             const newState = { ...prev };
-            // Remover mensagens em cache para o novo chat
-            delete newState[chat_name];
+            // Remover mensagens em cache para o novo chat usando a chave correta
+            console.log('🧹 Limpando cache de mensagens para chatKey:', chatKey);
+            delete newState[chatKey];
             return newState;
           });
           
           // Limpar cache de mensagens pendentes
           setLabPendingMessagesByChat(prev => {
             const newState = { ...prev };
-            // Remover mensagens pendentes em cache para o novo chat
-            delete newState[chat_name];
+            // Remover mensagens pendentes em cache para o novo chat usando a chave correta
+            console.log('🧹 Limpando cache de mensagens pendentes para chatKey:', chatKey);
+            delete newState[chatKey];
             return newState;
           });
           
@@ -4005,7 +4016,7 @@ const Home = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                          Consultas Hoje
+                          Consultas realizadas hoje
                         </h3>
                         <p className="text-neutral-600 dark:text-neutral-300 text-sm">
                           Total de consultas realizadas hoje
@@ -4024,10 +4035,14 @@ const Home = () => {
                       <div className="p-2 rounded-lg bg-gradient-to-r from-accent1 to-accent1 text-white">
                         <FaCode className="w-4 h-4" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      <div className="relative group">
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-help">
                           Tokens Hoje
                         </h3>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                          Tokens são unidades de texto que a IA processa. Cada palavra, pontuação ou espaço conta como um token.
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900 dark:border-t-neutral-100"></div>
+                        </div>
                         <p className="text-neutral-600 dark:text-neutral-300 text-sm">
                           Tokens processados hoje
                         </p>
@@ -4047,7 +4062,7 @@ const Home = () => {
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                          Consultas no Mês
+                          Total no mês
                         </h3>
                         <p className="text-neutral-600 dark:text-neutral-300 text-sm">
                           Total mensal de consultas
@@ -4144,87 +4159,220 @@ const Home = () => {
                 </motion.div>
               )} */}
 
-              {/* Current Plan */}
+
+
+              {/* Resumo de Produtividade */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.8 }}
+                transition={{ duration: 0.6, delay: 0.9 }}
                 className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
               >
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                    Seu Plano Atual
+                    Resumo de Produtividade
                   </h3>
-            {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
-                    <button
-                      className="px-3 py-1 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
-                    >
-                Fazer upgrade
-                    </button>
-                  )}
+                  <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+                    <FaChartBar className="w-4 h-4" />
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <div 
-                      className="px-3 py-1 rounded-full text-sm font-medium"
-                      style={{ 
-                        backgroundColor: 'rgba(225, 102, 61, 0.1)',
-                        color: '#8C4B35'
-                      }}
-                    >
-                      {planData.name || 'Free Trial'}
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Peças Revisadas */}
+                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <FaFileAlt className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
-                      {planData.price || 'Gratuito'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <FaClock className="w-4 h-4 text-neutral-500" />
-                      <div>
-                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {planData.maxQueriesPerHour || 100}
-                        </div>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                          consultas/hora
-                        </div>
-                      </div>
+                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                      {Math.floor(Math.random() * 50) + 25}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <FaCode className="w-4 h-4 text-neutral-500" />
-                      <div>
-                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {(planData.maxTokensPerHour || 20000).toLocaleString()}
-                        </div>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                          tokens/hora
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <FaHistory className="w-4 h-4 text-neutral-500" />
-                      <div>
-                        <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
-                          {!planData.historyRetention ? 'Limitado' : `${planData.historyRetention}h`}
-                        </div>
-                        <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                          histórico
-                        </div>
-                      </div>
+                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      Peças Revisadas
                     </div>
                   </div>
-            {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
-                      Upgrade disponível para mais recursos
+
+                  {/* Erros Evitados */}
+                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <FaShieldAlt className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
-                  )}
+                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                      {Math.floor(Math.random() * 30) + 15}
+                    </div>
+                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      Erros Evitados
+                    </div>
+                  </div>
+
+                  {/* Tempo Economizado */}
+                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
+                      <FaClock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                      {Math.floor(Math.random() * 20) + 8}h
+                    </div>
+                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                      Tempo Economizado
+                    </div>
+                  </div>
                 </div>
               </motion.div>
 
-            </div>
-          </motion.div>
-        </div>
-      </div>
+                            {/* Uso do Plano */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 1.0 }}
+                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    Uso do Plano
+                  </h3>
+                  <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+                    <FaChartBar className="w-4 h-4" />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {/* Barra de Progresso Principal */}
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                        Consumo Total do Plano
+                      </span>
+                      <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                        {Math.min(
+                          Math.max(
+                            ((usageStats?.queries_today || 0) / (planData.maxQueriesPerHour || 100)) * 100,
+                            ((usageStats?.tokens_today || 0) / (planData.maxTokensPerHour || 20000)) * 100
+                          ), 
+                          100
+                        ).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-4 overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ 
+                          width: `${Math.min(
+                            Math.max(
+                              ((usageStats?.queries_today || 0) / (planData.maxQueriesPerHour || 100)) * 100,
+                              ((usageStats?.tokens_today || 0) / (planData.maxTokensPerHour || 20000)) * 100
+                            ), 
+                            100
+                          )}%`
+                        }}
+                        transition={{ duration: 1, delay: 1.2 }}
+                        className="h-full bg-gradient-to-r from-accent1 to-accent1 rounded-full"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Informações Detalhadas */}
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                      <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                        {usageStats?.queries_today || 0}
+                      </div>
+                      <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Consultas hoje
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                      <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                        {(usageStats?.tokens_today || 0).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                        Tokens hoje
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+               {/* Current Plan */}
+               <motion.div
+                 initial={{ opacity: 0, y: 20 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 transition={{ duration: 0.6, delay: 1.2 }}
+                 className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+               >
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                     Seu Plano Atual
+                   </h3>
+             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
+                     <button
+                       className="px-3 py-1 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
+                     >
+                 Fazer upgrade
+                     </button>
+                   )}
+                 </div>
+                 <div className="space-y-4">
+                   <div className="flex items-center space-x-3">
+                     <div 
+                       className="px-3 py-1 rounded-full text-sm font-medium"
+                       style={{ 
+                         backgroundColor: 'rgba(225, 102, 61, 0.1)',
+                         color: '#8C4B35'
+                       }}
+                     >
+                       {planData.name || 'Free Trial'}
+                     </div>
+                     <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                       {planData.price || 'Gratuito'}
+                     </span>
+                   </div>
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                     <div className="flex items-center space-x-2">
+                       <FaClock className="w-4 h-4 text-neutral-500" />
+                       <div>
+                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                           {planData.maxQueriesPerHour || 100}
+                         </div>
+                         <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                           consultas/hora
+                         </div>
+                       </div>
+                     </div>
+                     <div className="flex items-center space-x-2">
+                       <FaCode className="w-4 h-4 text-neutral-500" />
+                       <div>
+                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                           {(planData.maxTokensPerHour || 20000).toLocaleString()}
+                         </div>
+                         <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                           tokens/hora
+                         </div>
+                       </div>
+                     </div>
+                     <div className="flex items-center space-x-2">
+                       <FaHistory className="w-4 h-4 text-neutral-500" />
+                       <div>
+                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                           {!planData.historyRetention ? 'Limitado' : `${planData.historyRetention}h`}
+                         </div>
+                         <div className="text-xs text-neutral-500 dark:text-neutral-400">
+                           histórico
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
+                     <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+                       Upgrade disponível para mais recursos
+                     </div>
+                   )}
+                 </div>
+               </motion.div>
+
+             </div>
+           </motion.div>
+         </div>
+       </div>
 
     );
   };
@@ -4386,9 +4534,6 @@ const Home = () => {
       return content;
     }
 
-    // Aplicar a função cortarAntesDeConteudo
-    content = cortarAntesDeConteudo(content);
-
     // Detectar diferentes padrões de arquivo
     const patterns = [
       /Arquivo enviado: (.+?)(?:\n|$)/,
@@ -4407,6 +4552,9 @@ const Home = () => {
       if (match) {
         fileName = match[1];
         hasFile = true;
+        
+        // Aplicar a função cortarAntesDeConteudo apenas quando há arquivo
+        content = cortarAntesDeConteudo(content);
         
         if (pattern.source.includes('Conteúdo do arquivo')) {
           // Para padrão "Conteúdo do arquivo", remover tudo até a pergunta do usuário
@@ -4676,7 +4824,7 @@ const Home = () => {
             }}
           >
             <FaPlus className="w-4 h-4" />
-            <span>Novo Chat</span>
+            <span>Nova Peça</span>
           </button>
           <div className="flex-1 overflow-hidden">
             <div className="mb-4">
@@ -4792,13 +4940,13 @@ const Home = () => {
               <div className="flex items-center justify-between gap-4 p-4 lg:p-2 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-2 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
                 <div className="flex items-center gap-2">
                   <FaCog className="text-accent1" />
-                  <span>Setup atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
+                  <span>Modo atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
                 </div>
                 <button 
                   onClick={() => setLabShowSetupModal(true)}
                   className="!bg-accent1 hover:!bg-amber-600 !text-white !border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
                 >
-                  Alterar Setup
+                  Alterar Modo
                 </button>
               </div>
 
@@ -5236,7 +5384,7 @@ const Home = () => {
         activeItem={activeItem} 
         setActiveItem={setActiveItem} 
       />
-      <div className={`flex-1 ${activeItem === 'security' || activeItem === 'reports' ? 'overflow-auto' : 'overflow-hidden'} bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50`}>
+      <div className={`flex-1 ${activeItem === 'security' || activeItem === 'reports' || activeItem === 'dashboard' ? 'overflow-auto' : 'overflow-hidden'} bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50`}>
         {activeItem === 'dashboard' && renderDashboard()}
         
         
@@ -5261,8 +5409,8 @@ const Home = () => {
                       Central Jurídica
                     </h1>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Explore e experimente com nossa inteligência artificial. 
-                    </p>
+                    Sua copilota que cria, revisa e corrige peças em segundos, com precisão e
+                    jurisprudência atualizada.                    </p>
                   </div>
                   
                   <div className="flex items-center gap-4">

@@ -30,7 +30,7 @@ const Reports = () => {
                 Relatórios e Analytics
               </h1>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                Análise detalhada do uso da plataforma • Dashboard em tempo real
+                Veja onde sua equipe erra, quanto tempo já economizou e quais peças têm mais risco — tudo em um dashboard jurídico em tempo real.
               </p>
             </div>
             
