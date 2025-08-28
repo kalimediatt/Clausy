@@ -25,7 +25,10 @@ import {
   FaTrophy,
   FaCalendarAlt,
   FaFilter,
-  FaRedo
+  FaRedo,
+  FaServer,
+  FaUserCheck,
+  FaPercentage
 } from 'react-icons/fa';
 
 // Estilos CSS para compatibilidade cross-browser
@@ -941,6 +944,49 @@ const EnhancedReportsDashboard = () => {
           </div>
           <div style={styles.summarySubtitle}>
             {topUsers[0]?.totalTokens?.toLocaleString() || '0'} tokens
+          </div>
+        </div>
+
+        <div 
+          style={{ 
+            ...styles.summaryCard, 
+            ...(hoveredCard === 4 ? styles.summaryCardHover : {})
+          }}
+          onMouseEnter={() => setHoveredCard(4)}
+          onMouseLeave={() => setHoveredCard(-1)}
+        >
+          <div style={styles.summaryTitle}>
+            <FaServer style={styles.summaryIcon} />
+            Total de Requisições
+          </div>
+          <div style={styles.summaryValue}>
+            {stats?.totalRequests?.toLocaleString() || '0'}
+          </div>
+          <div style={styles.summarySubtitle}>
+            {stats?.totalRequests > 0 ? `${Math.round((stats.totalRequests / (stats.totalRequests + 1000)) * 100)}%` : '0%'} do período
+          </div>
+        </div>
+
+        <div 
+          style={{ 
+            ...styles.summaryCard, 
+            ...(hoveredCard === 5 ? styles.summaryCardHover : {})
+          }}
+          onMouseEnter={() => setHoveredCard(5)}
+          onMouseLeave={() => setHoveredCard(-1)}
+        >
+          <div style={styles.summaryTitle}>
+            <FaCalendarAlt style={styles.summaryIcon} />
+            Pico de Consumo
+          </div>
+          <div style={styles.summaryValue}>
+            {data?.usageByPeriod?.[selectedCompany] 
+              ? Math.max(...Object.values(data.usageByPeriod[selectedCompany]).map(day => day.tokens || 0)).toLocaleString()
+              : '0'
+            }
+          </div>
+          <div style={styles.summarySubtitle}>
+            tokens em um dia
           </div>
         </div>
       </div>

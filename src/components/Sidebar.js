@@ -196,10 +196,22 @@ const Sidebar = ({
           {currentUser && (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-xs font-medium text-neutral-400">
+                <span 
+                  className="text-xs font-medium text-neutral-400"
+                  style={{ 
+                    opacity: isOpen ? 1 : 0,
+                    width: isOpen ? 'auto' : 0
+                  }}
+                >
                   Uso do Plano
                 </span>
-                <span className="text-xs font-bold text-neutral-200">
+                <span 
+                  className="text-xs font-bold text-neutral-200"
+                  style={{ 
+                    opacity: isOpen ? 1 : 0,
+                    width: isOpen ? 'auto' : 0
+                  }}
+                >
                   {Math.min(
                     Math.max(
                       ((usageStats?.queries_today || 0) / (currentUser.max_queries_per_hour || 100)) * 100,
@@ -209,7 +221,13 @@ const Sidebar = ({
                   ).toFixed(1)}%
                 </span>
               </div>
-              <div className="w-full bg-neutral-700 rounded-full h-2 overflow-hidden">
+              <div 
+                className="bg-neutral-700 rounded-full h-2 overflow-hidden"
+                style={{ 
+                  width: isOpen ? '100%' : '16px',
+                  margin: isOpen ? '0' : '0 auto'
+                }}
+              >
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ 
@@ -225,7 +243,13 @@ const Sidebar = ({
                   className="h-full bg-gradient-to-r from-accent1 to-accent1 rounded-full"
                 />
               </div>
-              <div className="text-xs text-neutral-400 text-center">
+              <div 
+                className="text-xs text-neutral-400 text-center"
+                style={{ 
+                  opacity: isOpen ? 1 : 0,
+                  width: isOpen ? 'auto' : 0
+                }}
+              >
                 {currentUser.plan_id || 'Free Trial'}
               </div>
             </div>
