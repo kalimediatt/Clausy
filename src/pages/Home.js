@@ -2323,8 +2323,8 @@ const Home = () => {
         )}
         {/* Chat principal do laboratório (igual IA, mas usando estados do laboratório) */}
         <div className="flex-1 min-w-0 !bg-white/30 dark:!bg-neutral-900/30 backdrop-blur-sm">
-                     <div className={`flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-2rem)] max-h-[calc(100vh-8rem)] lg:max-h-[calc(100vh-2rem)] !bg-white/60 dark:!bg-neutral-800/60 pb-5 lg:pb-10 gap-2 lg:gap-6 backdrop-blur-sm min-h-[100svh] ${isMobile ? 'bg-gradient-to-b from-sky-50 via-white to-indigo-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900' : ''}
-            ${isMobile ? 'p-0 gap-0 justify-start items-center h-full pt-2' : 'pt-2 px-3 lg:pt-3 lg:px-12 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-7rem)] md:max-h-[calc(100vh-7rem)] sm:p-3 sm:pb-4 sm:gap-3'}`}>
+                     <div className={`flex flex-col h-[calc(100vh-7rem)] lg:h-[calc(100vh-7rem)] max-h-[calc(100vh-8rem)] lg:max-h-[calc(100vh-7rem)] !bg-white/60 dark:!bg-neutral-800/60 pb-5 lg:pb-10 gap-2 lg:gap-6 backdrop-blur-sm min-h-[97svh] ${isMobile ? 'bg-gradient-to-b from-sky-50 via-white to-indigo-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900' : ''}
+            ${isMobile ? 'p-0 gap-0 justify-start items-center h-full pt-2' : 'pt-2 px-0 lg:pt-3 lg:px-2 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-7rem)] md:max-h-[calc(100vh-7rem)] sm:p-0 sm:pb-4 sm:gap-3'}`}>
 
             <div 
               className={`flex flex-col bg-white dark:bg-neutral-800 shadow-md h-full border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm relative
