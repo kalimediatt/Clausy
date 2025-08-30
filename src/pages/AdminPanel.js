@@ -54,6 +54,7 @@ const AdminPanel = () => {
   
   // Estado para tema
   const [theme] = useState(localStorage.getItem("theme") || "light");
+  const [isMobile, setIsMobile] = useState(false);
   
   // Estados do componente
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,6 +81,18 @@ const AdminPanel = () => {
     credits: 0,
     role: 'user'
   });
+
+  // Hook para detectar tamanho da tela
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Aplicar tema
   useEffect(() => {
@@ -422,6 +435,142 @@ const AdminPanel = () => {
     adminUsers: users?.filter(u => u.role === 'admin' || u.role === 'superadmin')?.length || 0
   };
 
+  // Gerar botões de paginação
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisible = isMobile ? 5 : 7; // Menos botões visíveis no mobile
+    
+    if (totalPages <= maxVisible) {
+      // Mostrar todas as páginas se couberem
+      for (let i = 1; i <= totalPages; i++) {
+        buttons.push(
+          <motion.button
+            key={i}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
+              i === currentPage 
+                ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white border-amber-600' 
+                : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+            } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(i)}
+          >
+            {i}
+          </motion.button>
+        );
+      }
+    } else {
+      // Lógica para páginas com ellipsis
+      if (currentPage <= 3) {
+        // Mostrar primeiras páginas + ellipsis + última
+        for (let i = 1; i <= 3; i++) {
+          buttons.push(
+            <motion.button
+              key={i}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
+                i === currentPage 
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white border-amber-600' 
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+              onClick={() => setCurrentPage(i)}
+            >
+              {i}
+            </motion.button>
+          );
+        }
+        buttons.push(<span key="ellipsis1" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
+        buttons.push(
+          <motion.button
+            key={totalPages}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(totalPages)}
+          >
+            {totalPages}
+          </motion.button>
+        );
+      } else if (currentPage >= totalPages - 2) {
+        // Mostrar primeira + ellipsis + últimas páginas
+        buttons.push(
+          <motion.button
+            key={1}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(1)}
+          >
+            1
+          </motion.button>
+        );
+        buttons.push(<span key="ellipsis2" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
+        for (let i = totalPages - 2; i <= totalPages; i++) {
+          buttons.push(
+            <motion.button
+              key={i}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
+                i === currentPage 
+                  ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white border-amber-600' 
+                  : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+              } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+              onClick={() => setCurrentPage(i)}
+            >
+              {i}
+            </motion.button>
+          );
+        }
+      } else {
+        // Mostrar primeira + ellipsis + página atual + ellipsis + última
+        buttons.push(
+          <motion.button
+            key={1}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(1)}
+          >
+            1
+          </motion.button>
+        );
+        buttons.push(<span key="ellipsis3" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
+        buttons.push(
+          <motion.button
+            key={currentPage}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 bg-gradient-to-r from-amber-600 to-amber-600 text-white border-amber-600 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px]
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(currentPage)}
+          >
+            {currentPage}
+          </motion.button>
+        );
+        buttons.push(<span key="ellipsis4" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
+        buttons.push(
+          <motion.button
+            key={totalPages}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
+            onClick={() => setCurrentPage(totalPages)}
+          >
+            {totalPages}
+          </motion.button>
+        );
+      }
+    }
+    
+    return buttons;
+  };
+
   // Render do modal
   const renderModal = () => {
     if (!modalOpen) return null;
@@ -439,50 +588,58 @@ const AdminPanel = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl max-w-md w-full p-6 border border-neutral-200 dark:border-neutral-800"
+          className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+            ${isMobile ? 'admin-modal-mobile max-w-md w-full' : 'max-w-md w-full p-6'}`}
         >
-          <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100 mb-6">
+          <h3 className={`font-semibold text-neutral-900 dark:text-neutral-100 mb-6
+            ${isMobile ? 'text-lg' : 'text-xl'}`}>
             {modalTitles[modalType]}
           </h3>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className={`space-y-4 ${isMobile ? 'space-y-4' : ''}`}>
             {(modalType === 'add' || modalType === 'edit') && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Nome
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Email
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Senha
                   </label>
                   <input
                     type="password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                     required={modalType === 'add'}
                     minLength="6"
                     placeholder="Mínimo 6 caracteres"
@@ -490,25 +647,29 @@ const AdminPanel = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Empresa
                   </label>
                   <input
                     type="text"
                     value={formData.company_name}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Função
                   </label>
                   <select
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                   >
                     <option value="user">Usuário</option>
                     <option value="admin">Admin</option>
@@ -517,13 +678,15 @@ const AdminPanel = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Plano
                   </label>
                   <select
                     value={formData.plan_name}
                     onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                   >
                     <option value="free">Free</option>
                     <option value="premium">Premium</option>
@@ -532,14 +695,16 @@ const AdminPanel = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                    ${isMobile ? 'text-sm' : 'text-sm'}`}>
                     Créditos
                   </label>
                   <input
                     type="number"
                     value={formData.credits}
                     onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                     min="0"
                   />
                 </div>
@@ -548,7 +713,8 @@ const AdminPanel = () => {
 
             {modalType === 'credits' && (
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                  ${isMobile ? 'text-sm' : 'text-sm'}`}>
                   Quantidade de créditos para adicionar
                 </label>
                 <div className="relative">
@@ -556,12 +722,13 @@ const AdminPanel = () => {
                     type="number"
                     value={formData.credits || ''}
                     onChange={(e) => setFormData({ ...formData, credits: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-accent2 transition-all duration-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  
+                    className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-accent2 transition-all duration-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
+                      ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                     placeholder="Digite a quantidade (ex: 100)"
                     required
                   />
-                  <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <div className={`text-neutral-500 dark:text-neutral-400 mt-1
+                    ${isMobile ? 'text-xs' : 'text-xs'}`}>
                     Mínimo: 1 crédito • Máximo: 10.000 créditos
                   </div>
                 </div>
@@ -570,13 +737,15 @@ const AdminPanel = () => {
 
             {modalType === 'plan' && (
               <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                <label className={`block font-medium text-neutral-700 dark:text-neutral-300 mb-2
+                  ${isMobile ? 'text-sm' : 'text-sm'}`}>
                   Novo Plano
                 </label>
                 <select
                   value={formData.plan_name}
                   onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                  className={`w-full rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                    ${isMobile ? 'px-3 py-3 text-base' : 'px-3 py-2'}`}
                   required
                 >
                   <option value="free">Free</option>
@@ -586,17 +755,19 @@ const AdminPanel = () => {
               </div>
             )}
 
-            <div className="flex space-x-3 pt-4">
+            <div className={`flex space-x-3 pt-4 ${isMobile ? 'flex-col space-x-0 space-y-3' : ''}`}>
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-amber-600 to-amber-600 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium"
+                className={`bg-gradient-to-r from-amber-600 to-amber-600 text-white rounded-xl hover:brightness-110 transition-all duration-300 font-medium
+                  ${isMobile ? 'w-full px-4 py-3 text-base' : 'flex-1 px-4 py-2'}`}
               >
                 {modalType === 'add' ? 'Adicionar' : modalType === 'edit' ? 'Salvar' : 'Confirmar'}
               </button>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="flex-1 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-4 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium"
+                className={`bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium
+                  ${isMobile ? 'w-full px-4 py-3 text-base' : 'flex-1 px-4 py-2'}`}
               >
                 Cancelar
               </button>
@@ -619,16 +790,18 @@ const AdminPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+    <div className={`min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500
+      ${isMobile ? 'admin-mobile-scroll' : ''}`}>
       {/* Header */}
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
+        className={`relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800
+          ${isMobile ? 'admin-header-mobile' : ''}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'py-3' : 'py-4'}`}>
+          <div className={`flex items-center justify-between ${isMobile ? 'flex-col gap-4' : ''}`}>
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -636,10 +809,12 @@ const AdminPanel = () => {
               className="flex items-center space-x-3"
             >
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                <h1 className={`font-bold text-neutral-900 dark:text-neutral-100
+                  ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                   Painel de Administração
                 </h1>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                <p className={`text-neutral-600 dark:text-neutral-400
+                  ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   Gestão completa de usuários e sistema
                 </p>
               </div>
@@ -649,30 +824,33 @@ const AdminPanel = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex items-center space-x-3"
+              className={`flex items-center space-x-3 ${isMobile ? 'w-full justify-between' : ''}`}
             >
               <button
                 onClick={openAddModal}
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-accent2 to-accent1 text-white px-4 py-2 rounded-xl hover:brightness-110 transition-all duration-300 font-medium shadow-lg"
+                className={`inline-flex items-center gap-2 bg-gradient-to-r from-accent2 to-accent1 text-white rounded-xl hover:brightness-110 transition-all duration-300 font-medium shadow-lg
+                  ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
               >
-                <FaPlus className="w-4 h-4" />
-                Adicionar Usuário
+                <FaPlus className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                {isMobile ? 'Adicionar' : 'Adicionar Usuário'}
               </button>
 
               <button
                 onClick={() => navigate('/')}
-                className="inline-flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-4 py-2 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium"
+                className={`inline-flex items-center gap-2 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all duration-300 font-medium
+                  ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
               >
-                <FaArrowLeft className="w-4 h-4" />
-                Voltar
+                <FaArrowLeft className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                {isMobile ? 'Voltar' : 'Voltar'}
               </button>
 
               <button
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-xl hover:bg-red-600 transition-all duration-300 font-medium shadow-lg"
+                className={`inline-flex items-center gap-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-300 font-medium shadow-lg
+                  ${isMobile ? 'px-3 py-2 text-sm' : 'px-4 py-2'}`}
               >
-                <FaSignOutAlt className="w-4 h-4" />
-                Sair
+                <FaSignOutAlt className={`${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                {isMobile ? 'Sair' : 'Sair'}
               </button>
             </motion.div>
           </div>
@@ -684,7 +862,7 @@ const AdminPanel = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"
+        className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'py-4' : 'py-6'}`}
       >
         <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-1">
           <div className="flex space-x-1">
@@ -697,6 +875,7 @@ const AdminPanel = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                title={isMobile ? tab.label : undefined}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white shadow-lg'
@@ -704,7 +883,7 @@ const AdminPanel = () => {
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
-                {tab.label}
+                {!isMobile && tab.label}
               </button>
             ))}
           </div>
@@ -712,78 +891,96 @@ const AdminPanel = () => {
       </motion.div>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 ${isMobile ? 'pb-8' : ''}`}>
         {activeTab === 'users' && (
           <motion.div
             variants={staggerContainer}
             initial="initial"
             animate="animate"
-            className="space-y-6"
+            className={`space-y-6 ${isMobile ? 'space-y-4' : ''}`}
           >
             {/* Estatísticas */}
-            <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+            <motion.div variants={fadeInUp} className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6
+              ${isMobile ? 'grid-cols-2 gap-3' : ''}`}>
+              <div className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+                ${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total de Usuários</p>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.totalUsers}</p>
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>Total de Usuários</p>
+                    <p className={`font-bold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-lg' : 'text-2xl'}`}>{stats.totalUsers}</p>
                   </div>
-                  <FaUsers className="text-3xl text-blue-500" />
+                  <FaUsers className={`text-blue-500 ${isMobile ? 'text-2xl' : 'text-3xl'}`} />
                 </div>
               </div>
               
-              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <div className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+                ${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Usuários Ativos</p>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.activeUsers}</p>
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>Usuários Ativos</p>
+                    <p className={`font-bold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-lg' : 'text-2xl'}`}>{stats.activeUsers}</p>
                   </div>
-                  <FaUserShield className="text-3xl text-green-500" />
+                  <FaUserShield className={`text-green-500 ${isMobile ? 'text-2xl' : 'text-3xl'}`} />
                 </div>
               </div>
               
-              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <div className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+                ${isMobile ? 'p-4' : 'p-6'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Créditos</p>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.totalCredits}</p>
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>Total Créditos</p>
+                    <p className={`font-bold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-lg' : 'text-2xl'}`}>{stats.totalCredits}</p>
                   </div>
-                  <FaCoins className="text-3xl text-yellow-500" />
+                  <FaCoins className={`text-yellow-500 ${isMobile ? 'text-2xl' : 'text-3xl'}`} />
                 </div>
               </div>
               
-              <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <div className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+                ${isMobile ? 'p-4 col-span-2' : 'p-6'}`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Administradores</p>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{stats.adminUsers}</p>
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>Administradores</p>
+                    <p className={`font-bold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-lg' : 'text-2xl'}`}>{stats.adminUsers}</p>
                   </div>
-                  <FaLock className="text-3xl text-red-500" />
+                  <FaLock className={`text-red-500 ${isMobile ? 'text-2xl' : 'text-3xl'}`} />
                 </div>
               </div>
             </motion.div>
 
             {/* Controles de busca e filtros */}
-            <motion.div variants={fadeInUp} className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="relative flex-1 max-w-md">
-                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+            <motion.div variants={fadeInUp} className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800
+              ${isMobile ? 'p-4' : 'p-6'}`}>
+              <div className={`flex flex-col md:flex-row gap-4 items-center justify-between
+                ${isMobile ? 'gap-3' : ''}`}>
+                <div className={`flex items-center gap-4 flex-1 ${isMobile ? 'w-full' : ''}`}>
+                  <div className={`relative flex-1 ${isMobile ? 'w-full' : 'max-w-md'}`}>
+                    <FaSearch className={`absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400
+                      ${isMobile ? 'w-3 h-3' : 'w-4 h-4'}`} />
                     <input
                       type="text"
                       placeholder="Buscar usuários..."
                       value={searchTerm}
                       onChange={(e) => handleSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                      className={`w-full pl-10 pr-4 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                        ${isMobile ? 'py-2 text-sm' : 'py-2'}`}
                     />
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-3 ${isMobile ? 'w-full justify-between' : ''}`}>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => handleItemsPerPageChange(e.target.value)}
-                    className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300"
+                    className={`rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all duration-300
+                      ${isMobile ? 'px-2 py-2 text-xs' : 'px-3 py-2'}`}
                     style={{
                       colorScheme: theme === 'dark' ? 'dark' : 'light'
                     }}
@@ -791,19 +988,15 @@ const AdminPanel = () => {
                     <option value={5} style={{
                       backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
                       color: theme === 'dark' ? '#f5f5f5' : '#171717'
-                    }}>5 por página</option>
+                    }}>{isMobile ? '5/página' : '5 por página'}</option>
                     <option value={10} style={{
                       backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
                       color: theme === 'dark' ? '#f5f5f5' : '#171717'
-                    }}>10 por página</option>
+                    }}>{isMobile ? '10/página' : '10 por página'}</option>
                     <option value={25} style={{
                       backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
                       color: theme === 'dark' ? '#f5f5f5' : '#171717'
-                    }}>25 por página</option>
-                    <option value={50} style={{
-                      backgroundColor: theme === 'dark' ? '#262626' : '#ffffff',
-                      color: theme === 'dark' ? '#f5f5f5' : '#171717'
-                    }}>50 por página</option>
+                    }}>{isMobile ? '25/página' : '25 por página'}</option>
                   </select>
                 </div>
               </div>
@@ -930,40 +1123,38 @@ const AdminPanel = () => {
 
               {/* Paginação com cores corretas para dark mode */}
               {totalPages > 1 && (
-                <div className="px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between">
-                  <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                <div className={`px-6 py-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center justify-between
+                  ${isMobile ? 'px-4 py-3 flex-col gap-3' : ''}`}>
+                  <div className={`text-neutral-600 dark:text-neutral-400
+                    ${isMobile ? 'text-xs text-center' : 'text-sm'}`}>
                     Mostrando {startIndex + 1} a {Math.min(endIndex, filteredUsers.length)} de {filteredUsers.length} usuários
                   </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                      className="px-3 py-1 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-300"
-                    >
-                      Anterior
-                    </button>
-                    
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`px-3 py-1 rounded-lg border transition-colors duration-300 ${
-                          currentPage === i + 1
-                            ? 'bg-amber-500 text-white border-amber-500'
-                            : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                        }`}
+                  <div className={`flex items-center space-x-2 ${isMobile ? 'w-full justify-center' : ''}`}>
+                    {!isMobile && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
                       >
-                        {i + 1}
-                      </button>
-                    ))}
+                        Anterior
+                      </motion.button>
+                    )}
                     
-                    <button
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                      className="px-3 py-1 rounded-lg border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-300"
-                    >
-                      Próximo
-                    </button>
+                    {renderPaginationButtons()}
+                    
+                    {!isMobile && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                      >
+                        Próximo
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               )}

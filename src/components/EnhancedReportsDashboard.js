@@ -95,39 +95,46 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     width: '100%',
     maxWidth: 1200,
     margin: '0 auto',
-    padding: '0 1rem',
+    padding: isMobile ? '0 0.25rem' : '0 1rem',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '2rem',
+    marginBottom: isMobile ? '1rem' : '2rem',
     flexWrap: 'wrap',
-    gap: '1rem',
+    gap: isMobile ? '0.5rem' : '1rem',
+    flexDirection: isMobile ? 'column' : 'row',
   },
   title: {
-    fontSize: '1.8rem',
+    fontSize: isMobile ? '1.2rem' : '1.8rem',
     fontWeight: 700,
     color: isDarkMode ? '#f9fafb' : '#1f2937',
     margin: 0,
+    textAlign: isMobile ? 'center' : 'left',
+    width: isMobile ? '100%' : 'auto',
   },
   controls: {
     display: 'flex',
-    gap: '1rem',
+    gap: isMobile ? '0.25rem' : '1rem',
     alignItems: 'center',
     flexWrap: 'wrap',
+    justifyContent: isMobile ? 'center' : 'flex-end',
+    width: isMobile ? '100%' : 'auto',
   },
   button: {
-    padding: '0.5rem 1rem',
+    padding: isMobile ? '0.35rem 0.6rem' : '0.5rem 1rem',
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
-    fontSize: '0.9rem',
+    gap: isMobile ? '0.25rem' : '0.5rem',
+    fontSize: isMobile ? '0.7rem' : '0.9rem',
     fontWeight: 600,
     transition: 'all 0.2s',
+    minHeight: isMobile ? '36px' : 'auto',
+    minWidth: isMobile ? '60px' : 'auto',
   },
   primaryButton: {
     background: '#3b82f6',
@@ -140,7 +147,7 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     backdropFilter: 'blur(4px)',
   },
   select: {
-    padding: '0.5rem 1rem',
+    padding: isMobile ? '0.35rem 0.6rem' : '0.5rem 1rem',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     borderRadius: '8px',
     background: isDarkMode ? '#404040' : '#ffffff',
@@ -149,8 +156,8 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     backdropFilter: 'blur(4px)',
     WebkitBackdropFilter: 'blur(4px)', // Safari support
     color: isDarkMode ? '#f9fafb' : '#374151',
-    fontSize: '0.9rem',
-    minWidth: '150px',
+    fontSize: isMobile ? '0.7rem' : '0.9rem',
+    minWidth: isMobile ? '100px' : '150px',
     cursor: 'pointer',
     outline: 'none',
     appearance: 'none',
@@ -174,19 +181,19 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
   },
   summaryGrid: {
     display: 'grid',
-    gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: isMobile ? '1rem' : '1.5rem',
-    marginBottom: '2rem',
+    gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(280px, 1fr))',
+    gap: isMobile ? '0.5rem' : '1.5rem',
+    marginBottom: isMobile ? '1rem' : '2rem',
   },
   summaryCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: isMobile ? '1rem' : '1.5rem',
+    padding: isMobile ? '0.75rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
     transition: 'all 0.3s',
-    minHeight: isMobile ? '100px' : '120px',
+    minHeight: isMobile ? '80px' : '120px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -196,7 +203,7 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     transform: 'translateY(-2px)',
   },
   summaryTitle: {
-    fontSize: isMobile ? '0.8rem' : '0.9rem',
+    fontSize: isMobile ? '0.65rem' : '0.9rem',
     color: isDarkMode ? '#9ca3af' : '#6b7280',
     fontWeight: 600,
     marginBottom: '0.5rem',
@@ -207,11 +214,11 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     wordBreak: 'break-word',
   },
   summaryIcon: {
-    fontSize: isMobile ? '1rem' : '1.1rem',
-    minWidth: isMobile ? '1rem' : '1.1rem',
+    fontSize: isMobile ? '0.8rem' : '1.1rem',
+    minWidth: isMobile ? '0.8rem' : '1.1rem',
   },
   summaryValue: {
-    fontSize: isMobile ? '1.5rem' : '2rem',
+    fontSize: isMobile ? '1rem' : '2rem',
     fontWeight: 700,
     color: isDarkMode ? '#f9fafb' : '#1f2937',
     marginBottom: '0.25rem',
@@ -220,7 +227,7 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     overflowWrap: 'break-word',
   },
   summarySubtitle: {
-    fontSize: isMobile ? '0.7rem' : '0.8rem',
+    fontSize: isMobile ? '0.6rem' : '0.8rem',
     color: isDarkMode ? '#6b7280' : '#9ca3af',
     lineHeight: '1.3',
     wordBreak: 'break-word',
@@ -229,26 +236,26 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
   chartsGrid: {
     display: 'grid',
     gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(400px, 1fr))',
-    gap: isMobile ? '1rem' : '1.5rem',
-    marginBottom: '2rem',
+    gap: isMobile ? '0.5rem' : '1.5rem',
+    marginBottom: isMobile ? '1rem' : '2rem',
   },
   chartCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: isMobile ? '1rem' : '1.5rem',
+    padding: isMobile ? '0.75rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
-    minHeight: isMobile ? '300px' : '400px',
+    minHeight: isMobile ? '200px' : '400px',
     display: 'flex',
     flexDirection: 'column',
     transition: 'all 0.3s',
   },
   chartTitle: {
-    fontSize: isMobile ? '1rem' : '1.1rem',
+    fontSize: isMobile ? '0.8rem' : '1.1rem',
     fontWeight: 600,
     color: isDarkMode ? '#f9fafb' : '#1f2937',
-    marginBottom: '1rem',
+    marginBottom: isMobile ? '0.5rem' : '1rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -256,63 +263,70 @@ const getThemeStyles = (isDarkMode, isMobile) => ({
     gap: '0.5rem',
   },
   chartIcon: {
-    fontSize: isMobile ? '1.1rem' : '1.2rem',
-    minWidth: isMobile ? '1.1rem' : '1.2rem',
+    fontSize: isMobile ? '0.9rem' : '1.2rem',
+    minWidth: isMobile ? '0.9rem' : '1.2rem',
   },
   chartContainer: {
     flex: 1,
     position: 'relative',
+    minHeight: isMobile ? '150px' : '300px',
   },
   tableCard: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.4)' : 'rgba(255, 255, 255, 0.4)',
     backdropFilter: 'blur(4px)',
-    padding: isMobile ? '1rem' : '1.5rem',
+    padding: isMobile ? '0.75rem' : '1.5rem',
     borderRadius: '12px',
     boxShadow: isDarkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
     border: isDarkMode ? '1px solid #525252' : '1px solid #e5e7eb',
-    marginBottom: '2rem',
+    marginBottom: isMobile ? '1rem' : '2rem',
     transition: 'all 0.3s',
     overflow: 'auto',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontSize: isMobile ? '0.8rem' : '0.9rem',
-    minWidth: isMobile ? '600px' : 'auto',
+    fontSize: isMobile ? '0.65rem' : '0.9rem',
+    minWidth: isMobile ? '400px' : 'auto',
   },
   tableHeader: {
     background: isDarkMode ? 'rgba(64, 64, 64, 0.2)' : '#f9fafb',
     borderBottom: isDarkMode ? '2px solid #525252' : '2px solid #e5e7eb',
   },
   tableHeaderCell: {
-    padding: isMobile ? '0.5rem' : '0.75rem',
+    padding: isMobile ? '0.3rem 0.4rem' : '0.75rem',
     textAlign: 'left',
     fontWeight: 600,
     color: isDarkMode ? '#f9fafb' : '#374151',
     whiteSpace: 'nowrap',
   },
   tableCell: {
-    padding: isMobile ? '0.5rem' : '0.75rem',
+    padding: isMobile ? '0.3rem 0.4rem' : '0.75rem',
     borderBottom: isDarkMode ? '1px solid rgba(64, 64, 64, 0.3)' : '1px solid #f3f4f6',
     color: isDarkMode ? '#d1d5db' : '#374151',
     whiteSpace: 'nowrap',
   },
   loading: {
-    textAlign: 'center',
-    padding: '3rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: isMobile ? '2rem 1rem' : '4rem 2rem',
+    fontSize: isMobile ? '0.9rem' : '1.1rem',
     color: isDarkMode ? '#9ca3af' : '#6b7280',
-    fontSize: '1.1rem',
   },
   error: {
-    textAlign: 'center',
-    padding: '3rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: isMobile ? '2rem 1rem' : '4rem 2rem',
+    fontSize: isMobile ? '0.9rem' : '1.1rem',
     color: '#ef4444',
-    fontSize: '1.1rem',
+    textAlign: 'center',
   },
-  mobileGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '1rem',
+  exportButtons: {
+    display: 'flex',
+    gap: isMobile ? '0.25rem' : '0.5rem',
+    flexWrap: 'wrap',
+    justifyContent: isMobile ? 'center' : 'flex-end',
   },
 });
 
@@ -486,43 +500,86 @@ const EnhancedReportsDashboard = () => {
     };
   };
 
-  const getChartOptions = (isDarkMode) => ({
+  const getChartOptions = (isDarkMode, isMobile) => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: isMobile ? 'bottom' : 'top',
         labels: { 
-          font: { size: 11 },
-          color: isDarkMode ? '#f9fafb' : '#374151'
+          font: { size: isMobile ? 8 : 11 },
+          color: isDarkMode ? '#f9fafb' : '#374151',
+          padding: isMobile ? 8 : 12,
+          usePointStyle: isMobile ? true : false,
+          pointStyle: isMobile ? 'circle' : 'rect',
         }
       },
-      title: { display: false }
+      title: { display: false },
+      tooltip: {
+        backgroundColor: isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+        titleColor: isDarkMode ? '#f9fafb' : '#1f2937',
+        bodyColor: isDarkMode ? '#d1d5db' : '#374151',
+        borderColor: isDarkMode ? '#525252' : '#e5e7eb',
+        borderWidth: 1,
+        cornerRadius: 8,
+        displayColors: true,
+        titleFont: { size: isMobile ? 10 : 12 },
+        bodyFont: { size: isMobile ? 9 : 11 },
+        padding: isMobile ? 8 : 12,
+      }
     },
     scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { 
-          font: { size: 10 },
-          color: isDarkMode ? '#d1d5db' : '#6b7280'
+      x: {
+        grid: {
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
         },
-        grid: { 
-          color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)'
+        ticks: {
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          font: { size: isMobile ? 8 : 10 },
+          maxRotation: isMobile ? 45 : 0,
+          minRotation: isMobile ? 45 : 0,
         }
       },
-      x: {
-        ticks: { 
-          font: { size: 10 },
-          color: isDarkMode ? '#d1d5db' : '#6b7280'
+      y: {
+        grid: {
+          color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
         },
-        grid: { 
-          color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'
+        ticks: {
+          color: isDarkMode ? '#9ca3af' : '#6b7280',
+          font: { size: isMobile ? 8 : 10 },
+          callback: function(value) {
+            if (isMobile && value >= 1000) {
+              return (value / 1000).toFixed(1) + 'k';
+            }
+            return value;
+          }
         }
       }
+    },
+    interaction: {
+      mode: isMobile ? 'nearest' : 'index',
+      intersect: false,
+    },
+    elements: {
+      point: {
+        radius: isMobile ? 2 : 4,
+        hoverRadius: isMobile ? 4 : 6,
+      },
+      line: {
+        borderWidth: isMobile ? 1 : 2,
+      },
+      bar: {
+        borderWidth: isMobile ? 0 : 1,
+      }
+    },
+    animation: {
+      duration: isMobile ? 500 : 1000,
     }
   });
 
-  const chartOptions = getChartOptions(isDarkMode);
+  const chartOptions = getChartOptions(isDarkMode, isMobile);
 
   const exportToPDF = async () => {
     if (!data) return;
@@ -781,20 +838,8 @@ const EnhancedReportsDashboard = () => {
       <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <div>
-          <h1 style={styles.title}>Dashboard de Relatórios</h1>
-          <p style={{ 
-            margin: '0.5rem 0 0 0', 
-            color: isDarkMode ? '#9ca3af' : '#6b7280', 
-            fontSize: '0.9rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
-            <FaCalendarAlt />
-            Período: {selectedPeriod === 'daily' ? 'Diário' : selectedPeriod === 'weekly' ? 'Semanal' : 'Mensal'}
-          </p>
-        </div>
+        <h1 style={styles.title}>Dashboard de Relatórios</h1>
+        
         <div style={styles.controls}>
           <select
             style={styles.select}
@@ -831,10 +876,10 @@ const EnhancedReportsDashboard = () => {
             disabled={loading}
           >
             <FaRedo />
-            Atualizar
+            {isMobile ? 'Atualizar' : 'Atualizar'}
           </button>
           
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div style={styles.exportButtons}>
             <button
               style={{ 
                 ...styles.button, 
@@ -846,7 +891,7 @@ const EnhancedReportsDashboard = () => {
               disabled={exporting}
             >
               <FaFilePdf />
-              PDF
+              {isMobile ? 'PDF' : 'PDF'}
             </button>
             <button
               style={{ 
@@ -859,7 +904,7 @@ const EnhancedReportsDashboard = () => {
               disabled={exporting}
             >
               <FaFileExcel />
-              Excel
+              {isMobile ? 'Excel' : 'Excel'}
             </button>
           </div>
         </div>
@@ -877,13 +922,13 @@ const EnhancedReportsDashboard = () => {
         >
           <div style={styles.summaryTitle}>
             <FaUsers style={styles.summaryIcon} />
-            Total de Usuários
+            {isMobile ? 'Usuários' : 'Total de Usuários'}
           </div>
           <div style={styles.summaryValue}>
             {stats?.totalUsers?.toLocaleString() || '0'}
           </div>
           <div style={styles.summarySubtitle}>
-            {stats?.activeUsers || '0'} usuários ativos
+            {stats?.activeUsers || '0'} {isMobile ? 'ativos' : 'usuários ativos'}
           </div>
         </div>
 
@@ -897,13 +942,13 @@ const EnhancedReportsDashboard = () => {
         >
           <div style={styles.summaryTitle}>
             <FaChartLine style={styles.summaryIcon} />
-            Total de Tokens
+            {isMobile ? 'Tokens' : 'Total de Tokens'}
           </div>
           <div style={styles.summaryValue}>
             {stats?.totalTokens?.toLocaleString() || '0'}
           </div>
           <div style={styles.summarySubtitle}>
-            {stats?.totalRequests?.toLocaleString() || '0'} requisições
+            {stats?.totalRequests || '0'} {isMobile ? 'req.' : 'requisições'}
           </div>
         </div>
 
@@ -917,13 +962,13 @@ const EnhancedReportsDashboard = () => {
         >
           <div style={styles.summaryTitle}>
             <FaClock style={styles.summaryIcon} />
-            Média por Requisição
+            {isMobile ? 'Média/Req' : 'Média por Requisição'}
           </div>
           <div style={styles.summaryValue}>
             {Math.round(stats?.averageTokensPerRequest || 0)}
           </div>
           <div style={styles.summarySubtitle}>
-            tokens por requisição
+            {isMobile ? 'tokens/req.' : 'tokens por requisição'}
           </div>
         </div>
 
@@ -936,14 +981,14 @@ const EnhancedReportsDashboard = () => {
           onMouseLeave={() => setHoveredCard(-1)}
         >
           <div style={styles.summaryTitle}>
-            <FaTrophy style={styles.summaryIcon} />
-            Usuário Top
+            <FaPercentage style={styles.summaryIcon} />
+            {isMobile ? 'Eficiência' : 'Taxa de Eficiência'}
           </div>
           <div style={styles.summaryValue}>
-            {topUsers[0]?.name?.split(' ')[0] || 'N/A'}
+            {stats?.efficiencyRate ? `${Math.round(stats.efficiencyRate)}%` : 'N/A'}
           </div>
           <div style={styles.summarySubtitle}>
-            {topUsers[0]?.totalTokens?.toLocaleString() || '0'} tokens
+            {isMobile ? 'otimização' : 'taxa de otimização'}
           </div>
         </div>
 
@@ -957,7 +1002,7 @@ const EnhancedReportsDashboard = () => {
         >
           <div style={styles.summaryTitle}>
             <FaServer style={styles.summaryIcon} />
-            Total de Requisições
+            {isMobile ? 'Requisições' : 'Total de Requisições'}
           </div>
           <div style={styles.summaryValue}>
             {stats?.totalRequests?.toLocaleString() || '0'}
@@ -977,7 +1022,7 @@ const EnhancedReportsDashboard = () => {
         >
           <div style={styles.summaryTitle}>
             <FaCalendarAlt style={styles.summaryIcon} />
-            Pico de Consumo
+            {isMobile ? 'Pico' : 'Pico de Consumo'}
           </div>
           <div style={styles.summaryValue}>
             {data?.usageByPeriod?.[selectedCompany] 
@@ -986,7 +1031,7 @@ const EnhancedReportsDashboard = () => {
             }
           </div>
           <div style={styles.summarySubtitle}>
-            tokens em um dia
+            {isMobile ? 'tokens/dia' : 'tokens em um dia'}
           </div>
         </div>
       </div>
@@ -995,12 +1040,12 @@ const EnhancedReportsDashboard = () => {
       <div style={gridStyle}>
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
-            Consumo por {selectedPeriod === 'daily' ? 'Dia' : selectedPeriod === 'weekly' ? 'Semana' : 'Mês'}
-            <FaCalendarAlt style={styles.chartIcon} />
+            {isMobile ? 'Consumo por Hora' : 'Consumo por Hora do Dia'}
+            <FaClock style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
-            {periodChartData ? (
-              <Line data={periodChartData} options={chartOptions} />
+            {hourlyChartData ? (
+              <Line data={hourlyChartData} options={chartOptions} />
             ) : (
               <div style={{ 
                 display: 'flex', 
@@ -1008,7 +1053,9 @@ const EnhancedReportsDashboard = () => {
                 justifyContent: 'center', 
                 height: '100%',
                 color: '#6b7280',
-                fontSize: '0.9rem'
+                fontSize: isMobile ? '0.8rem' : '0.9rem',
+                textAlign: 'center',
+                padding: isMobile ? '1rem' : '2rem'
               }}>
                 Nenhum dado disponível para o período selecionado
               </div>
@@ -1018,7 +1065,7 @@ const EnhancedReportsDashboard = () => {
 
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
-            Consumo por Dia da Semana
+            {isMobile ? 'Consumo por Dia' : 'Consumo por Dia da Semana'}
             <FaCalendarAlt style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
@@ -1028,7 +1075,7 @@ const EnhancedReportsDashboard = () => {
 
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
-            Distribuição por Usuário
+            {isMobile ? 'Distribuição' : 'Distribuição por Usuário'}
             <FaUsers style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
@@ -1037,8 +1084,8 @@ const EnhancedReportsDashboard = () => {
               plugins: {
                 ...chartOptions.plugins,
                 legend: {
-                  position: 'bottom',
-                  labels: { font: { size: 10 } }
+                  position: isMobile ? 'bottom' : 'bottom',
+                  labels: { font: { size: isMobile ? 8 : 10 } }
                 }
               }
             }} />
@@ -1047,12 +1094,12 @@ const EnhancedReportsDashboard = () => {
 
         <div style={styles.chartCard}>
           <div style={styles.chartTitle}>
-            Top 5 Usuários
+            {isMobile ? 'Top 5' : 'Top 5 Usuários'}
             <FaTrophy style={styles.chartIcon} />
           </div>
           <div style={styles.chartContainer}>
             <Bar data={{
-              labels: topUsers.slice(0, 5).map(user => user.name),
+              labels: topUsers.slice(0, 5).map(user => isMobile ? user.name.split(' ')[0] : user.name),
               datasets: [{
                 label: 'Total de Tokens',
                 data: topUsers.slice(0, 5).map(user => user.totalTokens),
@@ -1068,39 +1115,59 @@ const EnhancedReportsDashboard = () => {
       {topUsers.length > 0 && (
         <div style={styles.tableCard}>
           <div style={styles.chartTitle}>
-            Ranking de Usuários
+            {isMobile ? 'Ranking' : 'Ranking de Usuários'}
             <FaTrophy style={styles.chartIcon} />
           </div>
-          <table style={styles.table}>
-            <thead style={styles.tableHeader}>
-              <tr>
-                <th style={styles.tableHeaderCell}>Posição</th>
-                <th style={styles.tableHeaderCell}>Usuário</th>
-                {selectedCompany === 'Geral' && (
-                  <th style={styles.tableHeaderCell}>Empresa</th>
-                )}
-                <th style={styles.tableHeaderCell}>Email</th>
-                <th style={styles.tableHeaderCell}>Total Tokens</th>
-                <th style={styles.tableHeaderCell}>Requisições</th>
-                <th style={styles.tableHeaderCell}>Média/Req</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topUsers.map((user, index) => (
-                <tr key={user.userId}>
-                  <td style={styles.tableCell}>#{index + 1}</td>
-                  <td style={styles.tableCell}>{user.name}</td>
-                  {selectedCompany === 'Geral' && (
-                    <td style={styles.tableCell}>{user.companyName}</td>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table style={styles.table}>
+              <thead style={styles.tableHeader}>
+                <tr>
+                  <th style={styles.tableHeaderCell}>#</th>
+                  <th style={styles.tableHeaderCell}>{isMobile ? 'Usuário' : 'Usuário'}</th>
+                  {selectedCompany === 'Geral' && !isMobile && (
+                    <th style={styles.tableHeaderCell}>Empresa</th>
                   )}
-                  <td style={styles.tableCell}>{user.email}</td>
-                  <td style={styles.tableCell}>{user.totalTokens.toLocaleString()}</td>
-                  <td style={styles.tableCell}>{user.totalRequests.toLocaleString()}</td>
-                  <td style={styles.tableCell}>{Math.round(user.averageTokensPerRequest)}</td>
+                  {!isMobile && <th style={styles.tableHeaderCell}>Email</th>}
+                  <th style={styles.tableHeaderCell}>{isMobile ? 'Tokens' : 'Total Tokens'}</th>
+                  <th style={styles.tableHeaderCell}>{isMobile ? 'Req.' : 'Requisições'}</th>
+                  <th style={styles.tableHeaderCell}>{isMobile ? 'Média' : 'Média/Req'}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {topUsers.map((user, index) => (
+                  <tr key={user.userId}>
+                    <td style={styles.tableCell}>#{index + 1}</td>
+                    <td style={styles.tableCell}>
+                      {isMobile ? user.name.split(' ')[0] : user.name}
+                    </td>
+                    {selectedCompany === 'Geral' && !isMobile && (
+                      <td style={styles.tableCell}>{user.companyName}</td>
+                    )}
+                    {!isMobile && <td style={styles.tableCell}>{user.email}</td>}
+                    <td style={styles.tableCell}>
+                      {isMobile ? 
+                        (user.totalTokens >= 1000 ? 
+                          (user.totalTokens / 1000).toFixed(1) + 'k' : 
+                          user.totalTokens.toString()
+                        ) : 
+                        user.totalTokens.toLocaleString()
+                      }
+                    </td>
+                    <td style={styles.tableCell}>
+                      {isMobile ? 
+                        (user.totalRequests >= 1000 ? 
+                          (user.totalRequests / 1000).toFixed(1) + 'k' : 
+                          user.totalRequests.toString()
+                        ) : 
+                        user.totalRequests.toLocaleString()
+                      }
+                    </td>
+                    <td style={styles.tableCell}>{Math.round(user.averageTokensPerRequest)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       </div>

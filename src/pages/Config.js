@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Config = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const { currentUser } = useAuth();
+  const [isMobile, setIsMobile] = useState(false);
 
   // Estados das configurações
   const [notifications, setNotifications] = useState(() => {
@@ -24,6 +25,18 @@ const Config = () => {
   });
 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+
+  // Hook para detectar tamanho da tela
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -83,30 +96,20 @@ const Config = () => {
   };
 
   const ToggleButton = ({ isActive, onClick, label }) => (
-    <motion.button
-      onClick={onClick}
-      className={`
-        relative w-14 h-7 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-accent1/20
-        ${isActive 
-          ? 'bg-gradient-to-r from-accent1 to-accent1 shadow-lg shadow-accent1/30' 
-          : 'bg-neutral-200 dark:bg-neutral-700'}
-      `}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      aria-label={label}
-    >
-      <motion.div
-        className={`
-          absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-all duration-300
-          ${isActive ? 'left-7' : 'left-0.5'}
-        `}
-        animate={{ x: isActive ? 0 : 0 }}
+    <label className="relative inline-flex items-center cursor-pointer">
+      <input 
+        type="checkbox" 
+        checked={isActive}
+        onChange={onClick}
+        className="sr-only peer" 
       />
-    </motion.button>
+      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600"></div>
+    </label>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
+    <div className={`min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500
+      ${isMobile ? 'config-mobile-optimized overflow-y-auto' : 'overflow-hidden'}`}>
       {/* Header */}
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
@@ -114,7 +117,7 @@ const Config = () => {
         transition={{ duration: 0.6 }}
         className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'py-3' : 'py-4'}`}>
           <div className="flex items-center justify-between">
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
@@ -123,47 +126,22 @@ const Config = () => {
               className="flex items-center space-x-3"
             >
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                <h1 className={`font-bold text-neutral-900 dark:text-neutral-100
+                  ${isMobile ? 'text-xl' : 'text-2xl'}`}>
                   Configurações
                 </h1>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                <p className={`text-neutral-600 dark:text-neutral-400
+                  ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   Configure a Clausy para máxima eficiência, precisão e proteção.
                 </p>
               </div>
             </motion.div>
-
-            {/* Botões do header - comentados temporariamente */}
-            {/* <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex items-center space-x-3"
-            >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleTheme}
-                className="flex items-center px-4 py-2 bg-gradient-to-r from-accent1 to-accent1 text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                {theme === "dark" ? <FaSun className="w-4 h-4 mr-2" /> : <FaMoon className="w-4 h-4 mr-2" />}
-                {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex items-center px-4 py-2 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 border border-neutral-200 dark:border-neutral-700"
-              >
-                <FaSave className="w-4 h-4 mr-2" />
-                Salvar Tudo
-              </motion.button>
-            </motion.div> */}
           </div>
         </div>
       </motion.header>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+      <div className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 ${isMobile ? 'pt-4 pb-4' : 'pt-12 pb-8'}`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -171,21 +149,23 @@ const Config = () => {
           className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 transition-colors duration-500"
         >
           {/* Header Card */}
-          <div className="px-8 py-6 border-b border-neutral-200 dark:border-neutral-800">
+          <div className={`px-8 py-6 border-b border-neutral-200 dark:border-neutral-800 ${isMobile ? 'px-4 py-3' : ''}`}>
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex items-center space-x-4"
+              className={`flex items-center ${isMobile ? 'space-x-3' : 'space-x-4'}`}
             >
-              <div className="p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg">
-                <FaCog className="w-6 h-6" />
+              <div className={`p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg ${isMobile ? 'p-2' : ''}`}>
+                <FaCog className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'}`} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                <h1 className={`font-bold text-neutral-900 dark:text-neutral-100
+                  ${isMobile ? 'text-lg' : 'text-2xl'}`}>
                   Configurações
                 </h1>
-                <p className="text-neutral-600 dark:text-neutral-300 mt-1">
+                <p className={`text-neutral-600 dark:text-neutral-300 mt-1
+                  ${isMobile ? 'text-xs' : ''}`}>
                   Configure a Clausy para máxima eficiência, precisão e proteção.
                 </p>
               </div>
@@ -193,25 +173,28 @@ const Config = () => {
           </div>
 
           {/* Settings Content */}
-          <div className="p-8 space-y-6">
+          <div className={`p-8 space-y-6 ${isMobile ? 'p-4 space-y-3' : ''}`}>
             
             {/* Dark Mode Setting */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+              className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 transition-all duration-300
+                ${isMobile ? 'p-3' : 'p-6'}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+              <div className={`flex items-center justify-between ${isMobile ? 'p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800' : ''}`}>
+                <div className={`flex items-center ${isMobile ? '' : 'space-x-4'}`}>
+                  <div className={`p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white ${isMobile ? 'hidden' : ''}`}>
                     {theme === "dark" ? <FaMoon className="w-4 h-4" /> : <FaSun className="w-4 h-4" />}
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    <h3 className={`font-semibold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-sm' : 'text-lg'}`}>
                       Modo Escuro
                     </h3>
-                    <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>
                       Conforto visual para longas horas de leitura.
                     </p>
                   </div>
@@ -229,18 +212,21 @@ const Config = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+              className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 transition-all duration-300
+                ${isMobile ? 'p-3' : 'p-6'}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white">
+              <div className={`flex items-center justify-between ${isMobile ? 'p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800' : ''}`}>
+                <div className={`flex items-center ${isMobile ? '' : 'space-x-4'}`}>
+                  <div className={`p-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white ${isMobile ? 'hidden' : ''}`}>
                     <FaBell className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    <h3 className={`font-semibold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-sm' : 'text-lg'}`}>
                       Notificações
                     </h3>
-                    <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>
                       Alertas de prazos e tarefas, nunca mais perca um deadline.
                     </p>
                   </div>
@@ -258,18 +244,21 @@ const Config = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.7 }}
-              className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+              className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 transition-all duration-300
+                ${isMobile ? 'p-3' : 'p-6'}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+              <div className={`flex items-center justify-between ${isMobile ? 'p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800' : ''}`}>
+                <div className={`flex items-center ${isMobile ? '' : 'space-x-4'}`}>
+                  <div className={`p-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white ${isMobile ? 'hidden' : ''}`}>
                     <FaSave className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                    <h3 className={`font-semibold text-neutral-900 dark:text-neutral-100
+                      ${isMobile ? 'text-sm' : 'text-lg'}`}>
                       Salvamento Automático
                     </h3>
-                    <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-sm'}`}>
                       Seus rascunhos e peças ficam salvos em tempo real, sem risco de perda
                     </p>
                   </div>

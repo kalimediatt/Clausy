@@ -93,6 +93,19 @@ export default function SecurityPanel({
   const [showDetails, setShowDetails] = useState(false);
   const [tempFilter, setTempFilter] = useState(filter);
   const [tempSearch, setTempSearch] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Hook para detectar tamanho da tela
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
 
   // Injetar estilos CSS para compatibilidade
   useEffect(() => {
@@ -278,7 +291,7 @@ export default function SecurityPanel({
   // Gerar botões de paginação
   const renderPaginationButtons = () => {
     const buttons = [];
-    const maxVisible = 7; // Máximo de botões visíveis
+    const maxVisible = isMobile ? 5 : 7; // Menos botões visíveis no mobile
     
     if (totalPages <= maxVisible) {
       // Mostrar todas as páginas se couberem
@@ -288,11 +301,11 @@ export default function SecurityPanel({
             key={i}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+            className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
               i === page 
                 ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                 : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
-            }`}
+            } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
             onClick={() => setPage(i)}
           >
             {i}
@@ -301,62 +314,64 @@ export default function SecurityPanel({
       }
     } else {
       // Lógica para páginas com ellipsis
-      if (page <= 4) {
+      if (page <= 3) {
         // Mostrar primeiras páginas + ellipsis + última
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 3; i++) {
           buttons.push(
             <motion.button
               key={i}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+              className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
                   ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-              }`}
+              } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
               onClick={() => setPage(i)}
             >
               {i}
             </motion.button>
           );
         }
-        buttons.push(<span key="ellipsis1" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
+        buttons.push(<span key="ellipsis1" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
         buttons.push(
           <motion.button
             key={totalPages}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
             onClick={() => setPage(totalPages)}
           >
             {totalPages}
           </motion.button>
         );
-      } else if (page >= totalPages - 3) {
+      } else if (page >= totalPages - 2) {
         // Mostrar primeira + ellipsis + últimas páginas
         buttons.push(
           <motion.button
             key={1}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
             onClick={() => setPage(1)}
           >
             1
           </motion.button>
         );
-        buttons.push(<span key="ellipsis2" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
-        for (let i = totalPages - 4; i <= totalPages; i++) {
+        buttons.push(<span key="ellipsis2" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
+        for (let i = totalPages - 2; i <= totalPages; i++) {
           buttons.push(
             <motion.button
               key={i}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+              className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
                   ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-              }`}
+              } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
               onClick={() => setPage(i)}
             >
               {i}
@@ -370,37 +385,39 @@ export default function SecurityPanel({
             key={1}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
             onClick={() => setPage(1)}
           >
             1
           </motion.button>
         );
-        buttons.push(<span key="ellipsis3" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
+        buttons.push(<span key="ellipsis3" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
         for (let i = page - 1; i <= page + 1; i++) {
           buttons.push(
             <motion.button
               key={i}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] ${
+              className={`border border-neutral-200 dark:border-neutral-700 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] ${
                 i === page 
                   ? 'bg-gradient-to-r from-accent1 to-accent1 text-white border-accent1' 
                   : 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700'
-              }`}
+              } ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
               onClick={() => setPage(i)}
             >
               {i}
             </motion.button>
           );
         }
-        buttons.push(<span key="ellipsis4" className="px-3 py-2 text-neutral-500 dark:text-neutral-400">...</span>);
+        buttons.push(<span key="ellipsis4" className={`text-neutral-500 dark:text-neutral-400 ${isMobile ? 'px-2 py-1 text-xs' : 'px-3 py-2'}`}>...</span>);
         buttons.push(
           <motion.button
             key={totalPages}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg text-sm cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700"
+            className={`border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 rounded-lg cursor-pointer transition-all duration-300 min-w-[40px] hover:bg-neutral-50 dark:hover:bg-neutral-700
+              ${isMobile ? 'px-2 py-1 text-xs min-w-[32px]' : 'px-3 py-2 text-sm'}`}
             onClick={() => setPage(totalPages)}
           >
             {totalPages}
@@ -451,8 +468,8 @@ export default function SecurityPanel({
   }
 
   return (
-    <div>
-      <div className="space-y-8">
+    <div className={`${isMobile ? 'overflow-y-auto security-mobile-scroll' : ''}`}>
+      <div className={`space-y-8 ${isMobile ? 'space-y-6 p-4' : ''}`}>
         
 
 
@@ -461,79 +478,100 @@ export default function SecurityPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8"
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8
+            ${isMobile ? 'grid-cols-2 gap-3 mb-6' : ''}`}
         >
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-blue-500"
+            className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-blue-500
+              ${isMobile ? 'p-4' : ''}`}
           >
-            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+            <div className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2
+              ${isMobile ? 'text-xs' : ''}`}>
               Total de Logs
             </div>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className={`font-bold text-neutral-900 dark:text-neutral-100 mb-1
+              ${isMobile ? 'text-xl' : 'text-3xl'}`}>
               {stats.last7DaysLogins}
             </div>
-            <div className="text-sm text-green-500 font-medium">
+            <div className={`text-sm text-green-500 font-medium
+              ${isMobile ? 'text-xs' : ''}`}>
               +{stats.todayLogins} hoje
             </div>
           </motion.div>
 
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-green-500"
+            className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-green-500
+              ${isMobile ? 'p-4' : ''}`}
           >
-            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+            <div className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2
+              ${isMobile ? 'text-xs' : ''}`}>
               Logins Bem-sucedidos
             </div>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className={`font-bold text-neutral-900 dark:text-neutral-100 mb-1
+              ${isMobile ? 'text-xl' : 'text-3xl'}`}>
               {stats.successfulLogins}
             </div>
-            <div className="text-sm text-green-500 font-medium">
+            <div className={`text-sm text-green-500 font-medium
+              ${isMobile ? 'text-xs' : ''}`}>
               +{stats.todaySuccessfulLogins} hoje
             </div>
           </motion.div>
 
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-red-500"
+            className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-red-500
+              ${isMobile ? 'p-4' : ''}`}
           >
-            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+            <div className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2
+              ${isMobile ? 'text-xs' : ''}`}>
               Logins Falhados
             </div>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className={`font-bold text-neutral-900 dark:text-neutral-100 mb-1
+              ${isMobile ? 'text-xl' : 'text-3xl'}`}>
               {stats.failedLogins}
             </div>
-            <div className="text-sm text-red-500 font-medium">
+            <div className={`text-sm text-red-500 font-medium
+              ${isMobile ? 'text-xs' : ''}`}>
               +{stats.todayFailedLogins} hoje
             </div>
           </motion.div>
 
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-accent1"
+            className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-accent1
+              ${isMobile ? 'p-4' : ''}`}
           >
-            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+            <div className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2
+              ${isMobile ? 'text-xs' : ''}`}>
               Usuários {companyName || 'N/A'}
             </div>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className={`font-bold text-neutral-900 dark:text-neutral-100 mb-1
+              ${isMobile ? 'text-xl' : 'text-3xl'}`}>
               {stats.uniqueUsers}
             </div>
-            <div className="text-sm text-green-500 font-medium">
+            <div className={`text-sm text-green-500 font-medium
+              ${isMobile ? 'text-xs' : ''}`}>
               Ativos no período
             </div>
           </motion.div>
 
           <motion.div
             whileHover={{ y: -2 }}
-            className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-purple-500"
+            className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 border-l-4 border-l-purple-500
+              ${isMobile ? 'p-4 col-span-2' : ''}`}
           >
-            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2">
+            <div className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-2
+              ${isMobile ? 'text-xs' : ''}`}>
               Taxa de Sucesso
             </div>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+            <div className={`font-bold text-neutral-900 dark:text-neutral-100 mb-1
+              ${isMobile ? 'text-xl' : 'text-3xl'}`}>
               {stats.successRate}%
             </div>
-            <div className="text-sm text-purple-500 font-medium">
+            <div className={`text-sm text-purple-500 font-medium
+              ${isMobile ? 'text-xs' : ''}`}>
               Geral
             </div>
           </motion.div>
@@ -544,17 +582,21 @@ export default function SecurityPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6"
+          className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-6 mb-6
+            ${isMobile ? 'p-4 mb-4' : ''}`}
         >
-          <div className="flex flex-wrap gap-4 items-end">
-            <div className="flex flex-col">
-              <label className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+          <div className={`flex flex-wrap gap-4 items-end
+            ${isMobile ? 'flex-col gap-3' : ''}`}>
+            <div className={`flex flex-col ${isMobile ? 'w-full' : ''}`}>
+              <label className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1
+                ${isMobile ? 'text-xs' : ''}`}>
                 Status
               </label>
               <select
                 value={tempFilter}
                 onChange={(e) => setTempFilter(e.target.value)}
-                className="security-select px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[120px] focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300"
+                className={`security-select px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300
+                  ${isMobile ? 'w-full text-xs' : 'min-w-[120px]'}`}
               >
               <option value="all">Todos</option>
               <option value="success">Bem-sucedidos</option>
@@ -562,8 +604,9 @@ export default function SecurityPanel({
               </select>
             </div>
             
-            <div className="flex flex-col">
-              <label className="text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1">
+            <div className={`flex flex-col ${isMobile ? 'w-full' : ''}`}>
+              <label className={`text-sm text-neutral-500 dark:text-neutral-400 font-medium mb-1
+                ${isMobile ? 'text-xs' : ''}`}>
                 Buscar
               </label>
               <input
@@ -571,39 +614,45 @@ export default function SecurityPanel({
               placeholder="Usuário ou IP..."
               value={tempSearch}
               onChange={(e) => setTempSearch(e.target.value)}
-                className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm min-w-[200px] focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300"
+                className={`px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 text-sm focus:outline-none focus:ring-2 focus:ring-accent1 transition-all duration-300
+                  ${isMobile ? 'w-full text-xs' : 'min-w-[200px]'}`}
             />
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            onClick={handleApplyFilters}
-              className="flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300"
-          >
-              <FaFilter className="w-4 h-4 mr-2" />
-            Aplicar Filtros
+            <div className={`flex gap-2 ${isMobile ? 'w-full justify-between' : ''}`}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              onClick={handleApplyFilters}
+                className={`flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300
+                  ${isMobile ? 'px-3 py-2 text-xs flex-1' : ''}`}
+            >
+                <FaFilter className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+              {isMobile ? 'Aplicar' : 'Aplicar Filtros'}
             </motion.button>
 
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             onClick={handleResetFilters}
-              className="flex items-center px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300"
+              className={`flex items-center px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-300
+                ${isMobile ? 'px-3 py-2 text-xs flex-1' : ''}`}
           >
             Limpar
             </motion.button>
 
-                        <motion.button
+            <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleExport}
-              className="flex items-center px-4 py-2 text-white rounded-xl hover:shadow-lg transition-all duration-300"
+              className={`flex items-center px-4 py-2 text-white rounded-xl hover:shadow-lg transition-all duration-300
+                ${isMobile ? 'px-3 py-2 text-xs flex-1' : ''}`}
               style={{ backgroundColor: '#E1663D' }}
             >
-              <FaDownload className="w-4 h-4 mr-2" />
-              Exportar CSV
+              <FaDownload className={`${isMobile ? 'w-3 h-3 mr-1' : 'w-4 h-4 mr-2'}`} />
+              {isMobile ? 'Exportar' : 'Exportar CSV'}
             </motion.button>
+            </div>
           </div>
         </motion.div>
 
@@ -612,47 +661,59 @@ export default function SecurityPanel({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden"
+          className={`bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden
+            ${isMobile ? 'rounded-xl' : ''}`}
         >
-          <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <div className={`px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex justify-between items-center
+            ${isMobile ? 'px-4 py-3' : ''}`}>
+            <h3 className={`font-semibold text-neutral-900 dark:text-neutral-100
+              ${isMobile ? 'text-lg' : 'text-xl'}`}>
               Logs de Autenticação
             </h3>
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">
+            <div className={`text-neutral-500 dark:text-neutral-400
+              ${isMobile ? 'text-xs' : 'text-sm'}`}>
             {filteredLogs.length} registros encontrados
             </div>
           </div>
 
         {filteredLogs.length === 0 ? (
-            <div className="text-center py-20">
-              <FaShieldAlt className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium text-neutral-500 dark:text-neutral-400 mb-2">
+            <div className={`text-center py-20 ${isMobile ? 'py-12' : ''}`}>
+              <FaShieldAlt className={`text-neutral-300 dark:text-neutral-600 mx-auto mb-4 opacity-50
+                ${isMobile ? 'w-8 h-8' : 'w-12 h-12'}`} />
+              <h3 className={`font-medium text-neutral-500 dark:text-neutral-400 mb-2
+                ${isMobile ? 'text-base' : 'text-lg'}`}>
                 Nenhum log encontrado
               </h3>
-              <p className="text-neutral-400 dark:text-neutral-500">
+              <p className={`text-neutral-400 dark:text-neutral-500
+                ${isMobile ? 'text-xs' : ''}`}>
                 Tente ajustar os filtros ou verificar se há dados disponíveis
               </p>
             </div>
         ) : (
           <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className={`overflow-x-auto ${isMobile ? 'overflow-x-scroll' : ''}`}>
+                <table className={`w-full ${isMobile ? 'min-w-[600px]' : ''}`}>
                   <thead className="bg-neutral-50 dark:bg-neutral-800/50">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      <th className={`px-6 py-4 text-left font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider
+                        ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-xs'}`}>
                         Usuário
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      <th className={`px-6 py-4 text-left font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider
+                        ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-xs'}`}>
                         Endereço IP
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      <th className={`px-6 py-4 text-left font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider
+                        ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-xs'}`}>
                         Status
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                      <th className={`px-6 py-4 text-left font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider
+                        ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-xs'}`}>
                         Data/Hora
                       </th>
                       {showDetails && (
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                        <th className={`px-6 py-4 text-left font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider
+                          ${isMobile ? 'px-4 py-3 text-xs' : 'px-6 py-4 text-xs'}`}>
                           Detalhes
                         </th>
                       )}
@@ -670,50 +731,56 @@ export default function SecurityPanel({
                           transition={{ duration: 0.3, delay: index * 0.05 }}
                           className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-200"
                         >
-                          <td className="px-6 py-4">
+                          <td className={`px-6 py-4 ${isMobile ? 'px-4 py-3' : ''}`}>
                             <div className="flex items-center space-x-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold text-sm ${getStatusColor(log)}`}>
+                              <div className={`rounded-full flex items-center justify-center text-white font-semibold text-sm ${getStatusColor(log)}
+                                ${isMobile ? 'w-6 h-6 text-xs' : 'w-8 h-8'}`}>
                             {getInitials(log.username)}
                               </div>
                               <div>
-                                <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                                <div className={`font-medium text-neutral-900 dark:text-neutral-100
+                                  ${isMobile ? 'text-sm' : ''}`}>
                                   {log.username}
                                 </div>
-                                <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                                <div className={`text-neutral-500 dark:text-neutral-400
+                                  ${isMobile ? 'text-xs' : 'text-sm'}`}>
                                   ID: {log.id}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className={`px-6 py-4 ${isMobile ? 'px-4 py-3' : ''}`}>
                             <div className="flex items-center space-x-2 text-neutral-700 dark:text-neutral-300">
-                              <FaMapMarkerAlt className="w-3 h-3 text-neutral-400" />
-                              <span>{log.ip_address}</span>
+                              <FaMapMarkerAlt className={`text-neutral-400 ${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                              <span className={`${isMobile ? 'text-xs' : ''}`}>{log.ip_address}</span>
                         </div>
                           </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide ${
+                          <td className={`px-6 py-4 ${isMobile ? 'px-4 py-3' : ''}`}>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full font-medium uppercase tracking-wide ${
                               isSuccess 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400' 
                                 : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
-                            }`}>
-                              {isSuccess ? <FaCheckCircle className="w-3 h-3 mr-1" /> : <FaTimesCircle className="w-3 h-3 mr-1" />}
+                            } ${isMobile ? 'text-xs px-2 py-0.5' : 'text-xs'}`}>
+                              {isSuccess ? <FaCheckCircle className={`mr-1 ${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} /> : <FaTimesCircle className={`mr-1 ${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />}
                           {getStatusText(log)}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className={`px-6 py-4 ${isMobile ? 'px-4 py-3' : ''}`}>
                             <div>
-                              <div className="font-medium text-neutral-900 dark:text-neutral-100">
+                              <div className={`font-medium text-neutral-900 dark:text-neutral-100
+                                ${isMobile ? 'text-sm' : ''}`}>
                                 {date}
                               </div>
-                              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                              <div className={`text-neutral-500 dark:text-neutral-400
+                                ${isMobile ? 'text-xs' : 'text-sm'}`}>
                                 {time}
                               </div>
                             </div>
                           </td>
                       {showDetails && (
-                            <td className="px-6 py-4">
-                              <div className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1">
+                            <td className={`px-6 py-4 ${isMobile ? 'px-4 py-3' : ''}`}>
+                              <div className={`text-neutral-500 dark:text-neutral-400 space-y-1
+                                ${isMobile ? 'text-xs' : 'text-sm'}`}>
                             <div>Success: {log.success ? 'Sim' : 'Não'}</div>
                             <div>Status: {log.status || 'N/A'}</div>
                             <div>ID: {log.id}</div>
@@ -728,32 +795,38 @@ export default function SecurityPanel({
               </div>
 
               {/* Paginação */}
-              <div className="flex justify-between items-center px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-                <div className="text-sm text-neutral-500 dark:text-neutral-400">
+              <div className={`flex justify-between items-center px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50
+                ${isMobile ? 'px-4 py-3 flex-col gap-3' : ''}`}>
+                <div className={`text-neutral-500 dark:text-neutral-400
+                  ${isMobile ? 'text-xs text-center' : 'text-sm'}`}>
                 Mostrando {filteredLogs.length} de {totalItems} registros
                 </div>
-                <div className="flex items-center space-x-2">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  disabled={page <= 1}
-                    className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
-                >
-                  Anterior
-                  </motion.button>
+                <div className={`flex items-center space-x-2 ${isMobile ? 'w-full justify-center' : ''}`}>
+                  {!isMobile && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page <= 1}
+                      className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                  >
+                    Anterior
+                    </motion.button>
+                  )}
                 
                 {renderPaginationButtons()}
                 
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  onClick={() => setPage(Math.min(totalPages, page + 1))}
-                  disabled={page >= totalPages}
-                    className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
-                >
-                  Próximo
-                  </motion.button>
+                  {!isMobile && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page >= totalPages}
+                      className="px-3 py-2 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-lg text-sm cursor-pointer transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+                  >
+                    Próximo
+                    </motion.button>
+                  )}
                 </div>
               </div>
           </>

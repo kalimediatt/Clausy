@@ -20,10 +20,23 @@ import EnhancedReportsDashboard from '../components/EnhancedReportsDashboard';
 const Reports = () => {
   const [theme] = useState(localStorage.getItem("theme") || "light");
   const [activeTab, setActiveTab] = useState('overview');
+  const [isMobile, setIsMobile] = useState(false);
   
   // Estados para dados reais
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Hook para detectar tamanho da tela
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
   
   // Dados da Visão Geral
   const [overviewData, setOverviewData] = useState({
@@ -173,20 +186,17 @@ const Reports = () => {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200/50 dark:border-neutral-800/50 shadow-lg"
+        className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
       >
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-neutral-50/30 to-transparent dark:via-neutral-800/30"></div>
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="flex items-center justify-between"
+            className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
           >
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-neutral-900 to-neutral-700 dark:from-neutral-100 dark:to-neutral-300 bg-clip-text text-transparent">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                 Relatórios e Analytics
               </h1>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
@@ -199,7 +209,7 @@ const Reports = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"
+              className="flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium self-start sm:self-auto"
             >
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <span>Sistema Online</span>
@@ -218,15 +228,16 @@ const Reports = () => {
         <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-800 p-1">
           <div className="flex space-x-1">
             {[
-              { id: 'overview', label: 'Visão Geral', icon: FaChartBar },
-              { id: 'technical', label: 'Visão Técnica', icon: FaCog },
-              { id: 'productivity', label: 'Analise de Erros', icon: FaBug },
-              { id: 'revisions', label: 'Performance', icon: FaTachometerAlt },
-              { id: 'errors', label: 'Gestão de Risco', icon: FaShieldAlt },
+              { id: 'overview', label: 'Visão Geral', shortLabel: 'Geral', icon: FaChartBar },
+              { id: 'technical', label: 'Visão Técnica', shortLabel: 'Técnica', icon: FaCog },
+              { id: 'productivity', label: 'Analise de Erros', shortLabel: 'Erros', icon: FaBug },
+              { id: 'revisions', label: 'Performance', shortLabel: 'Performance', icon: FaTachometerAlt },
+              { id: 'errors', label: 'Gestão de Risco', shortLabel: 'Risco', icon: FaShieldAlt },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                title={isMobile ? tab.label : undefined}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                   activeTab === tab.id
                     ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white shadow-lg'
@@ -234,7 +245,7 @@ const Reports = () => {
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
-                {tab.label}
+                {!isMobile && (isMobile ? tab.shortLabel : tab.label)}
               </button>
             ))}
           </div>
@@ -249,7 +260,7 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="space-y-6"
+            className="space-y-4 lg:space-y-6"
           >
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -644,44 +655,44 @@ const Reports = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="space-y-6"
+            className="space-y-4 lg:space-y-6"
           >
             {/* Performance por Advogado */}
-            <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-6">
+            <div className="bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg rounded-2xl p-4 lg:p-6 shadow-xl border border-neutral-200 dark:border-neutral-800">
+              <h2 className="text-xl lg:text-2xl font-bold text-neutral-900 dark:text-neutral-100 mb-4 lg:mb-6">
                 Performance por Advogado
               </h2>
               
-              <div className="space-y-4">
+              <div className="space-y-3 lg:space-y-4">
                 {/* Maria Silva */}
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold">MS</span>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-3 lg:gap-4 mb-3 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm lg:text-base">MS</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 text-sm lg:text-base">
                         Maria Silva
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         47 consultas • 23 erros evitados
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
+                    <div className="text-left lg:text-right">
+                      <p className="text-base lg:text-lg font-semibold text-green-600 dark:text-green-400">
                         12h 30min
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         tempo economizado
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-medium">
+                    <div className="text-left lg:text-right">
+                      <span className="inline-block px-2 py-1 lg:px-3 lg:py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs lg:text-sm font-medium">
                         Baixo
                       </span>
-                      <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
+                      <p className="text-xs lg:text-sm text-green-600 dark:text-green-400 font-medium mt-1">
                         +15%
                       </p>
                     </div>
@@ -689,34 +700,34 @@ const Reports = () => {
                 </div>
 
                 {/* João Santos */}
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold">JS</span>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-3 lg:gap-4 mb-3 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm lg:text-base">JS</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 text-sm lg:text-base">
                         João Santos
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         32 consultas • 18 erros evitados
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
+                    <div className="text-left lg:text-right">
+                      <p className="text-base lg:text-lg font-semibold text-green-600 dark:text-green-400">
                         8h 45min
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         tempo economizado
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-full text-sm font-medium">
+                    <div className="text-left lg:text-right">
+                      <span className="inline-block px-2 py-1 lg:px-3 lg:py-1 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-full text-xs lg:text-sm font-medium">
                         Médio
                       </span>
-                      <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
+                      <p className="text-xs lg:text-sm text-green-600 dark:text-green-400 font-medium mt-1">
                         +8%
                       </p>
                     </div>
@@ -724,34 +735,34 @@ const Reports = () => {
                 </div>
 
                 {/* Ana Costa */}
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold">AC</span>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-3 lg:gap-4 mb-3 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm lg:text-base">AC</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 text-sm lg:text-base">
                         Ana Costa
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         28 consultas • 15 erros evitados
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
+                    <div className="text-left lg:text-right">
+                      <p className="text-base lg:text-lg font-semibold text-green-600 dark:text-green-400">
                         7h 20min
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         tempo economizado
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm font-medium">
+                    <div className="text-left lg:text-right">
+                      <span className="inline-block px-2 py-1 lg:px-3 lg:py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs lg:text-sm font-medium">
                         Baixo
                       </span>
-                      <p className="text-sm text-green-600 dark:text-green-400 font-medium mt-1">
+                      <p className="text-xs lg:text-sm text-green-600 dark:text-green-400 font-medium mt-1">
                         +12%
                       </p>
                     </div>
@@ -759,34 +770,34 @@ const Reports = () => {
                 </div>
 
                 {/* Carlos Lima */}
-                <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold">CL</span>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between p-3 lg:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-3 lg:gap-4 mb-3 lg:mb-0">
+                    <div className="w-10 h-10 lg:w-12 lg:h-12 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm lg:text-base">CL</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-neutral-900 dark:text-neutral-100 text-sm lg:text-base">
                         Carlos Lima
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         19 consultas • 9 erros evitados
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
+                    <div className="text-left lg:text-right">
+                      <p className="text-base lg:text-lg font-semibold text-green-600 dark:text-green-400">
                         4h 50min
                       </p>
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      <p className="text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
                         tempo economizado
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-sm font-medium">
+                    <div className="text-left lg:text-right">
+                      <span className="inline-block px-2 py-1 lg:px-3 lg:py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full text-xs lg:text-sm font-medium">
                         Alto
                       </span>
-                      <p className="text-sm text-red-600 dark:text-red-400 font-medium mt-1">
+                      <p className="text-xs lg:text-sm text-red-600 dark:text-red-400 font-medium mt-1">
                         -3%
                       </p>
                     </div>

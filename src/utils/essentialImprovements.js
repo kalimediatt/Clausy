@@ -157,9 +157,11 @@ export const useKeyboardShortcuts = (handlers) => {
 
 // 6. COMPONENTES DE UI ESSENCIAIS
 export const LoadingSpinner = ({ message = 'Carregando...' }) => (
-  <div className="loading-container">
-    <div className="spinner"></div>
-    <span>{message}</span>
+  <div className="loading-container flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="spinner w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 border-4 border-accent1/20 dark:border-accent1 rounded-full animate-spin mb-3 sm:mb-4">
+      <div className="w-full h-full border-4 border-transparent border-t-amber-500 rounded-full animate-spin"></div>
+    </div>
+    <span className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 font-medium">{message}</span>
   </div>
 );
 
@@ -200,14 +202,14 @@ export const EmptyState = ({ type, action }) => {
   const { icon, title, description, actionText } = getEmptyState();
   
   return (
-    <div className="empty-state flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-white/60 to-neutral-50/60 dark:from-neutral-800/60 dark:to-neutral-900/60 backdrop-blur-sm rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-lg transition-all duration-500">
-      <div className="empty-icon text-6xl mb-4 opacity-70">{icon}</div>
-      <h3 className="text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">{title}</h3>
-      <p className="text-neutral-600 dark:text-neutral-400 mb-6 max-w-sm leading-relaxed">{description}</p>
+    <div className="empty-state flex flex-col items-center justify-center text-center p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white/60 to-neutral-50/60 dark:from-neutral-800/60 dark:to-neutral-900/60 backdrop-blur-sm rounded-xl lg:rounded-2xl border border-neutral-200 dark:border-neutral-700 shadow-lg transition-all duration-500">
+      <div className="empty-icon text-4xl sm:text-5xl lg:text-6xl mb-3 sm:mb-4 opacity-70">{icon}</div>
+      <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">{title}</h3>
+      <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-400 mb-4 sm:mb-6 max-w-sm leading-relaxed">{description}</p>
       {action && (
         <button 
           onClick={action} 
-          className="empty-action bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 border-0"
+          className="empty-action bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg lg:rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300 focus:ring-4 focus:ring-amber-200 dark:focus:ring-amber-800 border-0 text-sm sm:text-base"
         >
           {actionText}
         </button>

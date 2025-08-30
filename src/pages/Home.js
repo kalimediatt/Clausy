@@ -1,56 +1,28 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSetup } from '../contexts/SetupContext';
 import {
-  FaHome,
-  FaUser,
   FaCog,
   FaChartBar,
-  FaUsers,
-  FaSignOutAlt,
-  FaBars,
   FaTimes,
-  FaLock,
   FaCheck,
-  FaTimes as FaTimesCircle,
   FaRobot,
   FaPaperPlane,
-  FaMicrophone,
-  FaRegFileAlt,
-  FaUserShield,
-  FaBell,
-  FaClipboardList,
-  FaCalendarAlt,
-  FaBookmark,
-  FaExclamationTriangle,
-  FaLink,
-  FaFileExport,
   FaClock,
-  FaMoneyBillWave,
-  FaShare,
   FaPlus,
   FaChartLine,
   FaCode,
   FaCommentDots,
   FaHistory,
-  FaComment,
-  FaBuilding,
   FaCopy,
-  FaRedo,
   FaTrash,
-  FaFlask,
-  FaSearch,
-  FaEdit,
   FaFileAlt,
-  FaComments,
-  FaShieldAlt
+  FaShieldAlt,
+  FaChevronDown
 } from 'react-icons/fa';
-import { BsThreeDots, BsArrowsFullscreen } from 'react-icons/bs';
-import { HiLightBulb } from 'react-icons/hi';
-import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -62,9 +34,7 @@ import {
   Legend,
 } from 'chart.js';
 import { toast } from 'react-hot-toast';
-import FileUpload from '../components/FileUpload';
-import SetupSelector from '../components/SetupSelector';
-import axios from 'axios';
+
 import SecurityPanel from './SecurityPanel';
 import Sidebar from '../components/Sidebar';
 import Config from './Config';
@@ -95,1890 +65,8 @@ ChartJS.register(
 
 // Container convertido para Tailwind (flex h-screen bg-gray-800 text-gray-300)
 
-const AIContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 4rem);
-  max-height: calc(100vh - 4rem);
-  background: #f8fafc;
-  padding: 1.5rem;
-  gap: 1.5rem;
 
-  @media (max-width: 768px) {
-    padding: 1rem;
-    gap: 1rem;
-    height: calc(100vh - 3rem);
-    max-height: calc(100vh - 3rem);
-  }
 
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-    gap: 0.75rem;
-  }
-`;
-
-const AIContent = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'showSidebar'
-})`
-  display: grid;
-  grid-template-columns: ${props => props.showSidebar ? '280px 1fr' : '1fr'};
-  gap: 2rem;
-  height: 100%;
-  overflow: hidden;
-  transition: grid-template-columns 0.3s ease;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  @media (max-width: 480px) {
-    gap: 0.75rem;
-  }
-`;
-
-const AISidebar = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isVisible'
-})`
-  display: ${props => props.isVisible ? 'flex' : 'none'};
-  flex-direction: column;
-  gap: 1.5rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  height: 100%;
-  overflow-y: auto;
-  border: 1px solid #e2e8f0;
-  min-width: 280px;
-
-  @media (max-width: 768px) {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    z-index: 1000;
-    border-radius: 0;
-    padding: 1rem;
-    min-width: auto;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-  }
-`;
-
-const SidebarOverlay = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isVisible'
-})`
-  display: none;
-  
-  @media (max-width: 768px) {
-    display: ${props => props.isVisible ? 'block' : 'none'};
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-  }
-`;
-
-const AIChatSection = styled.div`
-  display: flex;
-  flex-direction: column;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  height: 100%;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-`;
-
-const ChatContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0; // Importante para flexbox funcionar corretamente
-  gap: 0; // Remove gap para melhor controle do layout
-`;
-
-const SidebarTitle = styled.h3`
-  font-size: 1.25rem;
-  color: #1e293b;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 600;
-
-  @media (max-width: 768px) {
-    font-size: 1.125rem;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.875rem;
-  }
-`;
-
-const MobileCloseButton = styled.button`
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 6px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #334155;
-  }
-
-  @media (max-width: 768px) {
-    display: flex;
-  }
-`;
-
-const SidebarSection = styled.div`
-  margin-bottom: 2rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const ConversationItem = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'selected'
-})`
-  padding: 1.25rem;
-  margin-bottom: 0.75rem;
-  background: ${props => props.selected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#ffffff'};
-  border: 2px solid ${props => props.selected ? '#3b82f6' : '#e2e8f0'};
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: ${props => props.selected ? '0 2px 4px rgba(59, 130, 246, 0.1)' : '0 1px 3px rgba(0, 0, 0, 0.05)'};
-  position: relative;
-  
-  &:hover {
-    background: ${props => props.selected ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' : '#f8fafc'};
-    border-color: #3b82f6;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  @media (max-width: 768px) {
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.875rem;
-    margin-bottom: 0.5rem;
-  }
-`;
-
-const ConversationDeleteButton = styled.button`
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: none;
-  border-radius: 6px;
-  padding: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  opacity: 0;
-  font-size: 0.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: rgba(239, 68, 68, 0.2);
-    color: #dc2626;
-    transform: scale(1.1);
-  }
-
-  ${ConversationItem}:hover & {
-    opacity: 1;
-  }
-
-  @media (max-width: 768px) {
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.25rem;
-    font-size: 0.7rem;
-  }
-
-  @media (max-width: 480px) {
-    top: 0.375rem;
-    right: 0.375rem;
-    padding: 0.25rem;
-    font-size: 0.65rem;
-  }
-`;
-
-const ConversationTitle = styled.div`
-  font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-  padding-right: 2rem; // Espaço para o botão de lixeira
-
-  @media (max-width: 768px) {
-    font-size: 0.95rem;
-    padding-right: 1.75rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.9rem;
-    padding-right: 1.5rem;
-  }
-`;
-
-const ConversationDate = styled.div`
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-bottom: 0.75rem;
-  font-weight: 500;
-
-  @media (max-width: 768px) {
-    font-size: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.7rem;
-  }
-`;
-
-const ConversationPreview = styled.div`
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 400;
-
-  @media (max-width: 768px) {
-    font-size: 0.8rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.75rem;
-  }
-`;
-
-const ActiveIndicator = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  background: #10b981;
-  color: white;
-  border-radius: 50%;
-  font-size: 0.6rem;
-  margin-left: 0.5rem;
-  animation: pulse 2s infinite;
-
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-    }
-    70% {
-      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-    }
-  }
-`;
-
-const EmptyHistoryState = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-  text-align: center;
-  color: #64748b;
-`;
-
-const EmptyHistoryIcon = styled.div`
-  font-size: 3rem;
-  color: #cbd5e1;
-  margin-bottom: 1rem;
-`;
-
-const EmptyHistoryTitle = styled.h4`
-  font-size: 1.125rem;
-  color: #475569;
-  margin: 0 0 0.5rem 0;
-  font-weight: 600;
-`;
-
-const EmptyHistoryDescription = styled.p`
-  font-size: 0.875rem;
-  color: #64748b;
-  margin: 0 0 1.5rem 0;
-  line-height: 1.5;
-  max-width: 250px;
-`;
-
-const EmptyHistoryButton = styled.button`
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-
-  &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-  }
-`;
-
-
-
-// Definindo Card antes de seu primeiro uso
-const Card = styled(motion.div)`
-  background: #DFDFDF;
-  border-radius: 12px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid #ADADAD;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const CardTitle = styled.h3`
-  color: #64748b;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
-`;
-
-// ToggleButton removido - não está sendo usado
-
-// Content convertido para Tailwind (flex-1 p-8 overflow-y-auto bg-gradient-to-br from-slate-50 to-slate-100)
-
-// MenuItem, MenuIcon, MenuText, LogoutButton removidos - agora usados no componente Sidebar.js
-
-const WelcomeText = styled(motion.h1)`
-  color: #DFDFDF;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  background: linear-gradient(45deg, #8C4B35, #2B2B2B);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-`;
-
-const PlanBadge = styled.div`
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 1rem;
-  background: ${props => props.color || 'rgba(225, 102, 61, 0.1)'};
-  color: ${props => props.textColor || '#8C4B35'};
-  border-radius: 2rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-left: 1rem;
-  vertical-align: middle;
-`;
-
-const PlanUpgradeBtn = styled.button`
-  display: flex;
-  align-items: center;
-  background-color: #8C4B35;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  
-  &:hover {
-    background-color: #8C4B35;
-  }
-`;
-
-const UsageProgressBar = styled.div`
-  height: 8px;
-  background: #e2e8f0;
-  border-radius: 4px;
-  margin-top: 0.5rem;
-  overflow: hidden;
-  
-  div {
-    height: 100%;
-    background: ${props => props.color || '#3b82f6'};
-    width: ${props => `${props.value || 0}%`};
-    border-radius: 4px;
-    transition: width 0.5s ease;
-  }
-`;
-
-const StatsContainer = styled.div`
-  margin-top: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  color: #64748b;
-`;
-
-const PlanDetailsCard = styled(Card)`
-  border-left: 4px solid ${props => props.borderColor || '#3b82f6'};
-`;
-
-const PlanFeatureList = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 1rem 0 0;
-  
-  li {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: #334155;
-    
-    svg {
-      color: #10b981;
-      margin-right: 0.5rem;
-      flex-shrink: 0;
-    }
-  }
-`;
-
-const DashboardGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const ChartContainer = styled(motion.div)`
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-// Novo componente para exibir os logs de autenticação
-const LogsSection = styled.div`
-  margin-top: 2rem;
-`;
-
-const LogTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const PaginationContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1rem;
-  gap: 0.5rem;
-`;
-
-const PaginationButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active'
-})`
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  background: ${props => props.active ? '#3b82f6' : '#ffffff'};
-  color: ${props => props.active ? '#ffffff' : '#64748b'};
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.active ? '#3b82f6' : '#f8fafc'};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const PageInfo = styled.span`
-  color: #64748b;
-  font-size: 0.875rem;
-`;
-
-const TableHeader = styled.th`
-  padding: 12px;
-  text-align: left;
-  border-bottom: 2px solid #e2e8f0;
-  color: #64748b;
-  font-weight: 600;
-  font-size: 0.875rem;
-`;
-
-const TableRow = styled.tr`
-  &:hover {
-    background-color: #f8fafc;
-  }
-`;
-
-const TableCell = styled.td`
-  padding: 12px;
-  border-bottom: 1px solid #e2e8f0;
-  color: ${props => props.neutral ? '#64748b' : '#1e293b'};
-  font-size: 0.875rem;
-`;
-
-const StatusIcon = styled.span`
-  margin-right: 0.5rem;
-  vertical-align: middle;
-`;
-
-const FilterContainer = styled.div`
-  display: flex;
-  margin-bottom: 1rem;
-  gap: 1rem;
-`;
-
-const FilterButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active'
-})`
-  background: ${({ active }) => active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.05)'};
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  color: #3b82f6;
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: rgba(59, 130, 246, 0.1);
-  }
-`;
-
-// Componentes para a seção de IA
-const AiContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 6rem);
-  max-height: calc(100vh - 6rem);
-`;
-
-const AIHeader = styled.div`
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-`;
-
-const Stats = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const UsageStat = styled.div`
-  background: ${props => props.color || '#f8fafc'};
-  padding: 1rem;
-  border-radius: 8px;
-  text-align: center;
-`;
-
-const UsageValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #334155;
-  margin-bottom: 0.25rem;
-`;
-
-const UsageLabel = styled.div`
-  font-size: 0.875rem;
-  color: #64748b;
-`;
-
-const SuggestedPrompts = styled.div`
-  margin-top: 1rem;
-`;
-
-const PromptSectionTitle = styled.h3`
-  font-size: 1rem;
-  color: #334155;
-  margin-bottom: 0.75rem;
-`;
-
-const PromptGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 0.75rem;
-`;
-
-const PromptButton = styled.button`
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
-  text-align: left;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-
-  &:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
-`;
-
-
-
-const ChatHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 12px 12px 0 0;
-  flex-shrink: 0; // Impede que o header encolha
-  position: sticky;
-  top: 0;
-  z-index: 10;
-
-  @media (max-width: 768px) {
-    padding: 1rem 1.25rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.875rem 1rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-`;
-
-const ChatTitle = styled.h3`
-  font-size: 1.25rem;
-  color: #1e293b;
-  font-weight: 600;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  @media (max-width: 768px) {
-    font-size: 1.125rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 1rem;
-  }
-`;
-
-const ChatHeaderActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-
-  @media (max-width: 480px) {
-    gap: 0.5rem;
-  }
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-`;
-
-const HeaderRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-`;
-
-const ClearChatButton = styled.button`
-  background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  &:hover {
-    background: #e2e8f0;
-    color: #334155;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.5rem 0.875rem;
-    font-size: 0.8rem;
-    min-height: 44px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-    gap: 0.25rem;
-  }
-`;
-
-const ChatMessages = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  min-height: 0; // Importante para flexbox funcionar corretamente
-  
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-  
-  &::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    gap: 1.25rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 1rem;
-    gap: 1rem;
-  }
-`;
-
-const MessageActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-`;
-
-const MessageActionButton = styled.button`
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: #334155;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.375rem;
-    font-size: 0.8rem;
-    min-height: 36px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.5rem;
-    font-size: 0.75rem;
-    min-height: 40px;
-  }
-`;
-
-const MessageItemWrapper = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isUser'
-})`
-  display: flex;
-  flex-direction: column;
-  align-items: ${props => props.isUser ? 'flex-end' : 'flex-start'};
-  margin-bottom: 1rem;
-  width: 100%;
-
-  &:hover ${MessageActions} {
-    opacity: 1;
-  }
-`;
-
-const MessageBubble = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isUser' && prop !== 'isError'
-})`
-  background: ${props => props.isUser ? '#8C4B35' : '#DFDFDF'};
-  color: ${props => props.isUser ? 'white' : '#2B2B2B'};
-  padding: 1rem;
-  border-radius: 12px;
-  max-width: 80%;
-  position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  white-space: pre-wrap;
-  word-break: break-word;
-
-  ${props => props.isError && `
-    background: #fee2e2;
-    color: #dc2626;
-  `}
-
-  @media (max-width: 768px) {
-    max-width: 90%;
-    padding: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    max-width: 95%;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-  }
-`;
-
-const ChatInputContainer = styled.form`
-  display: flex;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 0 0 12px 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0; // Impede que o input encolha
-  border-top: 1px solid #e2e8f0;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-
-  @media (max-width: 768px) {
-    padding: 1.25rem;
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 1rem;
-    gap: 0.5rem;
-  }
-`;
-
-const ChatInput = styled.textarea`
-  flex: 1;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 1rem;
-  font-size: 0.95rem;
-  resize: none;
-  min-height: 48px;
-  max-height: 120px;
-  line-height: 1.5;
-  background: #f8fafc;
-  color: #1e293b;
-  font-family: inherit;
-  transition: all 0.2s ease;
-
-  &::placeholder {
-    color: #94a3b8;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    background: white;
-  }
-
-  &:hover {
-    border-color: #cbd5e1;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.875rem;
-    font-size: 0.875rem;
-    min-height: 48px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    min-height: 52px;
-  }
-`;
-
-const SendButton = styled.button`
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-
-  &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-  }
-
-  &:disabled {
-    background: #cbd5e1;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.875rem;
-    min-width: 48px;
-    min-height: 48px;
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 1rem;
-    min-width: 52px;
-    min-height: 52px;
-    font-size: 0.875rem;
-  }
-`;
-
-const AiTypingIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-bottom: 1rem;
-  padding-left: 1rem;
-  color: #64748b;
-`;
-
-const MessageList = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow-y: auto;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const MessageItem = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isUser'
-})`
-  display: flex;
-  flex-direction: column;
-  align-self: ${({ isUser }) => (isUser ? 'flex-end' : 'flex-start')};
-  max-width: 80%;
-`;
-
-const MessageTimeWrapper = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isUser'
-})`
-  font-size: 0.7rem;
-  opacity: 0.6;
-  margin-top: 0.5rem;
-  text-align: ${props => props.isUser ? 'right' : 'left'};
-  color: ${props => props.isUser ? 'rgba(255, 255, 255, 0.8)' : '#64748b'};
-
-  @media (max-width: 768px) {
-    font-size: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.7rem;
-    margin-top: 0.375rem;
-  }
-`;
-
-const TypingIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const TypingDot = styled.div`
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  opacity: 0.6;
-  animation: pulse 1.5s infinite;
-  animation-delay: ${props => props.delay || '0s'};
-
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(0.8);
-      opacity: 0.4;
-    }
-    50% {
-      transform: scale(1.2);
-      opacity: 0.8;
-    }
-  }
-`;
-
-const DotAnimation = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== '$delay'
-})`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  
-  .dot {
-    width: 8px;
-    height: 8px;
-    background: #3b82f6;
-    border-radius: 50%;
-    animation: dotPulse 1.5s infinite;
-  }
-  
-  .dot:nth-child(2) {
-    animation-delay: 0.2s;
-  }
-  
-  .dot:nth-child(3) {
-    animation-delay: 0.4s;
-  }
-  
-  @keyframes dotPulse {
-    0% {
-      transform: scale(0.5);
-      opacity: 0.3;
-    }
-    50% {
-      transform: scale(1);
-      opacity: 0.8;
-    }
-    100% {
-      transform: scale(0.5);
-      opacity: 0.3;
-    }
-  }
-`;
-
-const AIModelSelector = styled.div`
-  margin-top: 1.5rem;
-  display: flex;
-  gap: 1rem;
-`;
-
-const ModelButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  background: ${({ 'data-active': active }) => 
-    active ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.05)'};
-  border: 1px solid ${({ 'data-active': active }) => 
-    active ? 'rgba(59, 130, 246, 0.8)' : 'transparent'};
-  padding: 0.75rem 1.25rem;
-  border-radius: 8px;
-  color: #3b82f6;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: ${({ 'data-active': active }) => (active ? 'bold' : 'normal')};
-  transition: all 0.3s ease;
-  
-  &:hover {
-    background: rgba(59, 130, 246, 0.1);
-  }
-`;
-
-const TaskCard = styled(Card)`
-  position: relative;
-  padding-left: 3rem;
-`;
-
-const TaskIcon = styled.div`
-  position: absolute;
-  left: 1rem;
-  top: 1.5rem;
-  background: ${props => props.color || 'rgba(59, 130, 246, 0.1)'};
-  color: ${props => props.iconColor || '#3b82f6'};
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-`;
-
-const TaskTitle = styled.h3`
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
-  color: #334155;
-`;
-
-const TaskDescription = styled.p`
-  font-size: 0.875rem;
-  color: #64748b;
-  margin-bottom: 0.75rem;
-`;
-
-const TaskFooter = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.75rem;
-  color: #94a3b8;
-`;
-
-const Badge = styled.span`
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: ${props => 
-    props.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' :
-    props.type === 'error' ? 'rgba(239, 68, 68, 0.1)' :
-    props.type === 'success' ? 'rgba(16, 185, 129, 0.1)' :
-    'rgba(59, 130, 246, 0.1)'
-  };
-  color: ${props => 
-    props.type === 'warning' ? '#8C4B35' :
-    props.type === 'error' ? '#ef4444' :
-    props.type === 'success' ? '#10b981' :
-    '#3b82f6'
-  };
-`;
-
-const Divider = styled.hr`
-  border: none;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  margin: 1.5rem 0;
-`;
-
-const SettingsCard = styled(Card)`
-  margin-bottom: 1rem;
-`;
-
-const SettingItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-
-  &:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-  
-  &:first-child {
-    padding-top: 0;
-  }
-`;
-
-const SettingText = styled.div`
-  flex: 1;
-`;
-
-const SettingTitle = styled.h3`
-  font-size: 1rem;
-  margin-bottom: 0.25rem;
-  color: #334155;
-`;
-
-const SettingDescription = styled.p`
-  font-size: 0.875rem;
-  color: #64748b;
-`;
-
-const ToggleSwitch = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  background: ${props => props['data-active'] ? '#8C4B35' : '#ADADAD'};
-  width: 48px;
-  height: 24px;
-  border-radius: 9999px;
-  position: relative;
-  transition: background 0.2s ease;
-  border: none;
-  cursor: pointer;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 2px;
-    left: ${props => props['data-active'] ? 'calc(100% - 22px)' : '2px'};
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: white;
-    transition: left 0.2s ease;
-  }
-`;
-
-const SelectInput = styled.select`
-  background: #f8fafc;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  padding: 0.5rem;
-  color: #334155;
-`;
-
-const DashboardStatCard = styled.div`
-  display: flex;
-  align-items: center;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  padding: 15px;
-  transition: transform 0.2s;
-  
-  &:hover {
-    transform: translateY(-3px);
-  }
-`;
-
-const StatIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 45px;
-  height: 45px;
-  border-radius: 8px;
-  background-color: #3b82f6;
-  color: white;
-  margin-right: 15px;
-  font-size: 1.2rem;
-`;
-
-const StatInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const DashboardStatValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #0f172a;
-`;
-
-const DashboardStatLabel = styled.div`
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-top: 2px;
-`;
-
-const UserListItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  transition: background 0.2s ease;
-  
-  &:hover {
-    background: rgba(59, 130, 246, 0.05);
-  }
-  
-  &:last-child {
-    border-bottom: none;
-  }
-`;
-
-const UserAvatar = styled.div`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: ${props => props.bg || '#3b82f6'};
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  text-transform: uppercase;
-`;
-
-const UserInfo = styled.div`
-  flex: 1;
-`;
-
-const UserName = styled.div`
-  font-weight: 500;
-  color: #334155;
-`;
-
-const UserRole = styled.div`
-  font-size: 0.75rem;
-  color: #64748b;
-`;
-
-const UserActions = styled.div`
-  display: flex;
-  gap: 0.5rem;
-`;
-
-const IconAction = styled.button`
-  background: none;
-  border: none;
-  color: #64748b;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: #f1f5f9;
-    color: #1e293b;
-  }
-`;
-
-// StatusBadge removido - não está sendo usado
-
-// SavedPrompt, SavedPromptTitle, SavedPromptText, PromptTitle, PromptText removidos - não estão sendo usados
-
-const DoughnutChart = styled.div`
-  position: relative;
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  background: conic-gradient(
-    #3b82f6 0% 55%,
-    #8C4B35 55% 75%,
-    #10b981 75% 85%,
-    #64748b 85% 100%
-  );
-  margin: 1.5rem auto;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 110px;
-    height: 110px;
-    background: white;
-    border-radius: 50%;
-  }
-`;
-
-const ChartLegend = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center;
-`;
-
-const LegendItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.75rem;
-  color: #64748b;
-`;
-
-const LegendColor = styled.div`
-  width: 12px;
-  height: 12px;
-  border-radius: 2px;
-  background: ${props => props.color};
-`;
-
-// Estilos para Dashboard
-const DashboardContainer = styled.div`
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 20px;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  
-  @media (max-width: 1200px) {
-    grid-template-columns: repeat(1, 1fr);
-    padding: 0 20px;
-  }
-`;
-
-const InfoBannerContainer = styled.div`
-  grid-column: span 12;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const StatisticsSection = styled.section`
-  grid-column: span 12;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-`;
-
-const StatTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #1e293b;
-  margin-bottom: 20px;
-`;
-
-const StatCards = styled.div`
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(1, 1fr);
-  }
-`;
-
-const TasksSection = styled.section`
-  grid-column: span 6;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 1200px) {
-    grid-column: span 12;
-  }
-`;
-
-const TasksHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-`;
-
-const TasksTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #1e293b;
-`;
-
-const TasksCounter = styled.span`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: #e2e8f0;
-  color: #64748b;
-  font-size: 0.85rem;
-  font-weight: 500;
-`;
-
-const TasksList = styled.div`
-  display: flex;
-  flex-direction: column;
-  max-height: 350px;
-  overflow-y: auto;
-  
-  &::-webkit-scrollbar {
-    width: 5px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 5px;
-  }
-`;
-
-const TaskItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border-left: 3px solid ${props => 
-    props.priority === 'high' ? '#ef4444' : 
-    props.priority === 'medium' ? '#8C4B35' : '#3b82f6'
-  };
-  background-color: #f8fafc;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  transition: transform 0.2s;
-  
-  &:hover {
-    transform: translateX(3px);
-  }
-`;
-
-const TaskItemContent = styled.div`
-  flex: 1;
-`;
-
-const TaskListItemTitle = styled.h4`
-  font-size: 0.95rem;
-  color: #0f172a;
-  margin: 0 0 5px 0;
-`;
-
-const TaskListItemDescription = styled.p`
-  font-size: 0.85rem;
-  color: #64748b;
-  margin: 0 0 10px 0;
-`;
-
-const TaskDueDate = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 0.8rem;
-  color: #94a3b8;
-`;
-
-const TaskItemActions = styled.div`
-  display: flex;
-  align-items: center;
-`;
-
-const TaskButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  background-color: #e2e8f0;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: #10b981;
-    color: white;
-  }
-`;
-
-const EmptyTasksMessage = styled.p`
-  text-align: center;
-  color: #94a3b8;
-  padding: 30px 0;
-  font-size: 0.9rem;
-`;
-
-// Estilos para Equipe
-const TeamSection = styled.section`
-  grid-column: span 6;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 1200px) {
-    grid-column: span 12;
-  }
-`;
-
-const TeamSectionHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-`;
-
-const TeamTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #1e293b;
-`;
-
-const TeamViewAll = styled.button`
-  background: none;
-  border: none;
-  color: #3b82f6;
-  font-size: 0.85rem;
-  cursor: pointer;
-  
-  &:hover {
-    text-decoration: underline;
-  }
-`;
-
-const TeamList = styled.div`
-  display: flex;
-  flex-direction: column;
-  max-height: 350px;
-  overflow-y: auto;
-  
-  &::-webkit-scrollbar {
-    width: 5px;
-  }
-  
-  &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 5px;
-  }
-`;
-
-const TeamMember = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  background-color: #f8fafc;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  transition: transform 0.2s;
-  
-  &:hover {
-    transform: translateX(3px);
-  }
-`;
-
-const Avatar = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background-color: #3b82f6;
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-right: 12px;
-`;
-
-const MemberInfo = styled.div`
-  flex: 1;
-`;
-
-const MemberName = styled.div`
-  font-size: 0.95rem;
-  color: #0f172a;
-  font-weight: 500;
-`;
-
-const MemberRole = styled.div`
-  font-size: 0.8rem;
-  color: #64748b;
-`;
-
-const TeamMemberAction = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 5px;
-  border: none;
-  background-color: #e2e8f0;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s;
-  
-  &:hover {
-    background-color: #3b82f6;
-    color: white;
-  }
-`;
-
-const EmptyTeamMessage = styled.p`
-  text-align: center;
-  color: #94a3b8;
-  padding: 30px 0;
-  font-size: 0.9rem;
-`;
-
-// Estilos para Gráficos e Distribuição
-const QueryDistributionSection = styled.section`
-  grid-column: span 6;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 1200px) {
-    grid-column: span 12;
-  }
-`;
-
-const DistributionTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #1e293b;
-  margin-bottom: 20px;
-`;
-
-const DistributionChart = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-`;
-
-const DistributionItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
-
-const DistributionLabel = styled.div`
-  display: flex;
-  align-items: center;
-  width: 200px;
-  font-size: 0.85rem;
-  color: #0f172a;
-`;
-
-const ColorDot = styled.span`
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 8px;
-`;
-
-const DistributionBar = styled.div`
-  flex: 1;
-  height: 8px;
-  background-color: #f1f5f9;
-  border-radius: 4px;
-  overflow: hidden;
-`;
-
-const DistributionProgress = styled.div`
-  height: 100%;
-  background-color: #3b82f6;
-  border-radius: 4px;
-`;
-
-const DistributionPercentage = styled.div`
-  width: 45px;
-  text-align: right;
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-`;
-
-// Estilos para Plano Atual
-const CurrentPlanSection = styled.section`
-  grid-column: span 6;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  margin-bottom: 20px;
-  
-  @media (max-width: 1200px) {
-    grid-column: span 12;
-  }
-`;
-
-const CurrentPlanHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-`;
-
-const CurrentPlanTitle = styled.h3`
-  font-size: 1.2rem;
-  color: #1e293b;
-`;
-
-const CurrentPlanDetails = styled.div`
-  padding: 20px;
-  border: 2px solid #3b82f6;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const PlanName = styled.h4`
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #3b82f6;
-  margin: 0 0 15px 0;
-`;
-
-const PlanInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 20px;
-`;
-
-const PlanInfoItem = styled.div`
-  display: flex;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #64748b;
-`;
-
-const PlanPrice = styled.div`
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #0f172a;
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid #e2e8f0;
-`;
 
 const Modal = styled.div`
   position: fixed;
@@ -2054,525 +142,6 @@ const Button = styled.button`
 `;
 
 
-
-const SetupModal = styled(Modal)`
-  background: rgba(0, 0, 0, 0.8);
-  z-index: 1000;
-`;
-
-const SetupModalContent = styled(ModalContent)`
-  width: 90%;
-  max-width: 800px;
-  max-height: 90vh;
-  overflow-y: auto;
-  background: #f8fafc;
-  border-radius: 12px;
-  padding: 2rem;
-  z-index: 1001;
-`;
-
-const SetupHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-`;
-
-const SetupTitle = styled.h2`
-  color: #334155;
-  font-size: 1.5rem;
-  margin: 0;
-`;
-
-const SetupGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-`;
-
-const SetupCard = styled.div`
-  background: white;
-  border: 2px solid ${props => props.selected ? '#3b82f6' : '#e2e8f0'};
-  border-radius: 12px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const SetupCardTitle = styled.h3`
-  color: #334155;
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
-`;
-
-const SetupCardDescription = styled.p`
-  color: #64748b;
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
-`;
-
-const SetupCardFeatures = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  
-  li {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #64748b;
-    font-size: 0.9rem;
-    margin-bottom: 0.5rem;
-    
-    svg {
-      color: #10b981;
-    }
-  }
-`;
-
-const SetupActions = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-`;
-
-const SetupButton = styled.button`
-  background: ${props => props.primary ? '#3b82f6' : '#e2e8f0'};
-  color: ${props => props.primary ? 'white' : '#64748b'};
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: ${props => props.primary ? '#2563eb' : '#cbd5e1'};
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-  }
-`;
-
-const CurrentSetup = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  color: #334155;
-  font-size: 1rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-  @media (max-width: 768px) {
-    padding: 0.875rem 1.25rem;
-    font-size: 0.875rem;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.75rem 1rem;
-    font-size: 0.8rem;
-    gap: 0.5rem;
-  }
-`;
-
-const SetupInfo = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-`;
-
-const SetupIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #3b82f6;
-  color: white;
-  border-radius: 8px;
-  font-size: 1.2rem;
-
-  @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
-  }
-
-  @media (max-width: 480px) {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-  }
-`;
-
-const SetupDetails = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-`;
-
-const SetupLabel = styled.span`
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-`;
-
-const SetupName = styled.span`
-  font-size: 1rem;
-  color: #1e293b;
-  font-weight: 600;
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const FileAttachmentToggle = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-
-  @media (max-width: 768px) {
-    padding: 0.875rem 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-    gap: 0.5rem;
-  }
-`;
-
-const ToggleLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex: 1;
-
-  @media (max-width: 768px) {
-    width: 100%;
-  }
-`;
-
-const ToggleIcon = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: #f1f5f9;
-  color: #64748b;
-  border-radius: 6px;
-  font-size: 0.875rem;
-
-  @media (max-width: 480px) {
-    width: 28px;
-    height: 28px;
-    font-size: 0.8rem;
-  }
-`;
-
-const ToggleText = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-`;
-
-const ToggleTitle = styled.span`
-  font-size: 0.95rem;
-  color: #334155;
-  font-weight: 500;
-
-  @media (max-width: 768px) {
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const ToggleDescription = styled.span`
-  font-size: 0.8rem;
-  color: #64748b;
-  line-height: 1.3;
-
-  @media (max-width: 768px) {
-    font-size: 0.75rem;
-  }
-
-  @media (max-width: 480px) {
-    font-size: 0.7rem;
-  }
-`;
-
-const NewConversationButton = styled.button`
-  width: 100%;
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 1rem;
-  font-size: 0.95rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-
-  &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.875rem;
-    font-size: 0.875rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.75rem;
-    font-size: 0.8rem;
-  }
-`;
-
-const NewConversationButtonSmall = styled.button`
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 6px;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-
-  &:hover {
-    background: rgba(59, 130, 246, 0.2);
-    color: #2563eb;
-    transform: scale(1.05);
-  }
-
-  &:active {
-    transform: scale(1);
-  }
-
-  @media (max-width: 768px) {
-    padding: 0.375rem;
-    font-size: 0.7rem;
-  }
-
-  @media (max-width: 480px) {
-    padding: 0.25rem;
-    font-size: 0.65rem;
-  }
-`;
-
-const ToggleSwitchStyled = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  width: 52px;
-  height: 26px;
-  border-radius: 13px;
-  background: ${props => props['data-active'] ? '#8C4B35' : '#e5e7eb'};
-  border: none;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  padding: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  
-  &:hover {
-    background: ${props => props['data-active'] ? '#d97706' : '#d1d5db'};
-  }
-
-  // Dark mode support
-  .dark & {
-    background: ${props => props['data-active'] ? '#8C4B35' : '#374151'};
-    
-    &:hover {
-      background: ${props => props['data-active'] ? '#d97706' : '#4b5563'};
-    }
-  }
-`;
-
-const SwitchCircle = styled.span.withConfig({
-  shouldForwardProp: (prop) => prop !== 'data-active'
-})`
-  position: absolute;
-  left: ${props => props['data-active'] ? '28px' : '2px'};
-  top: 2px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
-`;
-
-const SwitchLabel = styled.span`
-  position: absolute;
-  left: 6px;
-  font-size: 0.6rem;
-  color: #ffffff;
-  font-weight: 500;
-  user-select: none;
-`;
-
-const SwitchLabelOff = styled.span`
-  position: absolute;
-  right: 6px;
-  font-size: 0.6rem;
-  color: #6b7280;
-  font-weight: 500;
-  user-select: none;
-
-  // Dark mode support
-  .dark & {
-    color: #9ca3af;
-  }
-`;
-
-// Componentes para o Laboratório
-const LaboratoryPanel = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
-`;
-
-const LabCard = styled(motion.div)`
-  background: #DFDFDF;
-  border-radius: 12px;
-  padding: 1.5rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid #ADADAD;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  cursor: pointer;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const LabCardTitle = styled.h3`
-  color: #2B2B2B;
-  margin-bottom: 0.5rem;
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const LabCardDescription = styled.p`
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  line-height: 1.4;
-`;
-
-const LabCardStatus = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8rem;
-  color: ${props => props.status === 'active' ? '#10b981' : props.status === 'warning' ? '#8C4B35' : '#ef4444'};
-`;
-
-const LabExperimentGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 1rem;
-`;
-
-const ExperimentCard = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-`;
-
-const ExperimentTitle = styled.h4`
-  color: #1e293b;
-  margin-bottom: 0.5rem;
-  font-size: 1rem;
-`;
-
-const ExperimentDescription = styled.p`
-  color: #64748b;
-  font-size: 0.8rem;
-  margin-bottom: 0.5rem;
-`;
-
-const ExperimentStatus = styled.span`
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 500;
-  background: ${props => 
-    props.status === 'running' ? '#dbeafe' : 
-    props.status === 'completed' ? '#dcfce7' : 
-    props.status === 'failed' ? '#fee2e2' : '#f3f4f6'};
-  color: ${props => 
-    props.status === 'running' ? '#1d4ed8' : 
-    props.status === 'completed' ? '#166534' : 
-    props.status === 'failed' ? '#dc2626' : '#6b7280'};
-`;
-
-// Adicione antes da função renderLaboratoryPanel:
 
 // Função para gerar session_id único por sessão de login
 function generateSessionId(userId) {
@@ -2767,6 +336,7 @@ const Home = () => {
   const [logFilter, setLogFilter] = useState('all');
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   const [fileContent, setFileContent] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -2784,9 +354,14 @@ const Home = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistorySidebar, setShowHistorySidebar] = useState(true);
 
+  // Estado para modal lateral do histórico
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  
   // Estados para o Laboratório (separados da IA)
   const [labMessages, setLabMessages] = useState([]);
   const [labInput, setLabInput] = useState('');
+  const labTextareaRef = useRef(null);
+  const labFileInputRef = useRef(null);
   const [isLabTyping, setIsLabTyping] = useState(false);
   const [labSelectedFile, setLabSelectedFile] = useState(null);
   const [labShowSetupModal, setLabShowSetupModal] = useState(false);
@@ -2794,6 +369,20 @@ const Home = () => {
   const [labShowNewChatModal, setLabShowNewChatModal] = useState(false);
   const [newChatName, setNewChatName] = useState('');
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  
+  // Hook para detectar tamanho da tela
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, []);
+  
+
   
   // useEffect para garantir que o modal seja resetado corretamente
   useEffect(() => {
@@ -2811,6 +400,14 @@ const Home = () => {
   // Estados para drag and drop
   const [isDragOver, setIsDragOver] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
+  
+  // Limpar estados de drag and drop quando sair do laboratório
+  useEffect(() => {
+    if (activeItem !== 'laboratory') {
+      setIsDragOver(false);
+      setDragCounter(0);
+    }
+  }, [activeItem]);
   const [labChatHistory, setLabChatHistory] = useState([]);
   const [labSelectedConversation, setLabSelectedConversation] = useState(null);
   const [labSelectedChatName, setLabSelectedChatName] = useState(null);
@@ -2821,6 +418,24 @@ const Home = () => {
   const [labMessagesByChat, setLabMessagesByChat] = useState({});
   const [labPendingMessagesByChat, setLabPendingMessagesByChat] = useState({});
   const [dataLoaded, setDataLoaded] = useState(false); // Controla se os dados já foram carregados
+
+  // Hook para detectar orientação do dispositivo
+  const [isLandscape, setIsLandscape] = useState(false);
+  
+  useEffect(() => {
+    const checkOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight);
+    };
+    
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
 
   // Funções seguras para acessar propriedades de objetos
   const safeGet = (obj, key, defaultValue = null) => {
@@ -2860,6 +475,24 @@ const Home = () => {
       }
     }, 100);
   };
+
+  // Função melhorada para scroll no mobile
+  const scrollToBottomMobile = useCallback(() => {
+    if (labChatContainerRef.current) {
+      const container = labChatContainerRef.current;
+      const isMobile = window.innerWidth < 768;
+      
+      if (isMobile) {
+        // Scroll mais suave no mobile
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, []);
 
   const loadTasks = useCallback(async () => {
     try {
@@ -2986,15 +619,15 @@ const Home = () => {
     const currentMessages = safeGet(labMessagesByChat, currentChatKey, []);
     
     if (currentMessages.length > 0) {
-      scrollLabChatToBottom();
+      scrollToBottomMobile();
     }
-  }, [labMessagesByChat, labSelectedChatName, labSelectedConversation]);
+  }, [labMessagesByChat, labSelectedChatName, labSelectedConversation, scrollToBottomMobile]);
 
   // Função para limpar todo o cache de mensagens
   const clearMessageCache = useCallback(() => {
     setLabMessagesByChat({});
     setLabPendingMessagesByChat({});
-    console.log('🧹 Cache de mensagens limpo completamente');
+
   }, []);
 
   // Efeito para carregar históricos do laboratório quando acessar o painel
@@ -3050,7 +683,7 @@ const Home = () => {
         return { [labSelectedChatName]: currentPendingMessages };
       });
       
-      console.log('🧹 Cache limpo ao trocar para chat:', labSelectedChatName);
+
       loadChatMessages(labSelectedChatName, true);
     }
   }, [labSelectedChatName, activeItem]); // Mantidas apenas dependências essenciais
@@ -3074,7 +707,7 @@ const Home = () => {
         setLabMessagesByChat({});
         setLabPendingMessagesByChat({});
         
-        console.log('🧹 Chat atual deselecionado via atalho de teclado');
+  
         
         // Abrir modal de novo chat
         setLabShowNewChatModal(true);
@@ -3147,59 +780,7 @@ const Home = () => {
     }
   }, [chatHistory]);
 
-  // Função para criar nova conversa
-  const createNewConversation = useCallback(async () => {
-    // Salvar conversa atual se houver mensagens e não estiver já salva
-    if (messages.length > 0 && !selectedConversation) {
-      await saveCurrentConversation();
-    }
-    
-    // Limpar estado para nova conversa
-    setSelectedConversation(null);
-    setMessages([]);
-    setChatInput('');
-    setSelectedFile(null);
-  }, [messages, selectedConversation, saveCurrentConversation]);
 
-  // Função para remover conversa do histórico
-  const removeConversation = useCallback(async (conversationId, event) => {
-    event.stopPropagation(); // Evita que o clique propague para o card
-    
-    
-    
-    if (window.confirm('Tem certeza que deseja remover esta conversa do histórico?')) {
-      try {
-
-        // Remover do Redis
-        const success = await removeChatConversation(conversationId);
-        
-        
-        if (success) {
-          // Atualizar estado local
-          setChatHistory(prev => {
-            const filtered = prev.filter(conv => conv.id !== conversationId);
-
-            return filtered;
-          });
-          
-          // Se a conversa removida era a selecionada, limpar seleção
-          if (selectedConversation === conversationId) {
-            setSelectedConversation(null);
-            setMessages([]);
-            setChatInput('');
-            setSelectedFile(null);
-          }
-          
-          showSuccessToast('Conversa removida com sucesso');
-        } else {
-          showErrorToast('Erro ao remover conversa');
-        }
-      } catch (error) {
-        console.error('Erro ao remover conversa:', error);
-        handleError(error, 'remoção de conversa');
-      }
-    }
-  }, [selectedConversation, removeChatConversation]);
 
 
 
@@ -3211,42 +792,7 @@ const Home = () => {
     return formatTime(isoDate);
   };
 
-  const handleEditUser = (user) => {
-    setSelectedUser(user);
-    setModalType('edit');
-    setEditName(user.name || '');
-    setEditRole(user.role || 'user');
-    setModalOpen(true);
-  };
 
-  const handleAddCredits = (user) => {
-    setSelectedUser(user);
-    setModalType('credits');
-    setCreditsAmount(100);
-    setModalOpen(true);
-  };
-
-  const handleRemoveUser = async (user) => {
-    if (window.confirm(`Tem certeza que deseja remover o usuário ${user.name}?`)) {
-      try {
-        setIsLoadingUsers(true);
-        const result = await removeUser(user.email);
-        
-        if (result.success) {
-          toast.success('Usuário removido com sucesso');
-          // Recarregar a lista após a remoção
-          await loadUsers(true);
-        } else {
-          toast.error(result.message || 'Erro ao remover usuário');
-        }
-      } catch (error) {
-        console.error('Erro ao remover usuário:', error);
-        toast.error('Erro inesperado ao remover usuário');
-      } finally {
-        setIsLoadingUsers(false);
-      }
-    }
-  };
 
   const handleModalSubmit = async () => {
     if (modalType === 'credits' && selectedUser) {
@@ -3266,35 +812,10 @@ const Home = () => {
     }
   };
 
-  const loadData = async () => {
-    try {
-      setIsLoading(true);
-      // ... existing code ...
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setError(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleLogout = useCallback(() => {
-    logout();
-    navigate('/login');
-  }, [logout, navigate]);
-
-  const handleFileUpload = (file) => {
-    
-    setSelectedFile(file);
-    // Se o arquivo for null, significa que foi removido
-    if (!file) {
-      setSelectedFile(null);
-    }
-  };
 
   // Funções para o Laboratório
   const handleLabFileUpload = (file) => {
-    
     setLabSelectedFile(file);
     if (!file) {
       setLabSelectedFile(null);
@@ -3303,12 +824,34 @@ const Home = () => {
     }
   };
 
+  const handleLabFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Verificar tamanho do arquivo (max 10MB)
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showErrorToast('Arquivo muito grande. Tamanho máximo: 10MB');
+        return;
+      }
+      
+      handleLabFileUpload(file);
+    }
+    // Limpar o input para permitir selecionar o mesmo arquivo novamente
+    e.target.value = '';
+  };
+
   // Funções para drag and drop
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log('DragEnter - tipos:', e.dataTransfer?.types);
+    
     setDragCounter(prev => prev + 1);
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+    
+    // Verificar se há arquivos sendo arrastados
+    if (e.dataTransfer?.types?.includes('Files') || e.dataTransfer?.files?.length > 0) {
+      console.log('✅ Ativando overlay de drag');
       setIsDragOver(true);
     }
   };
@@ -3316,10 +859,15 @@ const Home = () => {
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
     setDragCounter(prev => {
       const newCount = prev - 1;
-      if (newCount === 0) {
+      console.log('DragLeave - counter:', newCount);
+      
+      if (newCount <= 0) {
+        console.log('❌ Desativando overlay de drag');
         setIsDragOver(false);
+        return 0;
       }
       return newCount;
     });
@@ -3328,46 +876,55 @@ const Home = () => {
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Definir o efeito visual do cursor
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    console.log('=== DRAG AND DROP INICIADO ===');
+    
+    // Resetar estados
     setIsDragOver(false);
     setDragCounter(0);
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      
-      // Validação de tipo de arquivo
-      const allowedTypes = [
-        'text/plain',
-        'text/csv',
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        showErrorToast('Tipo de arquivo não suportado. Use: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV ou imagens.');
+    // Verificar se há arquivos
+    console.log('DataTransfer:', e.dataTransfer);
+    console.log('Files:', e.dataTransfer?.files);
+    console.log('Files length:', e.dataTransfer?.files?.length);
+    
+    if (!e.dataTransfer?.files || e.dataTransfer.files.length === 0) {
+      console.log('❌ Nenhum arquivo encontrado');
+      showErrorToast('Nenhum arquivo foi detectado. Tente novamente.');
         return;
       }
       
-      // Validação de tamanho (máximo 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      if (file.size > maxSize) {
-        showErrorToast('Arquivo muito grande. Tamanho máximo: 10MB');
-        return;
+    const file = e.dataTransfer.files[0];
+    console.log('✅ Arquivo detectado:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    });
+    
+    // Usar a mesma lógica do botão +
+    console.log('🔄 Chamando handleLabFileSelect...');
+    
+    // Simular event do input file
+    const fakeEvent = {
+      target: {
+        files: [file],
+        value: ''
       }
-      
-      handleLabFileUpload(file);
-    }
+    };
+    
+    handleLabFileSelect(fakeEvent);
+    console.log('=== DRAG AND DROP CONCLUÍDO ===');
   };
 
   // [3] Atualize handleLabSendMessage para usar o chat atual
@@ -3434,7 +991,7 @@ const Home = () => {
         promptId = 1; // Fallback padrão
       }
       const conteudo = userMessage.content;
-      console.log('📤 DEBUG: Enviando para API - conteudo:', conteudo);
+  
       const userPlan = currentUser?.plan_id || currentUser?.plan_name || '';
       const userId = currentUser?.user_id || currentUser?.id || '';
       
@@ -3481,7 +1038,7 @@ const Home = () => {
       // Atualizar chatKey se for um novo chat
       if (!labSelectedChatName) {
         chatKey = chat_name;
-        console.log('🆕 Novo chat criado - chatKey:', chatKey, 'chat_name:', chat_name);
+  
       }
       
       // Adicionar mensagem do usuário ao chat correto
@@ -3566,7 +1123,7 @@ const Home = () => {
       const data = await response.json();
       
       // Debug: verificar a estrutura da resposta
-      console.log('🔍 DEBUG: Estrutura da resposta da API:', data);
+
       
       // Processamento robusto da resposta da IA
       let content = 'Resposta recebida da API, mas sem mensagem.';
@@ -3595,25 +1152,25 @@ const Home = () => {
       if (data && data.type === 'ai' && data.content) {
         content = data.content;
         found = true;
-        console.log('✅ Estratégia 1: Resposta direta encontrada');
+
       }
       // Estratégia 2: Array de mensagens
       else if (Array.isArray(data) && data.length > 0) {
-        console.log('📋 Estratégia 2: Processando array de mensagens');
+
         // Procurar a última mensagem da IA
         for (let i = data.length - 1; i >= 0; i--) {
           const extracted = extractContent(data[i]);
           if (extracted) {
             content = extracted;
             found = true;
-            console.log('✅ Encontrou resposta da IA no array (índice', i, ')');
+
             break;
           }
         }
       }
       // Estratégia 3: Objeto com propriedades (chats históricos)
       else if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
-        console.log('📁 Estratégia 3: Processando objeto com propriedades');
+
         
         // Encontrar todas as propriedades que contêm mensagens
         const messageKeys = Object.keys(data).filter(key => {
@@ -3621,7 +1178,7 @@ const Home = () => {
           return typeof item === 'object' && item !== null && (item.message || item.type === 'ai');
         });
         
-        console.log('🔍 Chaves com mensagens encontradas:', messageKeys);
+        
         
         if (messageKeys.length > 0) {
           // Ordenar por número (maior primeiro) para pegar a última mensagem
@@ -3631,7 +1188,7 @@ const Home = () => {
             return isNaN(numA) || isNaN(numB) ? 0 : numB - numA;
           });
           
-          console.log('📊 Chaves ordenadas:', sortedKeys);
+          
           
           // Tentar cada chave até encontrar a ÚLTIMA resposta da IA
           for (const key of sortedKeys) {
@@ -3639,7 +1196,7 @@ const Home = () => {
             if (item && item.message && item.message.type === 'ai' && item.message.content) {
               content = item.message.content;
               found = true;
-              console.log('✅ Encontrou resposta da IA na chave:', key, 'Conteúdo:', content.substring(0, 100) + '...');
+
               break;
             }
           }
@@ -3651,35 +1208,30 @@ const Home = () => {
           if (extracted) {
             content = extracted;
             found = true;
-            console.log('✅ Encontrou resposta direta no objeto');
+    
           }
         }
       }
       
       // Estratégia 4: Fallbacks para estruturas específicas
       if (!found) {
-        console.log('🔄 Estratégia 4: Tentando fallbacks');
+
         
         if (data && data.message && typeof data.message === 'string') {
           content = data.message;
           found = true;
-          console.log('✅ Fallback 1: data.message (string)');
         } else if (data && data.result) {
           content = data.result;
           found = true;
-          console.log('✅ Fallback 2: data.result');
         } else if (data && data.content) {
           content = data.content;
           found = true;
-          console.log('✅ Fallback 3: data.content');
         }
       }
       
       if (!found) {
-        console.log('❌ Nenhuma estratégia funcionou. Estrutura completa:', JSON.stringify(data, null, 2));
         content = 'DEBUG: ' + JSON.stringify(data);
       } else {
-        console.log('✅ Resposta da IA extraída com sucesso:', content.substring(0, 100) + '...');
       }
      
       
@@ -3722,8 +1274,6 @@ const Home = () => {
           // Limpar cache de mensagens para o novo chat
           setLabMessagesByChat(prev => {
             const newState = { ...prev };
-            // Remover mensagens em cache para o novo chat usando a chave correta
-            console.log('🧹 Limpando cache de mensagens para chatKey:', chatKey);
             delete newState[chatKey];
             return newState;
           });
@@ -3731,14 +1281,11 @@ const Home = () => {
           // Limpar cache de mensagens pendentes
           setLabPendingMessagesByChat(prev => {
             const newState = { ...prev };
-            // Remover mensagens pendentes em cache para o novo chat usando a chave correta
-            console.log('🧹 Limpando cache de mensagens pendentes para chatKey:', chatKey);
             delete newState[chatKey];
             return newState;
           });
           
-          console.log('✅ Chat salvo no histórico:', chat_name);
-          console.log('🧹 Cache limpo para o novo chat');
+      
           showSuccessToast(`Chat "${chat_name}" criado com sucesso!`);
         } catch (error) {
           console.error('❌ Erro ao salvar chat no histórico:', error);
@@ -3942,13 +1489,13 @@ const Home = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="flex items-center justify-between"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
             >
-              <div>
-                <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+              <div className="flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                   Dashboard
                 </h1>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                   Bem-vindo(a), {currentUser?.name || 'Usuário'}! • Visão geral da sua conta
                 </p>
               </div>
@@ -3958,7 +1505,7 @@ const Home = () => {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"
+                className="flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium self-start sm:self-auto"
               >
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>Sistema Online</span>
@@ -3968,7 +1515,7 @@ const Home = () => {
         </motion.header>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12 pb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -3977,21 +1524,21 @@ const Home = () => {
           >
         
             {/* Statistics Header */}
-            <div className="px-8 py-6 border-b border-neutral-200 dark:border-neutral-800">
+            <div className="px-4 sm:px-8 py-4 sm:py-6 border-b border-neutral-200 dark:border-neutral-800">
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex items-center space-x-4"
+                className="flex items-center space-x-3 sm:space-x-4"
               >
-                <div className="p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg">
-                  <FaChartLine className="w-6 h-6" />
+                <div className="p-2 sm:p-3 rounded-xl bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg">
+                  <FaChartLine className="w-4 h-4 sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  <h1 className="text-lg sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                     Estatísticas de Uso
                   </h1>
-                  <p className="text-neutral-600 dark:text-neutral-300 mt-1">
+                  <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 mt-1">
                     Acompanhe seu desempenho e atividade na plataforma
                   </p>
                 </div>
@@ -3999,239 +1546,175 @@ const Home = () => {
             </div>
 
             {/* Statistics Content */}
-            <div className="p-8 space-y-6">
+            <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
               
               {/* Stats Grid */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
               >
-                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                        <FaChartLine className="w-4 h-4" />
+                        <FaChartLine className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                          Consultas realizadas hoje
+                        <h3 className="text-sm sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                          Consultas hoje
                         </h3>
-                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
                           Total de consultas realizadas hoje
                         </p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {usageStats?.queries_today || 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-accent1 to-accent1 text-white">
-                        <FaCode className="w-4 h-4" />
+                        <FaCode className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       <div className="relative group">
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-help">
+                        <h3 className="text-sm sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 cursor-help">
                           Tokens Hoje
                         </h3>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs sm:text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 shadow-lg">
                           Tokens são unidades de texto que a IA processa. Cada palavra, pontuação ou espaço conta como um token.
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900 dark:border-t-neutral-100"></div>
                         </div>
-                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
                           Tokens processados hoje
                         </p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {usageStats?.tokens_today || 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white">
-                        <FaClock className="w-4 h-4" />
+                        <FaClock className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        <h3 className="text-sm sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                           Total no mês
                         </h3>
-                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
                           Total mensal de consultas
                         </p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {usageStats?.queries_this_month || 0}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
+                <div className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3 sm:space-x-4">
                       <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-                        <FaCommentDots className="w-4 h-4" />
+                        <FaCommentDots className="w-3 h-3 sm:w-4 sm:h-4" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                        <h3 className="text-sm sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                           Total de Consultas
                         </h3>
-                        <p className="text-neutral-600 dark:text-neutral-300 text-sm">
+                        <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300">
                           Consultas realizadas no total
                         </p>
                       </div>
                     </div>
-                    <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="text-xl sm:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       {usageStats?.total_queries || 0}
                     </div>
                   </div>
                 </div>
               </motion.div>
 
-
-
-              
-
-
-
-              {/* Plan Distribution - Comentado temporariamente */}
-              {/* {queryDistributionData && queryDistributionData.planDistribution && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
-                >
-                  Título da seção de distribuição de usuários por plano
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-4">
-                    Usuários por Plano
-                  </h3>
-                  
-                  Container para a lista de planos
-                  <div className="space-y-3">
-                    Mapeia cada plano para criar um item da lista
-                    {queryDistributionData.planDistribution.map((plan, index) => {
-                      // Converte o user_count para número, garantindo que seja um valor válido
-                      const userCount = typeof plan.user_count === 'number' ? plan.user_count : parseInt(plan.user_count || '0', 10);
-                      
-                      return (
-                        <div key={index} className="flex items-center justify-between">
-                          Lado esquerdo: indicador de cor e nome do plano
-                          <div className="flex items-center space-x-3">
-                            Quadrado colorido que representa o plano
-                            <div 
-                              className="w-4 h-4 rounded"
-                              style={{ backgroundColor: plan.color || '#3b82f6' }}
-                            />
-                            Nome do plano
-                            <span className="text-sm text-neutral-900 dark:text-neutral-100">
-                              {plan.label || 'Plano'}
-                            </span>
-                          </div>
-                          
-                          Lado direito: contador de usuários
-                          <div className="flex items-center space-x-2">
-                            Círculo colorido com o número de usuários
-                            <div 
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-                              style={{ backgroundColor: plan.color || '#3b82f6' }}
-                            >
-                              {userCount}
-                            </div>
-                            Texto descritivo (singular ou plural)
-                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                              {userCount === 1 ? 'usuário' : 'usuários'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )} */}
-
-
-
               {/* Resumo de Produtividade */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.9 }}
-                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     Resumo de Produtividade
                   </h3>
                   <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                    <FaChartBar className="w-4 h-4" />
+                    <FaChartBar className="w-3 h-3 sm:w-4 sm:h-4" />
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                   {/* Peças Revisadas */}
-                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
-                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <FaFileAlt className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <div className="text-center p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-2 sm:p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                      <FaFileAlt className="w-4 h-4 sm:w-6 sm:h-6 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                    <div className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
                       {Math.floor(Math.random() * 50) + 25}
                     </div>
-                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    <div className="text-xs sm:text-sm font-medium text-neutral-600 dark:text-neutral-400">
                       Peças Revisadas
                     </div>
                   </div>
 
                   {/* Erros Evitados */}
-                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
-                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <FaShieldAlt className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  <div className="text-center p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-2 sm:p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                      <FaShieldAlt className="w-4 h-4 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
                     </div>
-                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                    <div className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
                       {Math.floor(Math.random() * 30) + 15}
                     </div>
-                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    <div className="text-xs sm:text-sm font-medium text-neutral-600 dark:text-neutral-400">
                       Erros Evitados
                     </div>
                   </div>
 
                   {/* Tempo Economizado */}
-                  <div className="text-center p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
-                    <div className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-16 h-16 mx-auto mb-3 flex items-center justify-center">
-                      <FaClock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  <div className="text-center p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/70 transition-all duration-300">
+                    <div className="p-2 sm:p-3 rounded-full bg-neutral-100 dark:bg-neutral-700 w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-3 flex items-center justify-center">
+                      <FaClock className="w-4 h-4 sm:w-6 sm:h-6 text-amber-600 dark:text-amber-400" />
                     </div>
-                    <div className="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
+                    <div className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-1">
                       {Math.floor(Math.random() * 20) + 8}h
                     </div>
-                    <div className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
+                    <div className="text-xs sm:text-sm font-medium text-neutral-600 dark:text-neutral-400">
                       Tempo Economizado
                     </div>
                   </div>
                 </div>
               </motion.div>
 
-                            {/* Uso do Plano */}
+              {/* Uso do Plano */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 1.0 }}
-                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+                className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                     Uso do Plano
                   </h3>
                   <div className="p-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                    <FaChartBar className="w-4 h-4" />
+                    <FaChartBar className="w-3 h-3 sm:w-4 sm:h-4" />
                   </div>
                 </div>
                 
@@ -4239,10 +1722,10 @@ const Home = () => {
                   {/* Barra de Progresso Principal */}
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      <span className="text-xs sm:text-sm font-medium text-neutral-700 dark:text-neutral-300">
                         Consumo Total do Plano
                       </span>
-                      <span className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                      <span className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-neutral-100">
                         {Math.min(
                           Math.max(
                             ((usageStats?.queries_today || 0) / (planData.maxQueriesPerHour || 100)) * 100,
@@ -4252,7 +1735,7 @@ const Home = () => {
                         ).toFixed(1)}%
                       </span>
                     </div>
-                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-4 overflow-hidden">
+                    <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-3 sm:h-4 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ 
@@ -4271,17 +1754,17 @@ const Home = () => {
                   </div>
 
                   {/* Informações Detalhadas */}
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                      <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                  <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-2">
+                    <div className="text-center p-2 sm:p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                      <div className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
                         {usageStats?.queries_today || 0}
                       </div>
                       <div className="text-xs text-neutral-600 dark:text-neutral-400">
                         Consultas hoje
                       </div>
                     </div>
-                    <div className="text-center p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
-                      <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                    <div className="text-center p-2 sm:p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg">
+                      <div className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
                         {(usageStats?.tokens_today || 0).toLocaleString()}
                       </div>
                       <div className="text-xs text-neutral-600 dark:text-neutral-400">
@@ -4297,24 +1780,24 @@ const Home = () => {
                  initial={{ opacity: 0, y: 20 }}
                  animate={{ opacity: 1, y: 0 }}
                  transition={{ duration: 0.6, delay: 1.2 }}
-                 className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
+                 className="bg-white/40 dark:bg-neutral-800/40 backdrop-blur-sm rounded-xl p-4 sm:p-6 border border-neutral-200 dark:border-neutral-700 hover:bg-white/60 dark:hover:bg-neutral-800/60 transition-all duration-300"
                >
-                 <div className="flex items-center justify-between mb-4">
-                   <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                   <h3 className="text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100">
                      Seu Plano Atual
                    </h3>
-             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
+                   {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
                      <button
-                       className="px-3 py-1 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300"
+                       className="px-3 py-1.5 sm:py-2 bg-gradient-to-r from-accent1 to-accent1 text-white text-xs font-medium rounded-full hover:shadow-lg transition-all duration-300 self-start sm:self-auto"
                      >
-                 Fazer upgrade
+                       Fazer upgrade
                      </button>
                    )}
                  </div>
                  <div className="space-y-4">
                    <div className="flex items-center space-x-3">
                      <div 
-                       className="px-3 py-1 rounded-full text-sm font-medium"
+                       className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium"
                        style={{ 
                          backgroundColor: 'rgba(225, 102, 61, 0.1)',
                          color: '#8C4B35'
@@ -4322,15 +1805,15 @@ const Home = () => {
                      >
                        {planData.name || 'Free Trial'}
                      </div>
-                     <span className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                     <span className="text-base sm:text-lg font-bold text-neutral-900 dark:text-neutral-100">
                        {planData.price || 'Gratuito'}
                      </span>
                    </div>
-                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                      <div className="flex items-center space-x-2">
-                       <FaClock className="w-4 h-4 text-neutral-500" />
+                       <FaClock className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-500" />
                        <div>
-                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                         <div className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
                            {planData.maxQueriesPerHour || 100}
                          </div>
                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -4339,9 +1822,9 @@ const Home = () => {
                        </div>
                      </div>
                      <div className="flex items-center space-x-2">
-                       <FaCode className="w-4 h-4 text-neutral-500" />
+                       <FaCode className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-500" />
                        <div>
-                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                         <div className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
                            {(planData.maxTokensPerHour || 20000).toLocaleString()}
                          </div>
                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -4350,9 +1833,9 @@ const Home = () => {
                        </div>
                      </div>
                      <div className="flex items-center space-x-2">
-                       <FaHistory className="w-4 h-4 text-neutral-500" />
+                       <FaHistory className="w-3 h-3 sm:w-4 sm:h-4 text-neutral-500" />
                        <div>
-                         <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                         <div className="text-xs sm:text-sm font-medium text-neutral-900 dark:text-neutral-100">
                            {!planData.historyRetention ? 'Limitado' : `${planData.historyRetention}h`}
                          </div>
                          <div className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -4361,7 +1844,7 @@ const Home = () => {
                        </div>
                      </div>
                    </div>
-             {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
+                   {currentUser && currentUser.plan_id && currentUser.plan_id !== 'PRO' && (
                      <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
                        Upgrade disponível para mais recursos
                      </div>
@@ -4421,7 +1904,6 @@ const Home = () => {
       // Gerar um novo sessionId único para cada novo chat
       const sessionId = generateSessionId(userId);
       
-      console.log('🆕 Criando novo chat:', { chatName, sessionId, userId });
       
       // Limpar estados
       setLabMessages([]);
@@ -4438,13 +1920,11 @@ const Home = () => {
 
       // Salvar no Redis
       if (currentUser) {
-        const savedChats = await saveLabChatToRedis(userId, chatName, sessionId);
-        console.log('💾 Chat salvo no Redis:', savedChats);
+        await saveLabChatToRedis(userId, chatName, sessionId);
         
         // Recarregar histórico
         const updatedChats = await fetchLabChatsFromRedis(userId);
         setLabChatHistory(updatedChats);
-        console.log('📋 Histórico atualizado:', updatedChats);
       }
     } catch (error) {
       console.error('❌ Erro ao criar novo chat:', error);
@@ -4476,38 +1956,7 @@ const Home = () => {
     }
   };
 
-  // Função para limpar session_id ao fazer logout
-  const clearSessionId = (userId) => {
-    const sessionKey = `user:${userId}:current_session`;
-    sessionStorage.removeItem(sessionKey);
-  };
 
-  const handleInitializeChat = () => {
-    if (!initialChatName.trim()) {
-      toast.error('Por favor, insira um nome para o chat');
-      return;
-    }
-
-    const chatName = initialChatName.trim();
-    setLabSelectedConversation(chatName);
-    setLabSelectedChatName(chatName);
-    
-    // Adicionar o primeiro chat ao histórico
-    setLabChatHistory(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        session_id: chatName,
-        name: chatName,
-        messages: [],
-        createdAt: new Date().toISOString(),
-      }
-    ]);
-    
-    setInitialChatName('');
-    setLabShowInitialChatModal(false);
-    showSuccessToast(`Chat "${chatName}" inicializado com sucesso!`);
-  };
 
   // Função para cortar texto antes de "Conteúdo do arquivo"
   function cortarAntesDeConteudo(texto) {
@@ -4687,17 +2136,7 @@ const Home = () => {
     }
   };
 
-  const handleSetupSelect = (setup) => {
-    setSelectedSetupState(setup);
-  };
 
-  const handleSetupConfirm = () => {
-    if (selectedSetupState) {
-      setSelectedSetup(selectedSetupState);
-      toast.success('Setup selecionado com sucesso!');
-      setShowSetupModal(false);
-    }
-  };
 
   const handleCopyMessage = async (text) => {
     try {
@@ -4731,231 +2170,165 @@ const Home = () => {
     }
     };
 
-    const handleRegenerateResponse = async (messageId) => {
-    try {
-      setIsAiTyping(true);
-      
-      const messageIndex = messages.findIndex(msg => msg.id === messageId);
-      if (messageIndex === -1 || messageIndex === 0) return;
-      
-      const userMessage = messages[messageIndex - 1];
-      if (userMessage.role !== 'user') return;
 
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-
-      const response = await fetch('/api/ai/query', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          prompt: userMessage.content,
-          maxTokens: 500,
-          setup: selectedSetup
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro na resposta do servidor');
-      }
-
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Erro ao processar a solicitação');
-      }
-
-      const aiResponse = {
-        id: Date.now(),
-        role: 'assistant',
-        content: data.message || 'Não foi possível processar a resposta',
-        timestamp: new Date()
-      };
-
-      setMessages(prev => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Erro ao regenerar resposta:', error);
-      const errorMessage = error.message || 'Erro ao regenerar resposta';
-      
-      const errorResponse = {
-        id: Date.now(),
-        role: 'error',
-        content: errorMessage,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorResponse]);
-    } finally {
-      setIsAiTyping(false);
-    }
-  };
-
-  const handleClearChat = () => {
-    setMessages([]);
-    setChatInput('');
-    toast.success('Chat limpo com sucesso!');
-  };
 
   const renderLaboratoryPanel = () => {
     // Sidebar de sessões do laboratório
     return (
-      <div className="flex h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500">
-        {/* Sidebar de sessões */}
-        <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-r-1 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch p-5 min-h-full box-border gap-5 backdrop-blur-md shadow-inner">
-          <button
-            className="w-full bg-gradient-to-r from-accent1 to-accent1 hover:bg-accent1/80 text-white border-0 rounded-xl py-3 px-4 cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg mb-6"
-            onClick={() => {
-              // Deselecionar chat atual
-              setLabSelectedConversation(null);
-              setLabSelectedChatName(null);
-              setLabMessages([]);
-              setLabInput('');
-              setLabSelectedFile(null);
-              
-              // Limpar cache de mensagens
-              setLabMessagesByChat({});
-              setLabPendingMessagesByChat({});
-              
-              console.log('🧹 Chat atual deselecionado ao clicar em Novo Chat');
-              
-              // Abrir modal de novo chat
-              setLabShowNewChatModal(true);
-            }}
-          >
-            <FaPlus className="w-4 h-4" />
-            <span>Nova Peça</span>
-          </button>
-          <div className="flex-1 overflow-hidden">
-            <div className="mb-4">
-              <div className="flex items-center justify-center mb-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center space-x-2">
-                  <FaHistory className="w-3 h-3" />
-                  <span>Histórico </span>
-                </h4>
-              </div>
-              <div className="h-px bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-600 to-transparent"></div>
+      <div className={`flex flex-col lg:flex-row h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500
+        ${isMobile ? 'home-mobile-optimized' : ''}`}>
+        {/* Sidebar de sessões - Apenas Desktop */}
+        {!isMobile && (
+          <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-b lg: lg:!border-b-0 !border-1 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch min-h-0 lg:min-h-full box-border backdrop-blur-md shadow-inner p-3 lg:p-5 gap-3 lg:gap-5">
+          {!isMobile && (
+            <div className="flex flex-col items-center">
+            <button
+                className="bg-gradient-to-r from-accent1 to-accent1 hover:bg-accent1/80 text-white border-0 rounded-xl cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg w-full max-w-xs mx-auto py-2 lg:py-2.5 px-3 lg:px-4 mb-4 lg:mb-6 text-sm"
+              onClick={() => {
+                // Deselecionar chat atual
+                setLabSelectedConversation(null);
+                setLabSelectedChatName(null);
+                setLabMessages([]);
+                setLabInput('');
+                setLabSelectedFile(null);
+                
+                // Limpar cache de mensagens
+                setLabMessagesByChat({});
+                setLabPendingMessagesByChat({});
+                
+                
+                // Abrir modal de novo chat
+                setLabShowNewChatModal(true);
+              }}
+            >
+                <FaPlus className="w-3.5 h-3.5" />
+              <span>Nova Peça</span>
+            </button>
             </div>
-            
-            {labHistoryLoading ? (
-              <div className="flex flex-col items-center justify-center p-8 space-y-4">
-                <div className="relative">
-                  <div className="w-12 h-12 border-4 border-accent1/20 dark:border-accent1 rounded-full"></div>
-                  <div className="absolute top-0 left-0 w-12 h-12 border-4 border-transparent border-t-amber-500 rounded-full"></div>
-                </div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">Carregando seus chats...</p>
-              </div>
-            ) : labChatHistory.length === 0 ? (
-              <div className="p-4">
-                <EmptyState 
-                  type="chats" 
-                  action={() => {
-                    // Deselecionar chat atual
-                    setLabSelectedConversation(null);
-                    setLabSelectedChatName(null);
-                    setLabMessages([]);
-                    setLabInput('');
-                    setLabSelectedFile(null);
-                    
-                    // Limpar cache de mensagens
-                    setLabMessagesByChat({});
-                    setLabPendingMessagesByChat({});
-                    
-                    console.log('🧹 Chat atual deselecionado via EmptyState');
-                    
-                    // Abrir modal de novo chat
-                    setLabShowNewChatModal(true);
-                  }} 
-                />
-              </div>
+          )}
+          
+
+          
+
+          
+          <div className="flex-1 overflow-hidden">
+            {isMobile ? (
+              // Espaço vazio para mobile (dropdown movido para fora)
+              <div className="h-full"></div>
             ) : (
-              <div className="space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-accent1/30 dark:scrollbar-thumb-accent1 scrollbar-track-transparent scrollbar-thumb-rounded-full">
-                {labChatHistory.map((session, idx) => (
-                  <div
-                    key={session.session_id || session.id}
-                    className={`relative cursor-pointer rounded-xl group overflow-hidden ${
-                      labSelectedConversation === (session.session_id || session.id) 
-                        ? '!bg-gradient-to-r !from-accent1 !via-accent2 !to-accent1 !text-white font-bold shadow-lg shadow-accent1/30' 
-                        : '!bg-gradient-to-r !from-white/60 !via-white/40 !to-white/60 dark:!from-neutral-700/60 dark:!via-neutral-700/40 dark:!to-neutral-700/60 !text-neutral-700 dark:!text-neutral-300 font-medium hover:!from-white/80 hover:!via-white/60 hover:!to-white/80 dark:hover:!from-neutral-600/80 dark:hover:!via-neutral-600/60 dark:hover:!to-neutral-600/80 hover:shadow-md'
-                    }`}
-                    onClick={() => {
-                      const chatName = session.chat_name || session.name;
-                      const sessionId = session.session_id || session.id;
-                      
-              
-                      
-                      setLabSelectedConversation(sessionId);
-                      setLabSelectedChatName(chatName);
-                      
-                      // Buscar mensagens do chat específico da API externa
-                      loadChatMessages(chatName, true); // use sempre o nome do chat
-                      
-                      setLabInput('');
-                      setLabSelectedFile(null);
-                    }}
-                    title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
-                  >
-
-                    
-
-                    
-                    <div className="relative z-10 p-2 flex items-center justify-between">
-                      <div className="flex items-center flex-1 min-w-0">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm font-medium truncate">
-                              {session.chat_name || session.session_id || session.name}
-                            </span>
-
+              // Layout original para desktop
+              <>
+                <div className={`mb-3 lg:mb-4 ${isMobile ? 'mb-2' : ''}`}>
+                  <div className={`flex items-center justify-center ${isMobile ? 'mb-1' : 'mb-2 lg:mb-3'}`}>
+                    <h4 className={`font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 flex items-center space-x-2
+                      ${isMobile ? 'text-xs' : 'text-xs lg:text-sm'}`}>
+                      <FaHistory className={`${isMobile ? 'w-2.5 h-2.5' : 'w-3 h-3'}`} />
+                      <span>Histórico</span>
+                    </h4>
+                  </div>
+                  <div className="h-px bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-600 to-transparent"></div>
+                </div>
+                
+                {labHistoryLoading ? (
+                  <div className={`flex flex-col items-center justify-center space-y-2 lg:space-y-4
+                    ${isMobile ? 'p-2' : 'p-3 lg:p-8'}`}>
+                    <div className="relative">
+                      <div className={`border-4 border-accent1/20 dark:border-accent1 rounded-full
+                        ${isMobile ? 'w-6 h-6' : 'w-6 h-6 lg:w-12 lg:h-12'}`}></div>
+                      <div className={`absolute top-0 left-0 border-4 border-transparent border-t-amber-500 rounded-full
+                        ${isMobile ? 'w-6 h-6' : 'w-6 h-6 lg:w-12 lg:h-12'}`}></div>
+                    </div>
+                    <p className={`text-neutral-600 dark:text-neutral-400
+                      ${isMobile ? 'text-xs' : 'text-xs lg:text-sm'}`}>Carregando...</p>
+                  </div>
+                ) : labChatHistory.length === 0 ? (
+                  <div className={`${isMobile ? 'p-2' : 'p-2 lg:p-4'}`}>
+                    <EmptyState 
+                      type="chats" 
+                      action={() => {
+                        // Deselecionar chat atual
+                        setLabSelectedConversation(null);
+                        setLabSelectedChatName(null);
+                        setLabMessages([]);
+                        setLabInput('');
+                        setLabSelectedFile(null);
+                        
+                        // Limpar cache de mensagens
+                        setLabMessagesByChat({});
+                        setLabPendingMessagesByChat({});
+                        
+                        
+                        // Abrir modal de novo chat
+                        setLabShowNewChatModal(true);
+                      }} 
+                    />
+                  </div>
+                ) : (
+                  <div className={`flex flex-col max-h-[40vh] lg:max-h-[calc(100vh-12rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent hover:scrollbar-thumb-neutral-400 dark:hover:scrollbar-thumb-neutral-500
+                    ${isMobile ? 'gap-1 pr-1' : 'gap-0.5 pr-2'}`}>
+                    {labChatHistory.map((session, idx) => (
+                      <div
+                        key={session.session_id || session.id}
+                        className={`relative cursor-pointer group flex items-center gap-3 transition-all duration-200 ${
+                          labSelectedConversation === (session.session_id || session.id) 
+                            ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100' 
+                            : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+                        } ${isMobile ? 'rounded-lg p-2' : 'rounded-lg p-1 lg:p-1.5'}`}
+                        onClick={() => {
+                          const chatName = session.chat_name || session.session_id || session.name;
+                          const sessionId = session.session_id || session.id;
+                          
+                  
+                          
+                          setLabSelectedConversation(sessionId);
+                          setLabSelectedChatName(chatName);
+                          
+                          // Buscar mensagens do chat específico da API externa
+                          loadChatMessages(chatName, true); // use sempre o nome do chat
+                          
+                          setLabInput('');
+                          setLabSelectedFile(null);
+                        }}
+                        title={`${session.chat_name || session.session_id || session.name}${session.is_current_session ? ' (Sessão atual)' : ''}`}
+                      >
+                        {/* Conteúdo do chat */}
+                            <div className="flex-1 min-w-0">
+                          <span className={`block truncate font-medium
+                            ${isMobile ? 'text-sm' : 'text-sm'}`}>
+                                  {session.chat_name || session.session_id || session.name}
+                                </span>
                           </div>
                           
-
-                        </div>
+                          {/* Botão de remover */}
+                          <button
+                          className="opacity-0 group-hover:opacity-100 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer rounded p-1.5 flex items-center justify-center transition-all duration-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
+                                handleHideChat(session.session_id || session.id);
+                              }
+                            }}
+                            title="Remover chat"
+                          >
+                          <FaTrash className="w-3 h-3" />
+                          </button>
                       </div>
-                      
-                      {/* Botão de remover */}
-                      <button
-                        className="opacity-70 hover:opacity-100 group-hover:opacity-100 bg-red-600/30 hover:bg-red-600/50 dark:bg-red-500/30 dark:hover:bg-red-500/50 border-0 text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-400 cursor-pointer text-sm p-2 rounded-lg flex items-center justify-center ml-2 md:opacity-80 md:hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (window.confirm(`Tem certeza que deseja remover o chat "${session.chat_name || session.session_id || session.name}"?`)) {
-                            handleHideChat(session.session_id || session.id);
-                          }
-                        }}
-                        title="Remover chat"
-                      >
-                        <FaTrash className="w-3 h-3" />
-                      </button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
+        )}
         {/* Chat principal do laboratório (igual IA, mas usando estados do laboratório) */}
         <div className="flex-1 min-w-0 !bg-white/30 dark:!bg-neutral-900/30 backdrop-blur-sm">
-          <div className="flex flex-col h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] !bg-white/60 dark:!bg-neutral-800/60 p-6 pb-8 gap-6 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-3rem)] md:max-h-[calc(100vh-3rem)] sm:p-3 sm:pb-4 sm:gap-3 backdrop-blur-sm">
-            <div className="flex flex-col xl:flex-row gap-4 mb-4">
-              <div className="flex items-center justify-between gap-4 p-4 lg:p-2 !bg-white/40 dark:!bg-neutral-800/40 !border !border-neutral-200 dark:!border-neutral-700 rounded-xl !text-neutral-700 dark:!text-neutral-300 text-base shadow-sm backdrop-blur-sm md:p-3.5 md:text-sm md:flex-wrap md:gap-3 sm:p-2 sm:text-xs sm:gap-2 hover:!bg-white/60 dark:hover:!bg-neutral-800/60 transition-all duration-300 xl:flex-1">
-                <div className="flex items-center gap-2">
-                  <FaCog className="text-accent1" />
-                  <span>Modo atual: {labSelectedSetupState?.title || 'Não selecionado'}</span>
-                </div>
-                <button 
-                  onClick={() => setLabShowSetupModal(true)}
-                  className="!bg-accent1 hover:!bg-amber-600 !text-white !border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
-                >
-                  Alterar Modo
-                </button>
-              </div>
+                     <div className={`flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-2rem)] max-h-[calc(100vh-8rem)] lg:max-h-[calc(100vh-2rem)] !bg-white/60 dark:!bg-neutral-800/60 pb-5 lg:pb-10 gap-2 lg:gap-6 backdrop-blur-sm min-h-[100svh] ${isMobile ? 'bg-gradient-to-b from-sky-50 via-white to-indigo-50 dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-900' : ''}
+            ${isMobile ? 'p-0 gap-0 justify-start items-center h-full pt-2' : 'pt-2 px-3 lg:pt-3 lg:px-12 md:p-4 md:pb-6 md:gap-4 md:h-[calc(100vh-7rem)] md:max-h-[calc(100vh-7rem)] sm:p-3 sm:pb-4 sm:gap-3'}`}>
 
-              {/* <div className="xl:min-w-fit">
-                <FileUpload onFileUpload={handleLabFileUpload} file={labSelectedFile} />
-              </div> */}
-            </div>
             <div 
-              className="flex flex-col bg-white dark:bg-neutral-800 rounded-xl shadow-md h-full overflow-hidden border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm mb-8 md:mb-6 sm:mb-4 relative"
+              className={`flex flex-col bg-white dark:bg-neutral-800 shadow-md h-full border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm relative
+                ${isMobile ? 'w-full max-w-md mx-auto rounded-2xl ring-1 ring-white/40 dark:ring-white/10 shadow-xl backdrop-blur-lg overflow-visible h-[calc(100vh-5rem)]' : 'mb-6 lg:mb-8 md:mb-6 sm:mb-4 rounded-xl overflow-hidden'}`}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
@@ -4963,55 +2336,133 @@ const Home = () => {
             >
               {/* Overlay de drag and drop */}
               {isDragOver && (
-                <div className="absolute inset-0 bg-accent2/20 backdrop-blur-sm border-2 border-dashed border-accent2 rounded-xl z-50 flex items-center justify-center">
-                  <div className="text-center p-8">
+                <div className={`absolute inset-0 bg-accent2/20 backdrop-blur-sm border-2 border-dashed border-accent2 z-50 flex items-center justify-center
+                  ${isMobile ? 'rounded-lg' : 'rounded-lg lg:rounded-xl'}`}>
+                  <div className={`text-center ${isMobile ? 'p-3' : 'p-3 lg:p-8'}`}>
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="bg-white dark:bg-neutral-800 rounded-2xl p-8 shadow-2xl border border-accent2/20 dark:border-accent2"
+                      className={`bg-white dark:bg-neutral-800 shadow-2xl border border-accent2/20 dark:border-accent2
+                        ${isMobile ? 'rounded-xl p-3' : 'rounded-xl lg:rounded-2xl p-3 lg:p-8'}`}
                     >
-                      <div className="text-6xl mb-4">📁</div>
-                      <h3 className="text-xl font-bold text-accent2 dark:text-accent2 mb-2">
+                      <div className={`mb-2 lg:mb-4 ${isMobile ? 'text-2xl' : 'text-3xl lg:text-6xl'}`}>📁</div>
+                      <h3 className={`font-bold text-accent2 dark:text-accent2 mb-2
+                        ${isMobile ? 'text-sm' : 'text-base lg:text-xl'}`}>
                         Solte o arquivo aqui
                       </h3>
-                      <p className="text-neutral-600 dark:text-neutral-300 text-sm">
-                        Suportamos: PDF, DOC, DOCX, XLS, XLSX, TXT, CSV e imagens
+                      <p className={`text-neutral-600 dark:text-neutral-300
+                        ${isMobile ? 'text-xs' : 'text-xs lg:text-sm'}`}>
+                        PDF, DOC, DOCX, XLS, XLSX, TXT, CSV e imagens
                       </p>
-                      <p className="text-neutral-500 dark:text-neutral-400 text-xs mt-2">
-                        Tamanho máximo: 10MB
+                      <p className={`text-neutral-500 dark:text-neutral-400 mt-1 lg:mt-2
+                        ${isMobile ? 'text-xs' : 'text-xs'}`}>
+                        Máximo: 10MB
                       </p>
                     </motion.div>
                   </div>
                 </div>
               )}
               
-              <div className="flex flex-col h-full min-h-0 gap-0">
-                <div className="flex justify-between items-center p-5 border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm">
-                  <h3 className="text-xl text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2 md:text-lg">Chat da Central Jurídica</h3>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={handleLabClearChat}
-                      className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-2 cursor-pointer transition-all duration-200 text-sm flex items-center gap-2 font-medium hover:shadow-md"
-                    >
-                      <FaTrash className="w-3 h-3" /> Limpar Chat
-                    </button>
+              <div className="flex flex-col h-full min-h-0 gap-3">
+                {/* Header para desktop */}
+                {!isMobile && (
+                  <div className={`flex justify-between items-start border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm
+                    ${isMobile ? 'p-2' : 'p-3 lg:p-5'}`}>
+                    <div className="flex flex-col gap-1">
+                    <h3 className={`text-neutral-800 dark:text-neutral-200 font-semibold m-0 flex items-center gap-2
+                      ${isMobile ? 'text-base' : 'text-lg lg:text-xl md:text-lg'}`}>Chat da Central Jurídica</h3>
+                      
+                      {/* Modo atual embaixo do título */}
+                      <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400 text-sm">
+                        <FaCog className="text-accent1 w-3 h-3" />
+                        <span className="font-medium">
+                          Modo: {labSelectedSetupState?.title || 'Não selecionado'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-1">
+                      <button 
+                        onClick={() => setLabShowSetupModal(true)}
+                        className="bg-accent1 hover:bg-accent1/90 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-1 lg:gap-2 font-medium shadow-sm hover:shadow-md px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm"
+                      >
+                        <FaCog className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
+                        <span className="hidden sm:inline">Alterar Modo</span>
+                      </button>
+                      <button 
+                        onClick={handleLabClearChat}
+                        className={`bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-1 lg:gap-2 font-medium hover:shadow-md
+                          ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm'}`}
+                      >
+                        <FaTrash className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                        <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Limpar Chat</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div ref={labChatContainerRef} className="chat-messages flex-1 overflow-y-auto p-6 flex flex-col gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent">
+                )}
+                
+                {/* Header completo para mobile */}
+                {isMobile && (
+                  <div className="flex justify-between items-center p-3 border-b border-neutral-200 dark:border-neutral-700 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-md flex-shrink-0 sticky top-0 z-20">
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200 m-0 truncate">Chat da Central Jurídica</h3>
+                      <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
+                        <FaCog className="text-accent1 w-3 h-3 flex-shrink-0" />
+                        <span className="font-medium truncate">
+                          Modo: {labSelectedSetupState?.title || 'Não selecionado'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-1.5 ml-3 flex-shrink-0">
+                      <button 
+                        onClick={() => setLabShowNewChatModal(true)}
+                        className="bg-accent2 hover:bg-accent2/90 active:bg-accent2/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
+                        title="Nova Peça"
+                      >
+                        <FaPlus className="w-3 h-3" />
+                      </button>
+                      <button 
+                        onClick={() => setShowHistoryModal(true)}
+                        className="bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
+                        title="Histórico"
+                      >
+                        <FaHistory className="w-3 h-3" />
+                      </button>
+                      <button 
+                        onClick={() => setLabShowSetupModal(true)}
+                        className="bg-accent1 hover:bg-accent1/90 active:bg-accent1/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
+                        title="Alterar Modo"
+                      >
+                        <FaCog className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={handleLabClearChat}
+                        className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center hover:shadow-md w-8 h-8 min-w-[32px]"
+                        title="Limpar Chat"
+                      >
+                        <FaTrash className="w-3 h-3" /> 
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <div ref={labChatContainerRef} className={`chat-messages flex-1 overflow-y-auto flex flex-col gap-4 lg:gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent overscroll-contain
+                  ${isMobile ? 'p-3 gap-3 pb-36 mb-[env(safe-area-inset-bottom)] scroll-smooth' : 'p-3 lg:p-6'}`}>
                   {(safeGet(labMessagesByChat, getCurrentLabChatKey(), [])).map((message, index) => (
                     <div 
                       key={`${message.role}-${index}-${message.timestamp}`}
-                      className={`flex flex-col w-full mb-4 group ${
+                      className={`flex flex-col w-full group ${
                         message.role === 'user' ? 'items-end' : 'items-start'
-                      } fade-in`}
+                      } fade-in ${isMobile ? 'mb-2' : 'mb-3 lg:mb-4'}`}
                     >
-                      <div className={`relative max-w-[80%] p-4 rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 ${
+                      <div className={`relative max-w-[85%] lg:max-w-[80%] rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 hover:shadow-lg active:scale-[0.99]
+                        ${
                         message.role === 'user' 
                           ? 'bg-gradient-to-br from-accent1 to-accent1 text-white shadow-accent1/20' 
                           : message.role === 'error'
                           ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
                           : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600'
-                      } md:max-w-[90%] sm:max-w-[95%]`}>
+                      } ${isMobile ? 'p-2 max-w-[95%]' : 'p-3 lg:p-4 md:max-w-[90%] sm:max-w-[95%]'}`}>
                         {renderMessageWithFile(message.content)}
                         <div className={`text-xs opacity-60 mt-2 ${
                           message.role === 'user' 
@@ -5021,27 +2472,31 @@ const Home = () => {
                           {formatChatTime(message.timestamp)}
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div className={`flex gap-1 lg:gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200
+                        ${isMobile ? 'mt-1' : 'mt-1 lg:mt-2'}`}>
                         <button 
                           onClick={() => handleCopyMessage(message.content)}
                           title="Copiar mensagem"
-                          className="bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-700 border-0 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer p-2 rounded-lg text-xs flex items-center gap-1 transition-all duration-200"
+                          className={`bg-transparent hover:bg-neutral-100 dark:hover:bg-neutral-700 border-0 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                            ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
                         >
-                          <FaCopy className="w-3 h-3" /> Copiar
+                          <FaCopy className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                          <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Copiar</span>
                         </button>
                       </div>
                     </div>
                   ))}
                   {isLabTyping && (
-                    <div className="flex flex-col w-full mb-4 items-start">
-                      <div className="relative max-w-[80%] p-2 rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300">
+                    <div className={`flex flex-col w-full items-start ${isMobile ? 'mb-2' : 'mb-3 lg:mb-4'}`}>
+                      <div className={`relative max-w-[85%] lg:max-w-[80%] rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300
+                        ${isMobile ? 'p-2 max-w-[95%]' : 'p-2 lg:p-2'}`}>
                         <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
                           <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
-                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                            <div className="w-2 h-2 bg-accent1 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                            <div className={`bg-accent1 rounded-full animate-bounce ${isMobile ? 'w-1.5 h-1.5' : 'w-1.5 h-1.5 lg:w-2 lg:h-2'}`} style={{animationDelay: '0s'}}></div>
+                            <div className={`bg-accent1 rounded-full animate-bounce ${isMobile ? 'w-1.5 h-1.5' : 'w-1.5 h-1.5 lg:w-2 lg:h-2'}`} style={{animationDelay: '0.2s'}}></div>
+                            <div className={`bg-accent1 rounded-full animate-bounce ${isMobile ? 'w-1.5 h-1.5' : 'w-1.5 h-1.5 lg:w-2 lg:h-2'}`} style={{animationDelay: '0.4s'}}></div>
                           </div>
-                          <span className="text-sm">Clausy está digitando...</span>
+                          <span className={`${isMobile ? 'text-xs' : 'text-xs lg:text-sm'}`}>Clausy está digitando...</span>
                         </div>
                       </div>
                     </div>
@@ -5051,14 +2506,14 @@ const Home = () => {
                 
                 {/* Indicador de arquivo anexado */}
                 {labSelectedFile && (
-                  <div className="px-4 py-2 bg-accent1/5 dark:bg-accent1/90/20 border-t border-accent1/20 dark:border-accent1">
+                  <div className="px-3 lg:px-4 py-2 bg-accent1/5 dark:bg-accent1/90/20 border-t border-accent1/20 dark:border-accent1">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-accent1/10 dark:bg-accent1/80 rounded-lg flex items-center justify-center">
-                          <FaFileAlt className="w-4 h-4 text-accent1 dark:text-accent1/80" />
+                      <div className="flex items-center gap-2 lg:gap-3">
+                        <div className="w-6 h-6 lg:w-8 lg:h-8 bg-accent1/10 dark:bg-accent1/80 rounded-lg flex items-center justify-center">
+                          <FaFileAlt className="w-3 h-3 lg:w-4 lg:h-4 text-accent1 dark:text-accent1/80" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-accent1 dark:text-accent1/80">
+                          <p className="text-xs lg:text-sm font-medium text-accent1 dark:text-accent1/80">
                             {labSelectedFile.name}
                           </p>
                           <p className="text-xs text-accent1 dark:text-accent1">
@@ -5068,57 +2523,162 @@ const Home = () => {
                       </div>
                       <button
                         onClick={() => setLabSelectedFile(null)}
-                        className="w-6 h-6 bg-accent1/20 dark:bg-amber-700 hover:bg-accent1/30 dark:hover:bg-accent1/80 rounded-full flex items-center justify-center text-amber-700 dark:text-accent1/80 transition-all duration-200"
+                        className="w-5 h-5 lg:w-6 lg:h-6 bg-accent1/20 dark:bg-amber-700 hover:bg-accent1/30 dark:hover:bg-accent1/80 rounded-full flex items-center justify-center text-amber-700 dark:text-accent1/80 transition-all duration-200"
                       >
-                        <FaTimes className="w-3 h-3" />
+                        <FaTimes className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
                       </button>
                     </div>
                   </div>
                 )}
                 
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleLabSendMessage();
-                  }}
-                  className="flex gap-4 p-4 bg-white dark:bg-neutral-800 rounded-b-xl shadow-md flex-shrink-0 border-t border-neutral-200 dark:border-neutral-700 sticky bottom-0 backdrop-blur-sm md:gap-3 md:p-4 sm:gap-2 sm:p-3"
-                >
-                  <textarea
-                    value={labInput}
-                    onChange={(e) => setLabInput(e.target.value)}
-                    placeholder="Digite sua mensagem aqui..."
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleLabSendMessage();
-                      }
-                    }}
-                    className="flex-1 border border-neutral-300 dark:border-neutral-600 rounded-lg px-4 py-3 text-sm resize-none min-h-[2.25rem] max-h-20 leading-4 bg-neutral-50 dark:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-inherit transition-all duration-200 placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:border-accent1 focus:shadow-lg focus:shadow-accent1/20/20 dark:focus:shadow-accent1/80/20 focus:bg-white dark:focus:bg-neutral-600 hover:border-neutral-400 dark:hover:border-neutral-500 flex items-center"
-                  />
+                {isMobile ? (
+                <div className="flex items-center gap-3 flex-shrink-0 sticky bottom-0 transition-all duration-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white/80 dark:bg-neutral-800/80 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-700 fixed inset-x-0 z-50">
+                  {/* Container do input estilo desktop */}
+                  <div className="flex-1 relative flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-3xl border border-neutral-200 dark:border-neutral-600 shadow-sm hover:shadow-md transition-all duration-200">
+                    {/* Botão de anexar arquivo dentro da barra */}
+                    <input
+                      type="file"
+                      ref={labFileInputRef}
+                      style={{ display: 'none' }}
+                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xls,.xlsx"
+                      onChange={handleLabFileSelect}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => labFileInputRef.current?.click()}
+                      className="w-8 h-8 ml-2 bg-transparent hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-300 transition-all duration-200"
+                    >
+                      <FaPlus className="w-4 h-4" />
+                    </button>
+                    
+                    <textarea
+                      ref={labTextareaRef}
+                      value={labInput}
+                      onChange={(e) => {
+                        setLabInput(e.target.value);
+                        const textarea = e.target;
+                        setTimeout(() => {
+                          if (textarea.scrollHeight > textarea.clientHeight) {
+                            textarea.style.overflowY = 'auto';
+                          } else {
+                            textarea.style.overflowY = 'hidden';
+                          }
+                        }, 0);
+                      }}
+                      placeholder="Escreva sua mensagem..."
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleLabSendMessage();
+                        }
+                      }}
+                      className="w-full resize-none px-6 py-3 text-base h-12 bg-transparent text-neutral-900 dark:text-neutral-100 leading-6 border-0 outline-none placeholder:text-neutral-500 dark:placeholder:text-neutral-400 overflow-hidden"
+                      style={{ fontSize: '16px' }}
+                    />
+                  </div>
+                  
+                  {/* Botão de envio separado - Mobile */}
                   <button 
                     type="submit" 
+                    onClick={handleLabSendMessage}
                     disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
-                    className="bg-accent1 hover:bg-accent1/80 text-white border-0 rounded-lg p-4 cursor-pointer transition-all duration-200 flex items-center justify-center text-lg shadow-md hover:shadow-lg disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none w-14 h-14"
+                    className={`bg-accent1 hover:bg-accent1/90 active:bg-accent1/80 text-white border-0 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-50 touch-manipulation w-12 h-12 min-w-[48px] p-0
+                      ${(!labInput.trim() && !labSelectedFile) ? 'scale-90 opacity-60' : 'scale-100 opacity-100'}
+                      ${isLabTyping ? 'animate-pulse' : ''}
+                    `}
+                    style={{ minHeight: '48px' }}
                   >
-                    <FaPaperPlane />
+                    {isLabTyping ? (
+                      <div className="flex items-center justify-center">
+                        <div className="border-2 border-white/30 border-t-white rounded-full animate-spin w-5 h-5"></div>
+                      </div>
+                    ) : (
+                      <FaPaperPlane className="transition-transform duration-200 hover:scale-110 w-5 h-5" />
+                    )}
                   </button>
-                </form>
+                </div>
+                ) : (
+                  <div className="flex items-center gap-3 flex-shrink-0 sticky bottom-0 transition-all duration-200 p-4 lg:p-6 bg-transparent max-w-7xl w-full mx-auto">
+                    {/* Container do input */}
+                    <div className="flex-1 relative flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-3xl border border-neutral-200 dark:border-neutral-600 shadow-sm hover:shadow-md transition-all duration-200">
+                      {/* Botão de anexar arquivo dentro da barra */}
+                      <input
+                        type="file"
+                        ref={labFileInputRef}
+                        style={{ display: 'none' }}
+                        accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xls,.xlsx"
+                        onChange={handleLabFileSelect}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => labFileInputRef.current?.click()}
+                        className="w-8 h-8 ml-2 bg-transparent hover:bg-neutral-200 dark:hover:bg-neutral-600 rounded-full flex items-center justify-center text-neutral-600 dark:text-neutral-300 transition-all duration-200"
+                      >
+                        <FaPlus className="w-4 h-4" />
+                      </button>
+                      
+                      <textarea
+                        ref={labTextareaRef}
+                        value={labInput}
+                        onChange={(e) => {
+                          setLabInput(e.target.value);
+                          const textarea = e.target;
+                          setTimeout(() => {
+                            if (textarea.scrollHeight > textarea.clientHeight) {
+                              textarea.style.overflowY = 'auto';
+                            } else {
+                              textarea.style.overflowY = 'hidden';
+                            }
+                          }, 0);
+                        }}
+                        placeholder="Ask anything"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleLabSendMessage();
+                          }
+                        }}
+                        className="w-full resize-none px-6 py-3 text-base h-12 bg-transparent text-neutral-900 dark:text-neutral-100 leading-6 border-0 outline-none placeholder:text-neutral-500 dark:placeholder:text-neutral-400 overflow-hidden"
+                      />
+                    </div>
+                    
+                    {/* Botão de envio separado - Desktop */}
+                    <button 
+                      type="submit" 
+                      disabled={(!labInput.trim() && !labSelectedFile) || isLabTyping}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleLabSendMessage();
+                      }}
+                      className={`bg-accent1 hover:bg-accent1/90 active:bg-accent1/80 text-white border-0 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl disabled:bg-neutral-300 dark:disabled:bg-neutral-600 disabled:cursor-not-allowed disabled:shadow-none disabled:opacity-50 w-14 h-12 p-3
+                        ${(!labInput.trim() && !labSelectedFile) ? 'scale-90 opacity-60' : 'scale-100 opacity-100'}
+                        ${isLabTyping ? 'animate-pulse' : ''}
+                      `}
+                    >
+                      {isLabTyping ? (
+                        <div className="border-2 border-white/30 border-t-white rounded-full animate-spin w-4 h-4"></div>
+                      ) : (
+                        <FaPaperPlane className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             {labShowSetupModal && (
-              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-[900px] h-[600px] border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-2 lg:p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-[95vw] lg:w-[900px] h-[85vh] lg:h-[600px] border border-neutral-200 dark:border-neutral-700 overflow-hidden">
                   {/* Header */}
-                  <div className="flex justify-between items-center p-4 border-b border-neutral-200 dark:border-neutral-700">
-                    <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
-                      <FaCog className="text-accent1" />
+                  <div className="flex justify-between items-center p-3 lg:p-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <h2 className="text-sm lg:text-lg font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                      <FaCog className="text-accent1 w-3 h-3 lg:w-4 lg:h-4" />
                       Escolha um Setup
                     </h2>
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={handleLabSetupConfirm}
                         disabled={!labSelectedSetupState}
-                        className="px-3 py-1.5 bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
+                        className="px-2 lg:px-3 py-1 lg:py-1.5 bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white rounded-lg text-xs lg:text-sm font-medium transition-colors"
                       >
                         Usar Setup
                       </button>
@@ -5131,9 +2691,9 @@ const Home = () => {
                     </div>
                   </div>
                   
-                                    {/* Conteúdo */}
-                  <div className="p-4 h-[calc(600px-80px)] overflow-y-auto">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                  {/* Conteúdo */}
+                  <div className="p-2 lg:p-4 h-[calc(85vh-80px)] lg:h-[calc(600px-80px)] overflow-y-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-6 h-full">
                       {/* Lista de Setups */}
                       <div className="space-y-2">
                         {setups.map((setup, index) => (
@@ -5147,7 +2707,7 @@ const Home = () => {
                                 handleLabSetupSelect(setup);
                               }
                             }}
-                            className={`p-3 rounded-lg cursor-pointer border transition-colors ${
+                            className={`p-2 lg:p-3 rounded-lg cursor-pointer border transition-colors ${
                               labSelectedSetupState?.title === setup.title
                                 ? 'border-accent1 bg-accent1/5'
                                 : 'border-neutral-300 dark:border-neutral-600 hover:border-accent1/50'
@@ -5155,14 +2715,14 @@ const Home = () => {
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <FaCog className="text-accent1 text-sm" />
-                                <span className="font-medium text-neutral-900 dark:text-neutral-100 text-sm">
+                                <FaCog className="text-accent1 text-xs lg:text-sm" />
+                                <span className="font-medium text-neutral-900 dark:text-neutral-100 text-xs lg:text-sm">
                                   {setup.title}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 {labSelectedSetupState?.title === setup.title && (
-                                  <FaCheck className="text-accent1 text-sm" />
+                                  <FaCheck className="text-accent1 text-xs lg:text-sm" />
                                 )}
                                 <div className={`w-0 h-0 border-l-3 border-r-3 border-t-3 border-transparent transition-transform duration-200 ${
                                   labSelectedSetupState?.title === setup.title 
@@ -5176,31 +2736,31 @@ const Home = () => {
                       </div>
                       
                       {/* Área de Detalhes */}
-                      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 h-full overflow-y-auto">
+                      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-2 lg:p-4 h-full overflow-y-auto">
                         {labSelectedSetupState ? (
                           <div>
-                            <div className="flex items-center gap-2 mb-4">
-                              <FaCog className="text-accent1 text-sm" />
-                              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-lg">
+                            <div className="flex items-center gap-2 mb-2 lg:mb-4">
+                              <FaCog className="text-accent1 text-xs lg:text-sm" />
+                              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm lg:text-lg">
                                 {labSelectedSetupState.title}
                               </h3>
                             </div>
                             
-                            <div className="mb-4">
-                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-sm mb-2">
+                            <div className="mb-2 lg:mb-4">
+                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-xs lg:text-sm mb-1 lg:mb-2">
                                 Quando usar:
                               </h4>
-                              <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                              <p className="text-neutral-600 dark:text-neutral-400 text-xs lg:text-sm leading-relaxed">
                                 {labSelectedSetupState.when_to_use}
                               </p>
                             </div>
                             
                             <div>
-                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-sm mb-2">
+                              <h4 className="font-medium text-neutral-700 dark:text-neutral-300 text-xs lg:text-sm mb-1 lg:mb-2">
                                 Prompt:
                               </h4>
-                              <div className="p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
-                                <p className="text-neutral-800 dark:text-neutral-200 text-sm font-mono leading-relaxed">
+                              <div className="p-2 lg:p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg">
+                                <p className="text-neutral-800 dark:text-neutral-200 text-xs lg:text-sm font-mono leading-relaxed">
                                   {labSelectedSetupState.prompt}
                                 </p>
                               </div>
@@ -5209,8 +2769,8 @@ const Home = () => {
                         ) : (
                           <div className="flex items-center justify-center h-full">
                             <div className="text-center">
-                              <FaCog className="text-neutral-400 text-2xl mx-auto mb-2" />
-                              <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                              <FaCog className="text-neutral-400 text-lg lg:text-2xl mx-auto mb-2" />
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs lg:text-sm">
                                 Selecione um setup para ver os detalhes
                               </p>
                             </div>
@@ -5223,11 +2783,11 @@ const Home = () => {
               </div>
             )}
             {labShowNewChatModal && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
-                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
-                      <FaPlus className="text-accent1" />
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-2 lg:p-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-xl lg:rounded-2xl shadow-2xl w-full max-w-sm lg:max-w-md overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
+                  <div className="flex justify-between items-center p-3 lg:p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-xl lg:rounded-t-2xl">
+                    <h2 className="text-base lg:text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
+                      <FaPlus className="text-accent1 w-3 h-3 lg:w-5 lg:h-5" />
                       Nomear Novo Chat
                     </h2>
                     <button 
@@ -5235,13 +2795,13 @@ const Home = () => {
                         setLabShowNewChatModal(false);
                         setNewChatName('');
                       }}
-                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
+                      className="text-lg lg:text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-1 lg:p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
                     >
                       ×
                     </button>
                   </div>
-                  <div className="p-6">
-                    <label className="block mb-3 font-semibold text-neutral-700 dark:text-neutral-300">
+                  <div className="p-3 lg:p-6">
+                    <label className="block mb-2 lg:mb-3 font-semibold text-neutral-700 dark:text-neutral-300 text-sm lg:text-base">
                       Nome do Chat:
                     </label>
                     <input
@@ -5250,7 +2810,7 @@ const Home = () => {
                       onChange={(e) => setNewChatName(e.target.value)}
                       placeholder="Digite o nome do chat..."
                       disabled={isCreatingChat}
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full px-3 lg:px-4 py-2 lg:py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !isCreatingChat) {
                           e.preventDefault();
@@ -5260,24 +2820,24 @@ const Home = () => {
                       autoFocus
                     />
                   </div>
-                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
+                  <div className="flex justify-end gap-2 lg:gap-3 p-3 lg:p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-xl lg:rounded-b-2xl">
                     <button onClick={() => {
                       setLabShowNewChatModal(false);
                       setNewChatName('');
                     }}
-                    className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
+                    className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-3 lg:px-6 py-2 lg:py-3 text-sm lg:text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
                     >
                       Cancelar
                     </button>
                     <button 
                       onClick={handleCreateNewChat}
                       disabled={!newChatName.trim() || isCreatingChat}
-                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md flex items-center gap-2"
+                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-3 lg:px-6 py-2 lg:py-3 text-sm lg:text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md flex items-center gap-2"
                     >
                       {isCreatingChat ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          Criando...
+                          <div className="w-3 h-3 lg:w-4 lg:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          <span className="hidden sm:inline">Criando...</span>
                         </>
                       ) : (
                         'Criar Chat'
@@ -5287,66 +2847,6 @@ const Home = () => {
                 </div>
               </div>
             )}
-            {/* {labShowInitialChatModal && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] p-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden backdrop-blur-lg border border-neutral-200 dark:border-neutral-700">
-                  <div className="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-t-2xl">
-                    <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100 m-0 flex items-center gap-2">
-                      <FaFlask className="text-accent1" />
-                      Bem-vindo ao Laboratório
-                    </h2>
-                    <button 
-                      onClick={() => {
-                        setLabShowInitialChatModal(false);
-                        setInitialChatName('');
-                      }}
-                      className="text-2xl text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer bg-transparent border-0 p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all duration-200"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="p-6">
-                    <p className="mb-6 text-neutral-700 dark:text-neutral-300 text-base leading-relaxed">
-                      Para começar a usar o Laboratório, você precisa definir um nome para o seu primeiro chat.
-                    </p>
-                    <label className="block mb-3 font-semibold text-neutral-700 dark:text-neutral-300">
-                      Nome do Chat:
-                    </label>
-                    <input
-                      type="text"
-                      value={initialChatName}
-                      onChange={(e) => setInitialChatName(e.target.value)}
-                      placeholder="Digite o nome do seu chat..."
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400 focus:ring-4 focus:ring-accent1/20 dark:focus:ring-amber-800 focus:border-accent1 dark:focus:border-accent1/40 transition-all duration-300 focus:outline-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleInitializeChat();
-                        }
-                      }}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-b-2xl">
-                    <button onClick={() => {
-                      setLabShowInitialChatModal(false);
-                      setInitialChatName('');
-                    }}
-                    className="bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium"
-                    >
-                      Cancelar
-                    </button>
-                    <button 
-                      onClick={handleInitializeChat}
-                      disabled={!initialChatName.trim()}
-                      className="bg-accent1 hover:bg-accent1/80 disabled:bg-neutral-400 disabled:cursor-not-allowed text-white border-0 rounded-lg px-6 py-3 text-base cursor-pointer transition-all duration-200 md:px-5 md:py-2.5 md:text-sm sm:px-4 sm:py-2 sm:text-xs font-medium shadow-sm hover:shadow-md"
-                    >
-                      Iniciar Chat
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )} */}
           </div>
         </div>
       </div>
@@ -5354,11 +2854,7 @@ const Home = () => {
   };
 
 
-  const handlePageChange = useCallback((newPage) => {
-    if (newPage !== currentPage) {
-      loadAuthLogs(newPage);
-    }
-  }, [loadAuthLogs, currentPage]);
+
 
   // Carregar logs ao abrir aba de segurança ou mudar de página
   useEffect(() => {
@@ -5384,75 +2880,53 @@ const Home = () => {
         activeItem={activeItem} 
         setActiveItem={setActiveItem} 
       />
-      <div className={`flex-1 ${activeItem === 'security' || activeItem === 'reports' || activeItem === 'dashboard' ? 'overflow-auto' : 'overflow-hidden'} bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50`}>
+      <div className={`flex-1 ${activeItem === 'security' || activeItem === 'reports' || activeItem === 'dashboard' ? 'overflow-auto' : 'overflow-hidden'} bg-gradient-to-br from-slate-50/50 to-slate-100/50 dark:from-gray-900/50 dark:to-gray-800/50 pb-16 lg:pb-0`}>
         {activeItem === 'dashboard' && renderDashboard()}
         
         
         {activeItem === 'laboratory' && (
           <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-500">
-            {/* Header */}
-            <motion.header 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="relative bg-white/40 dark:bg-neutral-800/40 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-700"
-            >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                  className="flex items-center justify-between"
-                >
-                  <div>
-                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                      Central Jurídica
-                    </h1>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    Sua copilota que cria, revisa e corrige peças em segundos, com precisão e
-                    jurisprudência atualizada.                    </p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    {/* Toggle para manter arquivo anexado 
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                      className="flex items-center gap-3 px-4 py-2 bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-white/80 dark:hover:bg-neutral-800/80 transition-all duration-300"
-                    >
-                      <span className="text-sm text-neutral-700 dark:text-neutral-300 font-medium whitespace-nowrap">
-                        Manter arquivo anexado
-                      </span>
-                      <ToggleSwitchStyled
-                        type="button"
-                        data-active={labKeepFileAttached}
-                        aria-pressed={labKeepFileAttached}
-                        onClick={() => setLabKeepFileAttached(v => !v)}
-                      >
-                        {labKeepFileAttached ? (
-                          <SwitchLabel>ON</SwitchLabel>
-                        ) : (
-                          <SwitchLabelOff>OFF</SwitchLabelOff>
-                        )}
-                        <SwitchCircle data-active={labKeepFileAttached} />
-                      </ToggleSwitchStyled>
-                    </motion.div>*/}
+            {/* Header - Apenas no Desktop */}
+            {!isMobile && (
+              <motion.header 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="relative bg-white/40 dark:bg-neutral-800/40 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-700"
+              >
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 lg:gap-4"
+                  >
+                    <div className="flex-1">
+                      <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                        Central Jurídica
+                      </h1>
+                      <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
+                        Sua copilota que cria, revisa e corrige peças em segundos, com precisão e
+                        jurisprudência atualizada.
+                      </p>
+                    </div>
                     
-                    {/* Status Badge */}
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.5, delay: 0.3 }}
-                      className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-accent2/10 dark:bg-accent2/30 text-accent2 dark:text-accent2 rounded-full text-xs font-medium"
-                    >
-                      <FaRobot className="w-3 h-3" />
-                      <span>IA Ativa</span>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.header>
+                    <div className="flex items-center gap-3 lg:gap-4">
+                      {/* Status Badge */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="flex items-center space-x-2 px-2 lg:px-3 py-1 lg:py-1.5 bg-accent2/10 dark:bg-accent2/30 text-accent2 dark:text-accent2 rounded-full text-xs font-medium self-start sm:self-auto"
+                      >
+                        <FaRobot className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
+                        <span>IA Ativa</span>
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.header>
+            )}
 
             {/* Original Content */}
             {renderLaboratoryPanel()}
@@ -5468,18 +2942,18 @@ const Home = () => {
               transition={{ duration: 0.6 }}
               className="relative bg-white/60 dark:bg-neutral-900/60 backdrop-blur-lg border-b border-neutral-200 dark:border-neutral-800"
             >
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 lg:py-4">
                 <motion.div 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.1 }}
-                  className="flex items-center justify-between"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 lg:gap-4"
                 >
-          <div>
-                    <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+                  <div className="flex-1">
+                    <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-neutral-900 dark:text-neutral-100">
                       Segurança e Logs
                     </h1>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
                       Monitoramento de acessos e atividades de autenticação
                     </p>
                   </div>
@@ -5489,9 +2963,9 @@ const Home = () => {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.3 }}
-                    className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium"
+                    className="flex items-center space-x-2 px-2 lg:px-3 py-1 lg:py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full text-xs font-medium self-start sm:self-auto"
                   >
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <div className="w-1.5 h-1.5 lg:w-2 lg:h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span>Sistema Online</span>
                   </motion.div>
                 </motion.div>
@@ -5499,7 +2973,7 @@ const Home = () => {
             </motion.header>
 
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
             <SecurityPanel
               logs={authLogs}
               loading={securityLoading}
@@ -5594,6 +3068,221 @@ const Home = () => {
             )}
           </ModalContent>
         </Modal>
+      )}
+      
+      {/* Modal Lateral do Histórico */}
+      {showHistoryModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-2 lg:p-4"
+          onClick={() => setShowHistoryModal(false)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", duration: 0.3 }}
+            className="bg-white/95 dark:bg-neutral-800/95 backdrop-blur-xl rounded-2xl shadow-2xl w-full max-w-[95vw] lg:w-[420px] h-[85vh] lg:h-[650px] border border-neutral-200/50 dark:border-neutral-700/50 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header com gradiente aprimorado */}
+            <div className="flex justify-between items-center p-4 lg:p-5 border-b border-neutral-200/50 dark:border-neutral-700/50 bg-gradient-to-r from-white/80 via-neutral-50/80 to-white/80 dark:from-neutral-800/80 dark:via-neutral-700/80 dark:to-neutral-800/80 backdrop-blur-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent1/10 dark:bg-accent1/20 rounded-xl">
+                  <FaHistory className="text-accent1 w-4 h-4 lg:w-5 lg:h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base lg:text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Histórico
+                  </h2>
+                  <p className="text-xs lg:text-sm text-neutral-500 dark:text-neutral-400">
+                    {labChatHistory.length} {labChatHistory.length === 1 ? 'conversa' : 'conversas'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="w-8 h-8 lg:w-10 lg:h-10 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-lg"
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Conteúdo com scroll customizado */}
+            <div className="p-4 lg:p-5 h-[calc(85vh-100px)] lg:h-[calc(650px-100px)] overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent hover:scrollbar-thumb-neutral-400 dark:hover:scrollbar-thumb-neutral-500">
+              {labHistoryLoading ? (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center justify-center space-y-6 h-full"
+                >
+                  <div className="relative">
+                    <div className="w-16 h-16 lg:w-20 lg:h-20 border-4 border-accent1/20 rounded-full"></div>
+                    <div className="absolute top-0 left-0 w-16 h-16 lg:w-20 lg:h-20 border-4 border-transparent border-t-accent1 rounded-full animate-spin"></div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-neutral-700 dark:text-neutral-300 font-medium text-base lg:text-lg mb-2">
+                      Carregando histórico
+                    </h3>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm lg:text-base">
+                      Buscando suas conversas...
+                    </p>
+                  </div>
+                </motion.div>
+              ) : labChatHistory.length === 0 ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center space-y-6 h-full text-center px-4"
+                >
+                  <div className="relative">
+                    <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-700 dark:to-neutral-600 rounded-3xl flex items-center justify-center shadow-lg">
+                      <FaHistory className="text-neutral-400 dark:text-neutral-500 w-8 h-8 lg:w-10 lg:h-10" />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-accent1/20 rounded-full animate-ping"></div>
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-accent1/30 rounded-full"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-neutral-900 dark:text-neutral-100 font-bold text-lg lg:text-xl">
+                      Nenhuma conversa ainda
+                    </h3>
+                    <p className="text-neutral-600 dark:text-neutral-400 text-sm lg:text-base leading-relaxed max-w-xs">
+                      Suas conversas aparecerão aqui. Comece criando uma nova peça para ver o histórico.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowHistoryModal(false);
+                        setLabShowNewChatModal(true);
+                      }}
+                      className="mt-4 px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-xl text-sm font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      Criar Nova Peça
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-3"
+                >
+                  {labChatHistory.map((session, idx) => {
+                    const isActive = labSelectedConversation === (session.session_id || session.id);
+                    const chatName = session.chat_name || session.session_id || session.name;
+                    
+                    return (
+                      <motion.div
+                        key={session.session_id || session.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`group relative p-4 lg:p-5 rounded-2xl cursor-pointer border backdrop-blur-sm transition-all duration-300 hover:shadow-lg ${
+                          isActive
+                            ? 'border-accent1/50 bg-gradient-to-r from-accent1/5 via-accent1/3 to-accent1/5 shadow-lg shadow-accent1/10'
+                            : 'border-neutral-200/50 dark:border-neutral-600/50 hover:border-accent1/30 bg-white/60 dark:bg-neutral-700/60 hover:bg-white/80 dark:hover:bg-neutral-700/80'
+                        }`}
+                        onClick={() => {
+                          const chatName = session.chat_name || session.name;
+                          const sessionId = session.session_id || session.id;
+                          
+                          setLabSelectedConversation(sessionId);
+                          setLabSelectedChatName(chatName);
+                          
+                          // Buscar mensagens do chat específico da API externa
+                          loadChatMessages(chatName, true);
+                          
+                          setLabInput('');
+                          setLabSelectedFile(null);
+                          setShowHistoryModal(false);
+                        }}
+                      >
+                        {/* Indicador lateral para conversa ativa */}
+                        {isActive && (
+                          <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-12 bg-gradient-to-b from-accent1 to-accent2 rounded-r-full"></div>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0 flex items-center space-x-3">
+                            {/* Avatar/Icon da conversa */}
+                            <div className={`flex-shrink-0 w-10 h-10 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center ${
+                              isActive 
+                                ? 'bg-accent1/20 text-accent1' 
+                                : 'bg-neutral-100 dark:bg-neutral-600 text-neutral-500 dark:text-neutral-400 group-hover:bg-accent1/10 group-hover:text-accent1'
+                            } transition-all duration-200`}>
+                              <FaFileAlt className="w-4 h-4 lg:w-5 lg:h-5" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h4 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm lg:text-base truncate">
+                                  {chatName}
+                                </h4>
+                                {isActive && (
+                                  <motion.span 
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="px-2 py-1 bg-accent1 text-white text-xs rounded-full font-medium shadow-sm"
+                                  >
+                                    Ativo
+                                  </motion.span>
+                                )}
+                              </div>
+                              <p className="text-neutral-500 dark:text-neutral-400 text-xs lg:text-sm">
+                                {isActive ? 'Conversa atual' : 'Clique para abrir'}
+                              </p>
+                              {/* Data da última atualização (se disponível) */}
+                              {session.last_update && (
+                                <p className="text-neutral-400 dark:text-neutral-500 text-xs mt-1">
+                                  {new Date(session.last_update).toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Botão de remover com confirmação melhorada */}
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            className="flex-shrink-0 w-8 h-8 lg:w-10 lg:h-10 opacity-60 hover:opacity-100 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 flex items-center justify-center group/delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Tem certeza que deseja remover a conversa "${chatName}"?\n\nEsta ação não pode ser desfeita.`)) {
+                                handleHideChat(session.session_id || session.id);
+                              }
+                            }}
+                            title="Remover conversa"
+                          >
+                            <FaTrash className="w-3 h-3 lg:w-4 lg:h-4 group-hover/delete:animate-pulse" />
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  
+                  {/* Footer com estatísticas */}
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: labChatHistory.length * 0.05 + 0.2 }}
+                    className="mt-6 p-4 bg-neutral-50/50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200/30 dark:border-neutral-700/30"
+                  >
+                    <div className="flex items-center justify-between text-xs lg:text-sm text-neutral-600 dark:text-neutral-400">
+                      <span>Total de conversas: {labChatHistory.length}</span>
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        Sincronizado
+                      </span>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
       )}
       
     </div>

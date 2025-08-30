@@ -18,6 +18,20 @@ import {
 } from 'react-icons/fa';
 import WhiteLogo from '../logos/white.png';
 
+// Hook para detectar mobile
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  return isMobile;
+};
+
 const defaultMenuItems = [
   { id: 'dashboard', text: 'Home', icon: <FaHome /> },
   { id: 'laboratory', text: 'Central Jurídica', icon: <FaFlask /> },
@@ -35,9 +49,13 @@ const Sidebar = ({
   const navigate = useNavigate();
   const { currentUser, logout, hasAdminAccess, usageStats } = useAuth();
   const items = Array.isArray(menuItems) && menuItems.length ? menuItems : defaultMenuItems;
+  const isMobile = useIsMobile();
   
   // Estado para controlar o menu dropdown do perfil
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [menuPosition, setMenuPosition] = useState('bottom');
+  const [menuHorizontalPosition, setMenuHorizontalPosition] = useState('center');
   const profileMenuRef = useRef(null);
 
   // Fechar menu quando clicar fora
@@ -91,106 +109,135 @@ const Sidebar = ({
     }
   };
 
-  return (
-    <div
-      className={`
-        ${isOpen ? 'w-64' : 'w-20'} 
-        bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900
-        backdrop-blur-lg
-        transition-all duration-500 ease-in-out
-        flex flex-col
-        relative
-        shadow-2xl
-        border-r border-neutral-700/50
-        min-h-screen
-        z-50
-      `}
-    >
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsOpen && setIsOpen(!isOpen)}
-        className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
-        aria-label="Alternar sidebar"
+  const calculateMenuPosition = () => {
+    if (!profileMenuRef.current) return { vertical: 'bottom', horizontal: 'center' };
+    
+    const rect = profileMenuRef.current.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    const menuHeight = 400; // Altura aproximada do menu
+    const menuWidth = windowWidth < 320 ? 256 : 288; // Largura do menu
+    
+    // Verificar se há espaço embaixo
+    const spaceBelow = windowHeight - rect.top;
+    const spaceAbove = rect.top;
+    
+    // Verificar se o menu cabe horizontalmente
+    const menuLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
+    const menuRight = menuLeft + menuWidth;
+    
+    let horizontalPosition = 'center';
+    if (menuLeft < 10) {
+      horizontalPosition = 'left';
+    } else if (menuRight > windowWidth - 10) {
+      horizontalPosition = 'right';
+    }
+    
+    // Decidir posição vertical
+    if (spaceBelow >= menuHeight || spaceBelow > spaceAbove) {
+      return { vertical: 'top', horizontal: horizontalPosition };
+    } else {
+      return { vertical: 'top', horizontal: horizontalPosition };
+    }
+  };
+
+  // Versão Desktop - Sidebar Lateral
+  if (!isMobile) {
+    return (
+      <div
+        className={`
+          ${isOpen ? 'w-64' : 'w-20'} 
+          bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900
+          backdrop-blur-lg
+          transition-all duration-500 ease-in-out
+          flex flex-col
+          relative
+          shadow-2xl
+          border-r border-neutral-700/50
+          min-h-screen
+          z-50
+        `}
       >
-        {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
-      </button>
-
-      {/* Logo Section */}
-      <div className={`${isOpen ? 'p-5' : 'p-5'} border-b border-neutral-700/50 transition-all duration-300`}>
-        <div 
-          className="flex items-center"
-          style={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsOpen && setIsOpen(!isOpen)}
+          className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
+          aria-label="Alternar sidebar"
         >
-          <div 
-            className="rounded-xl bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center shadow-lg flex-shrink-0"
-            style={{ 
-              width: isOpen ? '40px' : '32px',
-              height: isOpen ? '40px' : '32px',
-              padding: isOpen ? '8px' : '6px'
-            }}
-          >
-            <img 
-              src={WhiteLogo} 
-              alt="Clausy Logo" 
-              className="w-full h-full object-contain filter brightness-0 invert"
-            />
-          </div>
-          
-          <div
-            style={{ 
-              opacity: isOpen ? 1 : 0,
-              width: isOpen ? 'auto' : 0,
-              marginLeft: isOpen ? '12px' : 0
-            }}
-            className="overflow-hidden transition-all duration-300"
-          >
-            <h1 className="text-xl font-bold text-neutral-100 whitespace-nowrap">
-              Clausy
-            </h1>
-           
-          </div>
-        </div>
-      </div>
+          {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
+        </button>
 
-      {/* Menu Items */}
-      <nav className="flex-1 p-4 space-y-2">
-        {items.map((item, index) => (
-          <div
-            key={item.id}
-            className={`
-              flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
-              ${activeItem === item.id 
-                ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
-                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
-              }
-            `}
-            onClick={(e) => handleItemClick(item, e)}
+        {/* Logo Section */}
+        <div className={`${isOpen ? 'p-6' : 'p-5'} border-b border-neutral-700/50 transition-all duration-300`}>
+          <div 
+            className="flex items-center"
+            style={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
           >
-            <div className={`
-              text-lg transition-all duration-300
-              ${isOpen ? 'mr-4' : 'mx-auto'}
-              ${activeItem === item.id ? 'text-accent1' : 'group-hover:text-accent1'}
-            `}>
-              {item.icon}
+            <div 
+              className="rounded-xl bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center shadow-lg flex-shrink-0"
+              style={{ 
+                width: isOpen ? '40px' : '32px',
+                height: isOpen ? '40px' : '32px',
+                padding: isOpen ? '8px' : '6px'
+              }}
+            >
+              <img 
+                src={WhiteLogo} 
+                alt="Clausy Logo" 
+                className="w-full h-full object-contain filter brightness-0 invert"
+              />
             </div>
-            <span
+            
+            <div
               style={{ 
                 opacity: isOpen ? 1 : 0,
-                width: isOpen ? 'auto' : 0
+                width: isOpen ? 'auto' : 0,
+                marginLeft: isOpen ? '12px' : 0
               }}
-              className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
+              className="overflow-hidden transition-all duration-300"
             >
-              {item.text}
-            </span>
+              <h1 className="text-xl font-bold text-neutral-100 whitespace-nowrap">
+                Clausy
+              </h1>
+            </div>
           </div>
-        ))}
+        </div>
 
+        {/* Menu Items */}
+        <nav className="flex-1 p-4 space-y-2">
+          {items.map((item, index) => (
+            <div
+              key={item.id}
+              className={`
+                flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
+                ${activeItem === item.id 
+                  ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
+                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                }
+              `}
+              onClick={(e) => handleItemClick(item, e)}
+            >
+              <div className={`
+                text-lg transition-all duration-300
+                ${isOpen ? 'mr-4' : 'mx-auto'}
+                ${activeItem === item.id ? 'text-accent1' : 'group-hover:text-accent1'}
+              `}>
+                {item.icon}
+              </div>
+              <span
+                style={{ 
+                  opacity: isOpen ? 1 : 0,
+                  width: isOpen ? 'auto' : 0
+                }}
+                className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
+              >
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </nav>
 
-
-
-      </nav>
-
-                      {/* User Info & Plan Usage */}
+        {/* User Info & Plan Usage */}
         <div className="p-4 border-t border-neutral-700/50 space-y-3">
           {/* Barra de Progresso do Uso do Plano */}
           {currentUser && (
@@ -258,142 +305,428 @@ const Sidebar = ({
           {/* User Profile Button */}
           {currentUser && (
             <div className="relative" ref={profileMenuRef}>
+              <div
+                className={`
+                  flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
+                  ${activeItem === 'profile' 
+                    ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
+                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                  }
+                `}
+                onClick={(e) => handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e)}
+              >
+                <div 
+                  className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
+                  style={{ 
+                    width: isOpen ? '32px' : '28px',
+                    height: isOpen ? '32px' : '28px',
+                    fontSize: isOpen ? '14px' : '12px',
+                    marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
+                    marginLeft: isOpen ? 0 : 'auto'
+                  }}
+                >
+                  {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div
+                  style={{ 
+                    opacity: isOpen ? 1 : 0,
+                    width: isOpen ? 'auto' : 0
+                  }}
+                  className="overflow-hidden transition-all duration-300 flex-1"
+                >
+                  <p className="text-sm font-medium text-inherit whitespace-nowrap">
+                    {currentUser.name || 'Usuário'}
+                  </p>
+                  <p className="text-xs text-neutral-400 whitespace-nowrap">
+                    Ver Perfil
+                  </p>
+                </div>
+                
+                {/* Botão de 3 pontinhos */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileMenuOpen(!isProfileMenuOpen);
+                  }}
+                  className={`
+                    p-1 rounded-lg transition-all duration-300 hover:bg-neutral-700/50
+                    ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                  `}
+                  style={{ 
+                    opacity: isOpen ? 1 : 0,
+                    width: isOpen ? 'auto' : 0
+                  }}
+                >
+                  <FaEllipsisV className="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
+                </button>
+              </div>
+
+              {/* Menu Dropdown */}
+              {isProfileMenuOpen && isOpen && (
+                <div className="absolute bottom-full left-0 mb-2 w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50">
+                  <div className="py-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                        handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 transition-colors duration-200 flex items-center space-x-3"
+                    >
+                      <FaUser className="w-4 h-4" />
+                      <span>Ver Perfil</span>
+                    </button>
+                    
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                        handleItemClick({ id: 'settings', text: 'Configurações', icon: <FaCog /> }, e);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 transition-colors duration-200 flex items-center space-x-3"
+                    >
+                      <FaCog className="w-4 h-4" />
+                      <span>Configurações</span>
+                    </button>
+
+                    {/* Segurança - Apenas para admins */}
+                    {hasAdminAccess() && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsProfileMenuOpen(false);
+                          if (setActiveItem) setActiveItem('security');
+                          navigate('/');
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-green-400 hover:bg-green-500/10 transition-colors duration-200 flex items-center space-x-3"
+                      >
+                        <FaLock className="w-4 h-4" />
+                        <span>Segurança</span>
+                      </button>
+                    )}
+
+                    {/* Painel Admin - Apenas para admins */}
+                    {hasAdminAccess() && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsProfileMenuOpen(false);
+                          if (setActiveItem) setActiveItem('admin');
+                          navigate('/admin');
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-blue-400 hover:bg-blue-500/10 transition-colors duration-200 flex items-center space-x-3"
+                      >
+                        <FaUserShield className="w-4 h-4" />
+                        <span>Painel Admin</span>
+                      </button>
+                    )}
+
+                    <div className="border-t border-neutral-700 my-1"></div>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors duration-200 flex items-center space-x-3"
+                    >
+                      <FaSignOutAlt className="w-4 h-4" />
+                      <span>Sair</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Versão Mobile - Bottom Navigation
+  return (
+    <div
+      className="
+        fixed bottom-0 left-0 right-0
+        bg-gradient-to-t from-neutral-900 via-neutral-800 to-neutral-900
+        backdrop-blur-lg
+        border-t border-neutral-700/50
+        shadow-2xl
+        z-50
+        px-2 py-2
+      "
+    >
+      {/* Menu Items - Bottom Navigation */}
+      <nav className="flex justify-around items-center">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className={`
+              flex flex-col items-center p-2 rounded-lg cursor-pointer transition-all duration-300
+              ${activeItem === item.id 
+                ? 'text-accent1' 
+                : 'text-neutral-400 hover:text-neutral-200'
+              }
+            `}
+            onClick={(e) => handleItemClick(item, e)}
+          >
+            <div className="text-lg mb-1">
+              {item.icon}
+            </div>
+            <span className="text-xs font-medium">
+              {item.text}
+            </span>
+          </div>
+        ))}
+        
+        {/* Profile Button */}
+        {currentUser && (
+          <div className="relative" ref={profileMenuRef}>
             <div
               className={`
-                flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
+                flex flex-col items-center p-2 rounded-lg cursor-pointer transition-all duration-300
                 ${activeItem === 'profile' 
-                  ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
-                  : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                  ? 'text-accent1' 
+                  : 'text-neutral-400 hover:text-neutral-200'
                 }
+                ${isLongPressing ? 'scale-110 bg-accent1/20 border border-accent1/50' : ''}
               `}
-              onClick={(e) => handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e)}
+              onClick={(e) => {
+                // Só executa se não foi um long press
+                if (!isProfileMenuOpen) {
+                  handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e);
+                }
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                console.log('Touch start detected');
+                
+                // Long press timer
+                const timer = setTimeout(() => {
+                  console.log('Long press triggered');
+                  const position = calculateMenuPosition();
+                  setMenuPosition(position.vertical);
+                  setMenuHorizontalPosition(position.horizontal);
+                  setIsProfileMenuOpen(true);
+                  setIsLongPressing(false);
+                }, 800); // 800ms para ser mais fácil de testar
+                
+                // Store timer reference
+                e.currentTarget._longPressTimer = timer;
+                
+                // Feedback visual após 400ms
+                setTimeout(() => {
+                  setIsLongPressing(true);
+                }, 400);
+              }}
+              onTouchEnd={(e) => {
+                console.log('Touch end detected');
+                // Clear timer if touch ends before long press
+                if (e.currentTarget._longPressTimer) {
+                  clearTimeout(e.currentTarget._longPressTimer);
+                  e.currentTarget._longPressTimer = null;
+                }
+                setIsLongPressing(false);
+              }}
+              onTouchMove={(e) => {
+                // Cancel long press if finger moves
+                if (e.currentTarget._longPressTimer) {
+                  clearTimeout(e.currentTarget._longPressTimer);
+                  e.currentTarget._longPressTimer = null;
+                }
+                setIsLongPressing(false);
+              }}
+              onMouseDown={(e) => {
+                // Para testar no desktop também
+                console.log('Mouse down detected');
+                
+                const timer = setTimeout(() => {
+                  console.log('Mouse long press triggered');
+                  const position = calculateMenuPosition();
+                  setMenuPosition(position.vertical);
+                  setMenuHorizontalPosition(position.horizontal);
+                  setIsProfileMenuOpen(true);
+                  setIsLongPressing(false);
+                }, 800);
+                
+                e.currentTarget._mouseLongPressTimer = timer;
+                
+                setTimeout(() => {
+                  setIsLongPressing(true);
+                }, 400);
+              }}
+              onMouseUp={(e) => {
+                if (e.currentTarget._mouseLongPressTimer) {
+                  clearTimeout(e.currentTarget._mouseLongPressTimer);
+                  e.currentTarget._mouseLongPressTimer = null;
+                }
+                setIsLongPressing(false);
+              }}
+              onMouseLeave={(e) => {
+                if (e.currentTarget._mouseLongPressTimer) {
+                  clearTimeout(e.currentTarget._mouseLongPressTimer);
+                  e.currentTarget._mouseLongPressTimer = null;
+                }
+                setIsLongPressing(false);
+              }}
             >
-              <div 
-                className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
-                style={{ 
-                  width: isOpen ? '32px' : '28px',
-                  height: isOpen ? '32px' : '28px',
-                  fontSize: isOpen ? '14px' : '12px',
-                  marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
-                  marginLeft: isOpen ? 0 : 'auto'
-                }}
-              >
-                {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+              <div className="text-lg mb-1 relative">
+                <FaUser />
+                {/* Indicador de long press */}
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent1 rounded-full opacity-60"></div>
               </div>
-              <div
-                style={{ 
-                  opacity: isOpen ? 1 : 0,
-                  width: isOpen ? 'auto' : 0
-                }}
-                className="overflow-hidden transition-all duration-300 flex-1"
-              >
-                <p className="text-sm font-medium text-inherit whitespace-nowrap">
-                  {currentUser.name || 'Usuário'}
-                </p>
-                <p className="text-xs text-neutral-400 whitespace-nowrap">
-                  Ver Perfil
-                </p>
-              </div>
-              
-              {/* Botão de 3 pontinhos */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsProfileMenuOpen(!isProfileMenuOpen);
-                }}
-                className={`
-                  p-1 rounded-lg transition-all duration-300 hover:bg-neutral-700/50
-                  ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                `}
-                style={{ 
-                  opacity: isOpen ? 1 : 0,
-                  width: isOpen ? 'auto' : 0
-                }}
-              >
-                <FaEllipsisV className="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
-              </button>
+              <span className="text-xs font-medium">
+                Perfil
+              </span>
             </div>
 
+
+            
             {/* Menu Dropdown */}
-            {isProfileMenuOpen && isOpen && (
-              <div className="absolute bottom-full left-0 mb-2 w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50">
-                <div className="py-1">
+            {isProfileMenuOpen && (
+              <div className={`
+                fixed bottom-[100%] left-1/2 transform -translate-x-1/2 bg-neutral-800 border border-neutral-600 rounded-2xl shadow-lg z-[9999]
+                ${window.innerWidth < 320 ? 'w-64' : 'w-72'}
+                max-h-[80vh] overflow-y-auto
+              `}>
+
+                
+                {/* Botão de fechar */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileMenuOpen(false);
+                  }}
+                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-neutral-700/80 hover:bg-neutral-600/80 flex items-center justify-center text-neutral-400 hover:text-neutral-200 transition-all duration-200 backdrop-blur-sm"
+                >
+                  <FaTimes className="w-3 h-3" />
+                </button>
+                
+                {/* Header do Menu */}
+                                   <div className="px-5 py-4 border-b border-neutral-600">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent1 via-accent1 to-accent1/80 flex items-center justify-center shadow-lg ring-2 ring-accent1/20">
+                      <span className="text-white text-lg font-bold">
+                        {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-base font-semibold text-neutral-100">
+                        {currentUser.name || 'Usuário'}
+                      </p>
+                      <p className="text-sm text-neutral-400 mt-1">
+                        {currentUser.email || 'usuario@exemplo.com'}
+                      </p>
+                      <div className="flex items-center mt-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
+                        <span className="text-xs text-green-400 font-medium">Online</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="py-3">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsProfileMenuOpen(false);
                       handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 transition-colors duration-200 flex items-center space-x-3"
+                    className="w-full px-5 py-4 text-left text-sm text-neutral-200 hover:bg-neutral-700 transition-all duration-200 flex items-center space-x-4 group"
                   >
-                    <FaUser className="w-4 h-4" />
-                    <span>Ver Perfil</span>
+                    <div className="w-8 h-8 rounded-lg bg-neutral-700/50 flex items-center justify-center group-hover:bg-accent1/20 transition-colors duration-200">
+                      <FaUser className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-medium">Ver Perfil</span>
+                      <p className="text-xs text-neutral-500 mt-1">Gerenciar conta</p>
+                    </div>
                   </button>
                   
-                                     <button
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       setIsProfileMenuOpen(false);
-                       handleItemClick({ id: 'settings', text: 'Configurações', icon: <FaCog /> }, e);
-                     }}
-                     className="w-full px-4 py-2 text-left text-sm text-neutral-300 hover:bg-neutral-700 transition-colors duration-200 flex items-center space-x-3"
-                   >
-                     <FaCog className="w-4 h-4" />
-                     <span>Configurações</span>
-                   </button>
-                   
-                   {/* Segurança - Apenas para admins */}
-                   {hasAdminAccess() && (
-                     <button
-                       onClick={(e) => {
-                         e.stopPropagation();
-                         setIsProfileMenuOpen(false);
-                         if (setActiveItem) setActiveItem('security');
-                         navigate('/');
-                       }}
-                       className="w-full px-4 py-2 text-left text-sm text-green-400 hover:bg-green-500/10 transition-colors duration-200 flex items-center space-x-3"
-                     >
-                       <FaLock className="w-4 h-4" />
-                       <span>Segurança</span>
-                     </button>
-                   )}
-                   
-                   {/* Painel Admin - Apenas para admins */}
-                   {hasAdminAccess() && (
-                     <button
-                       onClick={(e) => {
-                         e.stopPropagation();
-                         setIsProfileMenuOpen(false);
-                         if (setActiveItem) setActiveItem('admin');
-                         navigate('/admin');
-                       }}
-                       className="w-full px-4 py-2 text-left text-sm text-blue-400 hover:bg-blue-500/10 transition-colors duration-200 flex items-center space-x-3"
-                     >
-                       <FaUserShield className="w-4 h-4" />
-                       <span>Painel Admin</span>
-                     </button>
-                   )}
-                   
-                   <div className="border-t border-neutral-700 my-1"></div>
-                  
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsProfileMenuOpen(false);
+                      handleItemClick({ id: 'settings', text: 'Configurações', icon: <FaCog /> }, e);
+                    }}
+                    className="w-full px-5 py-4 text-left text-sm text-neutral-200 hover:bg-neutral-700 transition-all duration-200 flex items-center space-x-4 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-neutral-700/50 flex items-center justify-center group-hover:bg-accent1/20 transition-colors duration-200">
+                      <FaCog className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-medium">Configurações</span>
+                      <p className="text-xs text-neutral-500 mt-1">Preferências</p>
+                    </div>
+                  </button>
+
+                  {/* Segurança - Apenas para admins */}
+                  {hasAdminAccess() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                        if (setActiveItem) setActiveItem('security');
+                        navigate('/');
+                      }}
+                      className="w-full px-5 py-4 text-left text-sm text-green-400 hover:bg-gradient-to-r hover:from-green-500/10 hover:to-transparent transition-all duration-200 flex items-center space-x-4 group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/30 transition-colors duration-200">
+                        <FaLock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-medium">Segurança</span>
+                        <p className="text-xs text-green-400/70 mt-1">Configurações de segurança</p>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Painel Admin - Apenas para admins */}
+                  {hasAdminAccess() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                        if (setActiveItem) setActiveItem('admin');
+                        navigate('/admin');
+                      }}
+                      className="w-full px-5 py-4 text-left text-sm text-blue-400 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-transparent transition-all duration-200 flex items-center space-x-4 group"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors duration-200">
+                        <FaUserShield className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-medium">Painel Admin</span>
+                        <p className="text-xs text-blue-400/70 mt-1">Administração</p>
+                      </div>
+                    </button>
+                  )}
+
+                  <div className="border-t border-neutral-700/50 my-3 mx-5"></div>
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsProfileMenuOpen(false);
                       handleLogout();
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors duration-200 flex items-center space-x-3"
+                    className="w-full px-5 py-4 text-left text-sm text-red-400 hover:bg-gradient-to-r hover:from-red-500/10 hover:to-transparent transition-all duration-200 flex items-center space-x-4 group"
                   >
-                    <FaSignOutAlt className="w-4 h-4" />
-                    <span>Sair</span>
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center group-hover:bg-red-500/30 transition-colors duration-200">
+                      <FaSignOutAlt className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-medium">Sair</span>
+                      <p className="text-xs text-red-400/70 mt-1">Fazer logout</p>
+                    </div>
                   </button>
                 </div>
               </div>
             )}
           </div>
         )}
-
-      </div>
+      </nav>
     </div>
   );
 };
