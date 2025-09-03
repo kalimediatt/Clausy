@@ -18,18 +18,28 @@ import {
 } from 'react-icons/fa';
 import WhiteLogo from '../logos/white.png';
 
-// Hook para detectar mobile
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
+// Hook para detectar mobile e tablet
+const useDeviceType = () => {
+  const [deviceType, setDeviceType] = useState('desktop');
   
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const checkDevice = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        setDeviceType('mobile');
+      } else if (width >= 768 && width <= 1024) {
+        setDeviceType('tablet');
+      } else {
+        setDeviceType('desktop');
+      }
+    };
+    
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+    return () => window.removeEventListener('resize', checkDevice);
   }, []);
   
-  return isMobile;
+  return deviceType;
 };
 
 const defaultMenuItems = [
@@ -49,7 +59,9 @@ const Sidebar = ({
   const navigate = useNavigate();
   const { currentUser, logout, hasAdminAccess, usageStats } = useAuth();
   const items = Array.isArray(menuItems) && menuItems.length ? menuItems : defaultMenuItems;
-  const isMobile = useIsMobile();
+  const deviceType = useDeviceType();
+  const isMobile = deviceType === 'mobile';
+  const isTablet = deviceType === 'tablet';
   
   // Estado para controlar o menu dropdown do perfil
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -110,43 +122,68 @@ const Sidebar = ({
   };
 
   const calculateMenuPosition = () => {
-    if (!profileMenuRef.current) return { vertical: 'bottom', horizontal: 'center' };
+    if (!profileMenuRef.current) return { placement: 'right-start', offset: 8 };
     
     const rect = profileMenuRef.current.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
-    const menuHeight = 400; // Altura aproximada do menu
-    const menuWidth = windowWidth < 320 ? 256 : 288; // Largura do menu
+    const menuHeight = 320; // Altura aproximada do menu
+    const menuWidth = 192; // Largura do menu (w-48 = 12rem = 192px)
     
-    // Verificar se há espaço embaixo
+    // Para tablet, calcular posicionamento inteligente
+    if (isTablet) {
+      // Verificar espaço disponível
+      const spaceRight = windowWidth - rect.right;
+      const spaceLeft = rect.left;
+      const spaceAbove = rect.top;
+      const spaceBelow = windowHeight - rect.bottom;
+      
+      // Determinar melhor posicionamento
+      if (spaceRight >= menuWidth + 8) {
+        // Cabe à direita
+        if (spaceBelow >= menuHeight) {
+          return { placement: 'right-start', offset: 8 };
+        } else if (spaceAbove >= menuHeight) {
+          return { placement: 'right-end', offset: 8 };
+        } else {
+          return { placement: 'right', offset: 8 };
+        }
+      } else if (spaceLeft >= menuWidth + 8) {
+        // Cabe à esquerda
+        if (spaceBelow >= menuHeight) {
+          return { placement: 'left-start', offset: 8 };
+        } else if (spaceAbove >= menuHeight) {
+          return { placement: 'left-end', offset: 8 };
+        } else {
+          return { placement: 'left', offset: 8 };
+        }
+      } else {
+        // Não cabe horizontalmente, usar vertical
+        if (spaceBelow >= menuHeight) {
+          return { placement: 'bottom-start', offset: 8 };
+        } else {
+          return { placement: 'top-start', offset: 8 };
+        }
+      }
+    }
+    
+    // Para desktop, manter lógica original
     const spaceBelow = windowHeight - rect.top;
     const spaceAbove = rect.top;
     
-    // Verificar se o menu cabe horizontalmente
-    const menuLeft = rect.left + (rect.width / 2) - (menuWidth / 2);
-    const menuRight = menuLeft + menuWidth;
-    
-    let horizontalPosition = 'center';
-    if (menuLeft < 10) {
-      horizontalPosition = 'left';
-    } else if (menuRight > windowWidth - 10) {
-      horizontalPosition = 'right';
-    }
-    
-    // Decidir posição vertical
     if (spaceBelow >= menuHeight || spaceBelow > spaceAbove) {
-      return { vertical: 'top', horizontal: horizontalPosition };
+      return { placement: 'top-start', offset: 8 };
     } else {
-      return { vertical: 'top', horizontal: horizontalPosition };
+      return { placement: 'bottom-start', offset: 8 };
     }
   };
 
-  // Versão Desktop - Sidebar Lateral
+  // Versão Desktop e Tablet - Sidebar Lateral
   if (!isMobile) {
     return (
       <div
         className={`
-          ${isOpen ? 'w-64' : 'w-20'} 
+          ${isTablet ? 'w-24' : (isOpen ? 'w-64' : 'w-20')} 
           bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900
           backdrop-blur-lg
           transition-all duration-500 ease-in-out
@@ -158,27 +195,29 @@ const Sidebar = ({
           z-50
         `}
       >
-        {/* Toggle Button */}
-        <button
-          onClick={() => setIsOpen && setIsOpen(!isOpen)}
-          className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
-          aria-label="Alternar sidebar"
-        >
-          {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
-        </button>
+        {/* Toggle Button - Não aparece no tablet */}
+        {!isTablet && (
+          <button
+            onClick={() => setIsOpen && setIsOpen(!isOpen)}
+            className="absolute -right-3 top-6 w-6 h-6 bg-gradient-to-br from-accent1 to-accent1 hover:from-accent1/80 hover:to-accent1 border-none rounded-full flex items-center justify-center text-white cursor-pointer z-[9999] shadow-lg transition-all duration-300"
+            aria-label="Alternar sidebar"
+          >
+            {isOpen ? <FaTimes className="w-3 h-3" /> : <FaBars className="w-3 h-3" />}
+          </button>
+        )}
 
         {/* Logo Section */}
-        <div className={`${isOpen ? 'p-6' : 'p-5'} border-b border-neutral-700/50 transition-all duration-300`}>
-          <div 
-            className="flex items-center"
-            style={{ justifyContent: isOpen ? 'flex-start' : 'center' }}
-          >
+        <div className={`${isTablet ? 'p-6' : (isOpen ? 'p-6' : 'p-5')} border-b border-neutral-700/50 transition-all duration-300`}>
+                      <div 
+              className="flex items-center"
+              style={{ justifyContent: isTablet ? 'center' : (isOpen ? 'flex-start' : 'center') }}
+            >
             <div 
               className="rounded-xl bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center shadow-lg flex-shrink-0"
               style={{ 
-                width: isOpen ? '40px' : '32px',
-                height: isOpen ? '40px' : '32px',
-                padding: isOpen ? '8px' : '6px'
+                width: isTablet ? '36px' : (isOpen ? '40px' : '32px'),
+                height: isTablet ? '36px' : (isOpen ? '40px' : '32px'),
+                padding: isTablet ? '8px' : (isOpen ? '8px' : '6px')
               }}
             >
               <img 
@@ -190,9 +229,9 @@ const Sidebar = ({
             
             <div
               style={{ 
-                opacity: isOpen ? 1 : 0,
-                width: isOpen ? 'auto' : 0,
-                marginLeft: isOpen ? '12px' : 0
+                opacity: isTablet ? 0 : (isOpen ? 1 : 0),
+                width: isTablet ? 0 : (isOpen ? 'auto' : 0),
+                marginLeft: isTablet ? 0 : (isOpen ? '12px' : 0)
               }}
               className="overflow-hidden transition-all duration-300"
             >
@@ -204,12 +243,12 @@ const Sidebar = ({
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className={`flex-1 ${isTablet ? 'p-4' : 'p-4'} space-y-2`}>
           {items.map((item, index) => (
             <div
               key={item.id}
               className={`
-                flex items-center p-3 rounded-xl cursor-pointer transition-all duration-300 group
+                flex items-center ${isTablet ? 'p-3' : 'p-3'} rounded-xl cursor-pointer transition-all duration-300 group
                 ${activeItem === item.id 
                   ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
                   : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
@@ -219,15 +258,15 @@ const Sidebar = ({
             >
               <div className={`
                 text-lg transition-all duration-300
-                ${isOpen ? 'mr-4' : 'mx-auto'}
+                ${isTablet ? 'mx-auto' : (isOpen ? 'mr-4' : 'mx-auto')}
                 ${activeItem === item.id ? 'text-accent1' : 'group-hover:text-accent1'}
               `}>
                 {item.icon}
               </div>
               <span
                 style={{ 
-                  opacity: isOpen ? 1 : 0,
-                  width: isOpen ? 'auto' : 0
+                  opacity: isTablet ? 0 : (isOpen ? 1 : 0),
+                  width: isTablet ? 0 : (isOpen ? 'auto' : 0)
                 }}
                 className="whitespace-nowrap overflow-hidden font-medium transition-all duration-300"
               >
@@ -239,8 +278,8 @@ const Sidebar = ({
 
         {/* User Info & Plan Usage */}
         <div className="p-4 border-t border-neutral-700/50 space-y-3">
-          {/* Barra de Progresso do Uso do Plano */}
-          {currentUser && (
+          {/* Barra de Progresso do Uso do Plano - Não aparece no tablet */}
+          {currentUser && !isTablet && (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span 
@@ -312,58 +351,207 @@ const Sidebar = ({
                     ? 'bg-gradient-to-r from-accent1/20 to-accent1/20 text-accent1 shadow-lg border border-accent1/30' 
                     : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
                   }
+                  ${isLongPressing ? 'scale-110 bg-accent1/20 border border-accent1/50' : ''}
                 `}
-                onClick={(e) => handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e)}
+                onClick={(e) => {
+                  // Só executa se não foi um long press
+                  if (!isProfileMenuOpen) {
+                    handleItemClick({ id: 'profile', text: 'Perfil', icon: <FaUser /> }, e);
+                  }
+                }}
+                onTouchStart={(e) => {
+                  if (isTablet) {
+                    e.preventDefault();
+                    console.log('Tablet touch start detected');
+                    
+                    // Long press timer
+                    const timer = setTimeout(() => {
+                      console.log('Tablet long press triggered - Menu should open');
+                      // Calcular posicionamento inteligente
+                      const position = calculateMenuPosition();
+                      setMenuPosition(position.placement.split('-')[0]);
+                      setMenuHorizontalPosition(position.placement.split('-')[1] || 'start');
+                      setIsProfileMenuOpen(true);
+                      setIsLongPressing(false);
+                      console.log('Tablet menu position:', position);
+                    }, 800);
+                    
+                    // Store timer reference
+                    e.currentTarget._longPressTimer = timer;
+                    
+                    // Feedback visual após 400ms
+                    setTimeout(() => {
+                      setIsLongPressing(true);
+                    }, 400);
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  if (isTablet) {
+                    console.log('Tablet touch end detected');
+                    // Clear timer if touch ends before long press
+                    if (e.currentTarget._longPressTimer) {
+                      clearTimeout(e.currentTarget._longPressTimer);
+                      e.currentTarget._longPressTimer = null;
+                    }
+                    setIsLongPressing(false);
+                  }
+                }}
+                onTouchMove={(e) => {
+                  if (isTablet) {
+                    // Cancel long press if finger moves
+                    if (e.currentTarget._longPressTimer) {
+                      clearTimeout(e.currentTarget._longPressTimer);
+                      e.currentTarget._longPressTimer = null;
+                    }
+                    setIsLongPressing(false);
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (isTablet) {
+                    // Para testar no desktop também
+                    console.log('Tablet mouse down detected');
+                    
+                    const timer = setTimeout(() => {
+                      console.log('Tablet mouse long press triggered');
+                      // Para tablet, usar posicionamento fixo
+                      setMenuPosition('top');
+                      setMenuHorizontalPosition('left');
+                      setIsProfileMenuOpen(true);
+                      setIsLongPressing(false);
+                    }, 800);
+                    
+                    e.currentTarget._mouseLongPressTimer = timer;
+                    
+                    setTimeout(() => {
+                      setIsLongPressing(true);
+                    }, 400);
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (isTablet) {
+                    if (e.currentTarget._mouseLongPressTimer) {
+                      clearTimeout(e.currentTarget._mouseLongPressTimer);
+                      e.currentTarget._mouseLongPressTimer = null;
+                    }
+                    setIsLongPressing(false);
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (isTablet) {
+                    if (e.currentTarget._mouseLongPressTimer) {
+                      clearTimeout(e.currentTarget._mouseLongPressTimer);
+                      e.currentTarget._mouseLongPressTimer = null;
+                    }
+                    setIsLongPressing(false);
+                  }
+                }}
               >
-                <div 
-                  className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
-                  style={{ 
-                    width: isOpen ? '32px' : '28px',
-                    height: isOpen ? '32px' : '28px',
-                    fontSize: isOpen ? '14px' : '12px',
-                    marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
-                    marginLeft: isOpen ? 0 : 'auto'
-                  }}
-                >
-                  {currentUser.name?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <div
-                  style={{ 
-                    opacity: isOpen ? 1 : 0,
-                    width: isOpen ? 'auto' : 0
-                  }}
-                  className="overflow-hidden transition-all duration-300 flex-1"
-                >
-                  <p className="text-sm font-medium text-inherit whitespace-nowrap">
-                    {currentUser.name || 'Usuário'}
-                  </p>
-                  <p className="text-xs text-neutral-400 whitespace-nowrap">
-                    Ver Perfil
-                  </p>
-                </div>
+                {isTablet ? (
+                  <div className="flex items-center justify-center w-full">
+                    <div className="text-lg relative">
+                      <FaUser />
+                      {/* Indicador de long press */}
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent1 rounded-full opacity-60"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="rounded-lg bg-gradient-to-br from-accent1 to-accent1 flex items-center justify-center text-white font-bold transition-all duration-300 flex-shrink-0"
+                    style={{ 
+                      width: isOpen ? '32px' : '28px',
+                      height: isOpen ? '32px' : '28px',
+                      fontSize: isOpen ? '14px' : '12px',
+                      marginRight: isOpen ? '12px' : (!isOpen ? 'auto' : 0),
+                      marginLeft: isOpen ? 0 : 'auto'
+                    }}
+                  >
+                    {currentUser.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                {!isTablet && (
+                  <div
+                    style={{ 
+                      opacity: isOpen ? 1 : 0,
+                      width: isOpen ? 'auto' : 0
+                    }}
+                    className="overflow-hidden transition-all duration-300 flex-1"
+                  >
+                    <p className="text-sm font-medium text-inherit whitespace-nowrap">
+                      {currentUser.name || 'Usuário'}
+                    </p>
+                    <p className="text-xs text-neutral-400 whitespace-nowrap">
+                      Ver Perfil
+                    </p>
+                  </div>
+                )}
                 
-                {/* Botão de 3 pontinhos */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsProfileMenuOpen(!isProfileMenuOpen);
-                  }}
-                  className={`
-                    p-1 rounded-lg transition-all duration-300 hover:bg-neutral-700/50
-                    ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                  `}
-                  style={{ 
-                    opacity: isOpen ? 1 : 0,
-                    width: isOpen ? 'auto' : 0
-                  }}
-                >
-                  <FaEllipsisV className="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
-                </button>
+                {/* Botão de 3 pontinhos - Não aparece no tablet */}
+                {!isTablet && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsProfileMenuOpen(!isProfileMenuOpen);
+                    }}
+                    className={`
+                      p-1 rounded-lg transition-all duration-300 hover:bg-neutral-700/50
+                      ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                    `}
+                    style={{ 
+                      opacity: isOpen ? 1 : 0,
+                      width: isOpen ? 'auto' : 0
+                    }}
+                  >
+                    <FaEllipsisV className="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
+                  </button>
+                )}
               </div>
 
               {/* Menu Dropdown */}
-              {isProfileMenuOpen && isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50">
+              {console.log('Rendering menu dropdown:', { isProfileMenuOpen, isOpen, isTablet })}
+              {isProfileMenuOpen && (
+                <div 
+                  className={`absolute w-48 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl z-50 ${
+                    isTablet 
+                      ? `${menuPosition}-${menuHorizontalPosition}` 
+                      : 'bottom-full left-0'
+                  }`}
+                  style={{
+                    // Posicionamento baseado no placement calculado
+                    top: isTablet && menuPosition === 'top' ? 'auto' : 
+                         isTablet && menuPosition === 'bottom' ? '100%' : 
+                         isTablet ? '0px' : 'auto',
+                    bottom: isTablet && menuPosition === 'bottom' ? 'auto' : 
+                           isTablet && menuPosition === 'top' ? '100%' : 
+                           isTablet ? 'auto' : '100%',
+                    left: isTablet && menuPosition === 'left' ? 'auto' : 
+                          isTablet && menuPosition === 'right' ? '100%' : 
+                          isTablet ? '100%' : '0px',
+                    right: isTablet && menuPosition === 'right' ? 'auto' : 
+                           isTablet && menuPosition === 'left' ? '100%' : 
+                           isTablet ? 'auto' : 'auto',
+                    marginLeft: isTablet && menuPosition === 'right' ? '8px' : '0px',
+                    marginRight: isTablet && menuPosition === 'left' ? '8px' : '0px',
+                    marginTop: isTablet && menuPosition === 'bottom' ? '8px' : '0px',
+                    marginBottom: isTablet && menuPosition === 'top' ? '8px' : '0px',
+                    // Fallback para diferentes posições se não couber
+                    maxHeight: '80vh',
+                    overflowY: 'auto',
+                    // Garantir que não saia da viewport
+                    zIndex: 9999,
+                  }}
+                >
+                  {/* Botão de fechar para tablet */}
+                  {isTablet && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="absolute top-2 right-2 p-1 rounded-lg hover:bg-neutral-700 transition-colors duration-200"
+                    >
+                      <FaTimes className="w-3 h-3 text-neutral-400 hover:text-neutral-200" />
+                    </button>
+                  )}
                   <div className="py-1">
                     <button
                       onClick={(e) => {
@@ -414,7 +602,7 @@ const Sidebar = ({
                           if (setActiveItem) setActiveItem('admin');
                           navigate('/admin');
                         }}
-                        className="w-full px-4 py-2 text-left text-sm text-blue-400 hover:bg-blue-500/10 transition-colors duration-200 flex items-center space-x-3"
+                        className="w-full px-4 py-2 text-left text-sm text-neutral-200 hover:bg-neutral-700 transition-colors duration-200 flex items-center space-x-3"
                       >
                         <FaUserShield className="w-4 h-4" />
                         <span>Painel Admin</span>
@@ -449,7 +637,7 @@ const Sidebar = ({
     <div
       className="
         fixed bottom-0 left-0 right-0
-        bg-gradient-to-t from-neutral-900 via-neutral-800 to-neutral-900
+        bg-neutral-900
         backdrop-blur-lg
         border-t border-neutral-700/50
         shadow-2xl
@@ -592,16 +780,7 @@ const Sidebar = ({
               `}>
 
                 
-                {/* Botão de fechar */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsProfileMenuOpen(false);
-                  }}
-                  className="absolute top-3 right-3 w-7 h-7 rounded-full bg-neutral-700/80 hover:bg-neutral-600/80 flex items-center justify-center text-neutral-400 hover:text-neutral-200 transition-all duration-200 backdrop-blur-sm"
-                >
-                  <FaTimes className="w-3 h-3" />
-                </button>
+
                 
                 {/* Header do Menu */}
                                    <div className="px-5 py-4 border-b border-neutral-600">
@@ -691,14 +870,14 @@ const Sidebar = ({
                         if (setActiveItem) setActiveItem('admin');
                         navigate('/admin');
                       }}
-                      className="w-full px-5 py-4 text-left text-sm text-blue-400 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-transparent transition-all duration-200 flex items-center space-x-4 group"
+                      className="w-full px-5 py-4 text-left text-sm text-neutral-200 hover:bg-gradient-to-r hover:from-neutral-700 hover:to-transparent transition-all duration-200 flex items-center space-x-4 group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors duration-200">
+                                              <div className="w-8 h-8 rounded-lg bg-neutral-700 flex items-center justify-center group-hover:bg-neutral-600 transition-colors duration-200">
                         <FaUserShield className="w-4 h-4" />
                       </div>
                       <div>
                         <span className="font-medium">Painel Admin</span>
-                        <p className="text-xs text-blue-400/70 mt-1">Administração</p>
+                        <p className="text-xs text-neutral-500 mt-1">Administração</p>
                       </div>
                     </button>
                   )}

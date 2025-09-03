@@ -55,6 +55,7 @@ const AdminPanel = () => {
   // Estado para tema
   const [theme] = useState(localStorage.getItem("theme") || "light");
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   
   // Estados do componente
   const [modalOpen, setModalOpen] = useState(false);
@@ -84,14 +85,16 @@ const AdminPanel = () => {
 
   // Hook para detectar tamanho da tela
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width <= 1024);
     };
     
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
 
   // Aplicar tema
@@ -891,7 +894,7 @@ const AdminPanel = () => {
       </motion.div>
 
       {/* Content */}
-      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 ${isMobile ? 'pb-8' : ''}`}>
+      <main className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${isTablet ? 'pb-0' : 'pb-16'} ${isMobile ? 'pb-8' : ''}`}>
         {activeTab === 'users' && (
           <motion.div
             variants={staggerContainer}
