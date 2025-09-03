@@ -240,7 +240,7 @@ const Reports = () => {
                 title={isMobile ? tab.label : undefined}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-all duration-300 ${
                   activeTab === tab.id
-                    ? 'bg-gradient-to-r from-amber-600 to-amber-600 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-accent1 to-accent1 text-white shadow-lg'
                     : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                 }`}
               >
@@ -351,7 +351,7 @@ const Reports = () => {
                 <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm">1</span>
+                      <span className="text-amber-600 dark:text-amber-300 font-semibold text-sm">1</span>
                     </div>
                     <div>
                       <p className="font-medium text-neutral-900 dark:text-neutral-100">
@@ -380,7 +380,7 @@ const Reports = () => {
                 <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl border border-neutral-200 dark:border-neutral-700">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-amber-700 dark:text-amber-300 font-semibold text-sm">2</span>
+                      <span className="text-amber-600 dark:text-amber-300 font-semibold text-sm">2</span>
                     </div>
                     <div>
                       <p className="font-medium text-neutral-900 dark:text-neutral-100">
@@ -476,7 +476,7 @@ const Reports = () => {
                       vs 98.2% ontem
                     </p>
                   </div>
-                  <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-14 h-14 bg-gradient-to-br from-amber-600 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg">
                     <FaTrophy className="w-7 h-7 text-white" />
                   </div>
                 </div>
@@ -565,7 +565,7 @@ const Reports = () => {
                       initial={{ width: 0 }}
                       animate={{ width: '35%' }}
                       transition={{ duration: 1, delay: 0.5 }}
-                      className="h-full bg-amber-700 dark:bg-amber-600 rounded-full"
+                      className="h-full bg-amber-600 dark:bg-amber-600 rounded-full"
                     />
                   </div>
                 </div>
@@ -590,7 +590,7 @@ const Reports = () => {
                       initial={{ width: 0 }}
                       animate={{ width: '26%' }}
                       transition={{ duration: 1, delay: 0.6 }}
-                      className="h-full bg-amber-700 dark:bg-amber-600 rounded-full"
+                      className="h-full bg-amber-600 dark:bg-amber-600 rounded-full"
                     />
                   </div>
                 </div>
