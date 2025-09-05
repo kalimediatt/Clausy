@@ -1043,7 +1043,7 @@ const Home = () => {
         } else {
           session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         }
-      } else {
+      } else if (!labSelectedChatName) {
         // Criar novo chat com nome baseado na primeira mensagem do usuário
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         
@@ -1059,6 +1059,10 @@ const Home = () => {
           // Fallback para data
           chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
         }
+      } else {
+        // Chat já existe, usar o nome e session_id existentes
+        chat_name = labSelectedChatName;
+        session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
       }
       
       // Atualizar chatKey se for um novo chat
