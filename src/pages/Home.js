@@ -24,7 +24,8 @@ import {
   FaChevronDown,
   FaEllipsisV,
   FaUserTie,
-  FaUsers
+  FaUsers,
+  FaTags
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -419,6 +420,27 @@ const Home = () => {
     }
   }, [labShowNewChatModal]);
   const [labShowInitialChatModal, setLabShowInitialChatModal] = useState(true);
+  const [showChipJuridicoModal, setShowChipJuridicoModal] = useState(false);
+  
+  // Estados para Chip Jurídico - áreas do direito
+  const [chipJuridicoAreas, setChipJuridicoAreas] = useState({
+    civil: false,
+    trabalhista: false,
+    contratos: false,
+    empresarial: false,
+    penal: false,
+    tributario: false,
+    administrativo: false,
+    consumidor: false,
+    previdenciario: false,
+    ambiental: false,
+    imobiliario: false,
+    familia: false,
+    bancario: false,
+    compliance: false,
+    aduaneiro: false,
+    eleitoral: false
+  });
   const [initialChatName, setInitialChatName] = useState('');
   const [labKeepFileAttached, setLabKeepFileAttached] = useState(false);
   const [labShowHistorySidebar, setLabShowHistorySidebar] = useState(false);
@@ -806,8 +828,59 @@ const Home = () => {
     }
   }, [chatHistory]);
 
+  // Funções para Chip Jurídico
+  const handleChipJuridicoAreaChange = (area) => {
+    // Limpar todas as seleções e marcar apenas a área clicada
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    newState[area] = true;
+    setChipJuridicoAreas(newState);
+  };
 
 
+  const handleChipJuridicoClearAll = () => {
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    setChipJuridicoAreas(newState);
+  };
+
+  const getSelectedAreas = () => {
+    return Object.entries(chipJuridicoAreas)
+      .filter(([_, selected]) => selected)
+      .map(([area, _]) => area);
+  };
+
+  const getSelectedAreasDisplay = () => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    
+    return getSelectedAreas().map(area => areaNames[area]).join(', ');
+  };
+
+  const getSelectedChipJuridicoMode = () => {
+    const selectedAreas = getSelectedAreas();
+    return selectedAreas.length > 0 ? selectedAreas[0] : null;
+  };
 
 
 
@@ -1095,6 +1168,12 @@ const Home = () => {
         formData.append('chat_name', chat_name);
         formData.append('session_id', session_id);
         formData.append('file', labSelectedFile);
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          formData.append('mode', selectedMode);
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1122,6 +1201,12 @@ const Home = () => {
           chat_name,
           session_id
         };
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          body.mode = selectedMode;
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1380,6 +1465,12 @@ const Home = () => {
           formData.append('maxTokens', 64000);
           formData.append('file', selectedFile);
           formData.append('setup', JSON.stringify(selectedSetup));
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            formData.append('mode', selectedMode);
+          }
 
 
 
@@ -1393,17 +1484,25 @@ const Home = () => {
         } else {
 
           // Envia como JSON se não houver arquivo
+          const requestBody = {
+            prompt: chatInput.trim(),
+            maxTokens: 64000,
+            setup: selectedSetup
+          };
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            requestBody.mode = selectedMode;
+          }
+          
           response = await fetch('/api/ai/query', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              prompt: chatInput.trim(),
-              maxTokens: 64000,
-              setup: selectedSetup
-            })
+            body: JSON.stringify(requestBody)
           });
         }
 
@@ -2542,6 +2641,19 @@ const Home = () => {
                              
                              <button 
                                onClick={() => {
+                                 setShowChipJuridicoModal(true);
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200"
+                             >
+                               <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center">
+                                 <FaTags className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Chip Jurídico</span>
+                             </button>
+                             
+                             <button 
+                               onClick={() => {
                                  handleLabClearChat();
                                  setIsMobileMenuOpen(false);
                                }}
@@ -2623,6 +2735,10 @@ const Home = () => {
                               <div className="w-6 h-6 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-3 h-3 text-white" /></div>
                               <span className="text-sm font-medium">Alterar Modo</span>
                             </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-6 h-6 bg-secondary rounded flex items-center justify-center"><FaTags className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
+                            </button>
                             <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
                               <div className="w-6 h-6 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-3 h-3 text-white" /></div>
                               <span className="text-sm font-medium">Limpar Chat</span>
@@ -2697,6 +2813,10 @@ const Home = () => {
                             <button onClick={() => { setLabShowSetupModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
                               <div className="w-7 h-7 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-4 h-4 text-white" /></div>
                               <span className="text-sm font-medium">Alterar Modo</span>
+                            </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center"><FaTags className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
                             </button>
                             <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
                               <div className="w-7 h-7 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-4 h-4 text-white" /></div>
@@ -3543,6 +3663,135 @@ const Home = () => {
                   </motion.div>
                 </motion.div>
               )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Modal do Chip Jurídico */}
+      {showChipJuridicoModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+          onClick={() => setShowChipJuridicoModal(false)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+                  <FaTags className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Chip Jurídico
+                  </h2>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Selecione as áreas do direito para personalizar suas consultas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowChipJuridicoModal(false)}
+                className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-lg"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {/* Botão de ação rápida */}
+              <div className="flex gap-2 mb-6">
+                <button
+                  onClick={handleChipJuridicoClearAll}
+                  className="px-4 py-2 bg-neutral-500 hover:bg-neutral-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Limpar Todas
+                </button>
+              </div>
+
+              {/* Grid de checkboxes */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries({
+                  civil: 'Cível',
+                  trabalhista: 'Trabalhista',
+                  contratos: 'Contratos',
+                  empresarial: 'Empresarial',
+                  penal: 'Penal',
+                  tributario: 'Tributário',
+                  administrativo: 'Administrativo',
+                  consumidor: 'Consumidor',
+                  previdenciario: 'Previdenciário',
+                  ambiental: 'Ambiental',
+                  imobiliario: 'Imobiliário',
+                  familia: 'Família',
+                  bancario: 'Bancário/Capital',
+                  compliance: 'Compliance',
+                  aduaneiro: 'Aduaneiro',
+                  eleitoral: 'Eleitoral'
+                }).map(([key, label]) => (
+                  <motion.label
+                    key={key}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                      chipJuridicoAreas[key]
+                        ? 'border-accent1 bg-accent1/10 dark:bg-accent1/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-accent1/50 dark:hover:border-accent1/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="chipJuridicoArea"
+                      checked={chipJuridicoAreas[key]}
+                      onChange={() => handleChipJuridicoAreaChange(key)}
+                      className="w-5 h-5 text-accent1 bg-neutral-100 border-neutral-300 focus:ring-accent1 dark:focus:ring-accent1 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
+                    />
+                    <span className={`text-sm font-medium ${
+                      chipJuridicoAreas[key]
+                        ? 'text-accent1 dark:text-accent1'
+                        : 'text-neutral-700 dark:text-neutral-300'
+                    }`}>
+                      {label}
+                    </span>
+                  </motion.label>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="flex items-center justify-between p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50">
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                {getSelectedAreas().length > 0 ? '1 área selecionada' : 'Nenhuma área selecionada'}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChipJuridicoModal(false)}
+                  className="px-4 py-2 bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    // Aqui você pode adicionar lógica para salvar as preferências
+                    toast.success('Preferências do Chip Jurídico salvas!');
+                    setShowChipJuridicoModal(false);
+                  }}
+                  className="px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Salvar Preferências
+                </button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
