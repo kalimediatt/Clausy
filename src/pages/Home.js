@@ -25,7 +25,10 @@ import {
   FaEllipsisV,
   FaUserTie,
   FaUsers,
-  FaTags
+  FaTags,
+  FaFileWord,
+  FaFilePdf,
+  FaDownload
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -38,6 +41,8 @@ import {
   Legend,
 } from 'chart.js';
 import { toast } from 'react-hot-toast';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, WidthType } from 'docx';
+import jsPDF from 'jspdf';
 
 import SecurityPanel from './SecurityPanel';
 import Sidebar from '../components/Sidebar';
@@ -880,6 +885,286 @@ const Home = () => {
   const getSelectedChipJuridicoMode = () => {
     const selectedAreas = getSelectedAreas();
     return selectedAreas.length > 0 ? selectedAreas[0] : null;
+  };
+
+  // Funções de Exportação
+  const getAreaName = (areaKey) => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    return areaNames[areaKey] || 'Não especificada';
+  };
+
+  const exportToWord = async () => {
+    try {
+      console.log('Iniciando exportação para Word...');
+      
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      console.log('Chat key:', currentChatKey);
+      console.log('Mensagens encontradas:', messages.length);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      console.log('Criando documento Word...');
+      
+      // Criar documento Word com estrutura mais simples e robusta
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // Cabeçalho
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "CONVERSA - CENTRAL JURÍDICA CLAUSY",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 }
+            }),
+            
+            // Metadados
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Chat: ${currentChatKey}`,
+                  bold: true,
+                  size: 24
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Data: ${new Date().toLocaleDateString('pt-BR')}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Área Jurídica: ${areaName}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 400 }
+            }),
+
+            // Mensagens
+            ...messages.map((message, index) => {
+              const isUser = message.role === 'user';
+              const isError = message.role === 'error';
+              
+              // Limpar conteúdo da mensagem para evitar caracteres problemáticos
+              const cleanContent = message.content ? message.content.toString().replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') : '';
+              
+              return new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA'}: `,
+                    bold: true,
+                    size: 22
+                  }),
+                  new TextRun({
+                    text: cleanContent,
+                    size: 20
+                  })
+                ],
+                spacing: { 
+                  after: 300,
+                  before: index === 0 ? 0 : 200
+                }
+              });
+            })
+          ]
+        }]
+      });
+
+      console.log('Gerando blob do documento...');
+      
+      // Gerar blob diretamente (compatível com navegador)
+      const blob = await Packer.toBlob(doc);
+      
+      console.log('Blob gerado, tamanho:', blob.size);
+      
+      // Criar URL e fazer download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.docx`;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('Download iniciado com sucesso!');
+      toast.success('Conversa exportada para Word com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para Word:', error);
+      console.error('Stack trace:', error.stack);
+      toast.error(`Erro ao exportar para Word: ${error.message}`);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      // Criar PDF
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Função para adicionar nova página se necessário
+      const checkNewPage = (requiredSpace) => {
+        if (yPosition + requiredSpace > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = 20;
+          return true;
+        }
+        return false;
+      };
+
+      // Cabeçalho
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONVERSA - CENTRAL JURÍDICA CLAUSY', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Metadados
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Chat: ${currentChatKey}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Área Jurídica: ${areaName}`, margin, yPosition);
+      yPosition += 15;
+
+      // Linha separadora
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 10;
+
+      // Mensagens
+      messages.forEach((message, index) => {
+        const isUser = message.role === 'user';
+        const isError = message.role === 'error';
+        
+        // Verificar se precisa de nova página
+        checkNewPage(20);
+
+        // Cabeçalho da mensagem
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        const roleText = isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA';
+        const roleColor = isUser ? [37, 99, 235] : isError ? [220, 38, 38] : [5, 150, 105];
+        
+        pdf.setTextColor(roleColor[0], roleColor[1], roleColor[2]);
+        pdf.text(`${roleText}:`, margin, yPosition);
+        yPosition += lineHeight;
+
+        // Conteúdo da mensagem
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(55, 65, 81);
+        
+        // Quebrar texto em linhas
+        const content = message.content;
+        const lines = pdf.splitTextToSize(content, maxWidth);
+        
+        lines.forEach(line => {
+          checkNewPage(lineHeight);
+          pdf.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        });
+
+        // Espaçamento entre mensagens
+        yPosition += 8;
+        
+        // Linha separadora sutil
+        if (index < messages.length - 1) {
+          checkNewPage(5);
+          pdf.setDrawColor(240, 240, 240);
+          pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+          yPosition += 5;
+        }
+      });
+
+      // Baixar arquivo
+      const fileName = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success('Conversa exportada para PDF com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para PDF:', error);
+      toast.error('Erro ao exportar para PDF');
+    }
   };
 
 
@@ -2866,6 +3151,31 @@ const Home = () => {
                           <FaCopy className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
                           <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Copiar</span>
                         </button>
+                        
+                        {/* Botões de exportação - apenas para respostas da IA */}
+                        {message.role === 'assistant' && (
+                          <>
+                            <button 
+                              onClick={exportToWord}
+                              title="Exportar conversa para Word"
+                              className={`bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 border-0 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFileWord className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Word</span>
+                            </button>
+                            
+                            <button 
+                              onClick={exportToPDF}
+                              title="Exportar conversa para PDF"
+                              className={`bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 border-0 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFilePdf className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>PDF</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
