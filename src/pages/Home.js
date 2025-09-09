@@ -24,7 +24,11 @@ import {
   FaChevronDown,
   FaEllipsisV,
   FaUserTie,
-  FaUsers
+  FaUsers,
+  FaTags,
+  FaFileWord,
+  FaFilePdf,
+  FaDownload
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -37,6 +41,8 @@ import {
   Legend,
 } from 'chart.js';
 import { toast } from 'react-hot-toast';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, WidthType } from 'docx';
+import jsPDF from 'jspdf';
 
 import SecurityPanel from './SecurityPanel';
 import Sidebar from '../components/Sidebar';
@@ -419,6 +425,27 @@ const Home = () => {
     }
   }, [labShowNewChatModal]);
   const [labShowInitialChatModal, setLabShowInitialChatModal] = useState(true);
+  const [showChipJuridicoModal, setShowChipJuridicoModal] = useState(false);
+  
+  // Estados para Chip Jurídico - áreas do direito
+  const [chipJuridicoAreas, setChipJuridicoAreas] = useState({
+    civil: false,
+    trabalhista: false,
+    contratos: false,
+    empresarial: false,
+    penal: false,
+    tributario: false,
+    administrativo: false,
+    consumidor: false,
+    previdenciario: false,
+    ambiental: false,
+    imobiliario: false,
+    familia: false,
+    bancario: false,
+    compliance: false,
+    aduaneiro: false,
+    eleitoral: false
+  });
   const [initialChatName, setInitialChatName] = useState('');
   const [labKeepFileAttached, setLabKeepFileAttached] = useState(false);
   const [labShowHistorySidebar, setLabShowHistorySidebar] = useState(false);
@@ -806,8 +833,339 @@ const Home = () => {
     }
   }, [chatHistory]);
 
+  // Funções para Chip Jurídico
+  const handleChipJuridicoAreaChange = (area) => {
+    // Limpar todas as seleções e marcar apenas a área clicada
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    newState[area] = true;
+    setChipJuridicoAreas(newState);
+  };
 
 
+  const handleChipJuridicoClearAll = () => {
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    setChipJuridicoAreas(newState);
+  };
+
+  const getSelectedAreas = () => {
+    return Object.entries(chipJuridicoAreas)
+      .filter(([_, selected]) => selected)
+      .map(([area, _]) => area);
+  };
+
+  const getSelectedAreasDisplay = () => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    
+    return getSelectedAreas().map(area => areaNames[area]).join(', ');
+  };
+
+  const getSelectedChipJuridicoMode = () => {
+    const selectedAreas = getSelectedAreas();
+    return selectedAreas.length > 0 ? selectedAreas[0] : null;
+  };
+
+  // Funções de Exportação
+  const getAreaName = (areaKey) => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    return areaNames[areaKey] || 'Não especificada';
+  };
+
+  const exportToWord = async () => {
+    try {
+      console.log('Iniciando exportação para Word...');
+      
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      console.log('Chat key:', currentChatKey);
+      console.log('Mensagens encontradas:', messages.length);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      console.log('Criando documento Word...');
+      
+      // Criar documento Word com estrutura mais simples e robusta
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // Cabeçalho
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "CONVERSA - CENTRAL JURÍDICA CLAUSY",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 }
+            }),
+            
+            // Metadados
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Chat: ${currentChatKey}`,
+                  bold: true,
+                  size: 24
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Data: ${new Date().toLocaleDateString('pt-BR')}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Área Jurídica: ${areaName}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 400 }
+            }),
+
+            // Mensagens
+            ...messages.map((message, index) => {
+              const isUser = message.role === 'user';
+              const isError = message.role === 'error';
+              
+              // Limpar conteúdo da mensagem para evitar caracteres problemáticos
+              const cleanContent = message.content ? message.content.toString().replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') : '';
+              
+              return new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA'}: `,
+                    bold: true,
+                    size: 22
+                  }),
+                  new TextRun({
+                    text: cleanContent,
+                    size: 20
+                  })
+                ],
+                spacing: { 
+                  after: 300,
+                  before: index === 0 ? 0 : 200
+                }
+              });
+            })
+          ]
+        }]
+      });
+
+      console.log('Gerando blob do documento...');
+      
+      // Gerar blob diretamente (compatível com navegador)
+      const blob = await Packer.toBlob(doc);
+      
+      console.log('Blob gerado, tamanho:', blob.size);
+      
+      // Criar URL e fazer download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.docx`;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('Download iniciado com sucesso!');
+      toast.success('Conversa exportada para Word com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para Word:', error);
+      console.error('Stack trace:', error.stack);
+      toast.error(`Erro ao exportar para Word: ${error.message}`);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      // Criar PDF
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Função para adicionar nova página se necessário
+      const checkNewPage = (requiredSpace) => {
+        if (yPosition + requiredSpace > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = 20;
+          return true;
+        }
+        return false;
+      };
+
+      // Cabeçalho
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONVERSA - CENTRAL JURÍDICA CLAUSY', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Metadados
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Chat: ${currentChatKey}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Área Jurídica: ${areaName}`, margin, yPosition);
+      yPosition += 15;
+
+      // Linha separadora
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 10;
+
+      // Mensagens
+      messages.forEach((message, index) => {
+        const isUser = message.role === 'user';
+        const isError = message.role === 'error';
+        
+        // Verificar se precisa de nova página
+        checkNewPage(20);
+
+        // Cabeçalho da mensagem
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        const roleText = isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA';
+        const roleColor = isUser ? [37, 99, 235] : isError ? [220, 38, 38] : [5, 150, 105];
+        
+        pdf.setTextColor(roleColor[0], roleColor[1], roleColor[2]);
+        pdf.text(`${roleText}:`, margin, yPosition);
+        yPosition += lineHeight;
+
+        // Conteúdo da mensagem
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(55, 65, 81);
+        
+        // Quebrar texto em linhas
+        const content = message.content;
+        const lines = pdf.splitTextToSize(content, maxWidth);
+        
+        lines.forEach(line => {
+          checkNewPage(lineHeight);
+          pdf.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        });
+
+        // Espaçamento entre mensagens
+        yPosition += 8;
+        
+        // Linha separadora sutil
+        if (index < messages.length - 1) {
+          checkNewPage(5);
+          pdf.setDrawColor(240, 240, 240);
+          pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+          yPosition += 5;
+        }
+      });
+
+      // Baixar arquivo
+      const fileName = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success('Conversa exportada para PDF com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para PDF:', error);
+      toast.error('Erro ao exportar para PDF');
+    }
+  };
 
 
 
@@ -996,25 +1354,25 @@ const Home = () => {
       if (labSelectedSetupState?.title === "IA Clausy") {
         promptId = 0;
       } else if (labSelectedSetupState?.title === "Pesquisador de Jurisprudência Atualizada") {
-        promptId = 1;
-      } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
         promptId = 2;
-      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
-        promptId = 3;
-      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
-        promptId = 4;
-      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
-        promptId = 5;
-      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
-        promptId = 6;
-      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
-        promptId = 7;
-      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
+      } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
         promptId = 8;
-      } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
+      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
+        promptId = 4;
+      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
+        promptId = 5;
+      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
+        promptId = 6;
+      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
+        promptId = 7;
+      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
+        promptId = 3;
+      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
         promptId = 9;
+      } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
+        promptId = 1;
       } else {
-        promptId = 1; // Fallback padrão
+        promptId = 0; // Fallback padrão
       }
       const conteudo = userMessage.content;
   
@@ -1095,6 +1453,12 @@ const Home = () => {
         formData.append('chat_name', chat_name);
         formData.append('session_id', session_id);
         formData.append('file', labSelectedFile);
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          formData.append('mode', selectedMode);
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1122,6 +1486,12 @@ const Home = () => {
           chat_name,
           session_id
         };
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          body.mode = selectedMode;
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1380,6 +1750,12 @@ const Home = () => {
           formData.append('maxTokens', 64000);
           formData.append('file', selectedFile);
           formData.append('setup', JSON.stringify(selectedSetup));
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            formData.append('mode', selectedMode);
+          }
 
 
 
@@ -1393,17 +1769,25 @@ const Home = () => {
         } else {
 
           // Envia como JSON se não houver arquivo
+          const requestBody = {
+            prompt: chatInput.trim(),
+            maxTokens: 64000,
+            setup: selectedSetup
+          };
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            requestBody.mode = selectedMode;
+          }
+          
           response = await fetch('/api/ai/query', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              prompt: chatInput.trim(),
-              maxTokens: 64000,
-              setup: selectedSetup
-            })
+            body: JSON.stringify(requestBody)
           });
         }
 
@@ -2542,6 +2926,19 @@ const Home = () => {
                              
                              <button 
                                onClick={() => {
+                                 setShowChipJuridicoModal(true);
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200"
+                             >
+                               <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center">
+                                 <FaTags className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Chip Jurídico</span>
+                             </button>
+                             
+                             <button 
+                               onClick={() => {
                                  handleLabClearChat();
                                  setIsMobileMenuOpen(false);
                                }}
@@ -2623,6 +3020,10 @@ const Home = () => {
                               <div className="w-6 h-6 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-3 h-3 text-white" /></div>
                               <span className="text-sm font-medium">Alterar Modo</span>
                             </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-6 h-6 bg-secondary rounded flex items-center justify-center"><FaTags className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
+                            </button>
                             <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
                               <div className="w-6 h-6 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-3 h-3 text-white" /></div>
                               <span className="text-sm font-medium">Limpar Chat</span>
@@ -2698,6 +3099,10 @@ const Home = () => {
                               <div className="w-7 h-7 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-4 h-4 text-white" /></div>
                               <span className="text-sm font-medium">Alterar Modo</span>
                             </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center"><FaTags className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
+                            </button>
                             <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
                               <div className="w-7 h-7 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-4 h-4 text-white" /></div>
                               <span className="text-sm font-medium">Limpar Chat</span>
@@ -2746,6 +3151,31 @@ const Home = () => {
                           <FaCopy className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
                           <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Copiar</span>
                         </button>
+                        
+                        {/* Botões de exportação - apenas para respostas da IA */}
+                        {message.role === 'assistant' && (
+                          <>
+                            <button 
+                              onClick={exportToWord}
+                              title="Exportar conversa para Word"
+                              className={`bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 border-0 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFileWord className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Word</span>
+                            </button>
+                            
+                            <button 
+                              onClick={exportToPDF}
+                              title="Exportar conversa para PDF"
+                              className={`bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 border-0 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFilePdf className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>PDF</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -3543,6 +3973,135 @@ const Home = () => {
                   </motion.div>
                 </motion.div>
               )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Modal do Chip Jurídico */}
+      {showChipJuridicoModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+          onClick={() => setShowChipJuridicoModal(false)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+                  <FaTags className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Chip Jurídico
+                  </h2>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Selecione as áreas do direito para personalizar suas consultas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowChipJuridicoModal(false)}
+                className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-lg"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {/* Botão de ação rápida */}
+              <div className="flex gap-2 mb-6">
+                <button
+                  onClick={handleChipJuridicoClearAll}
+                  className="px-4 py-2 bg-neutral-500 hover:bg-neutral-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Limpar Todas
+                </button>
+              </div>
+
+              {/* Grid de checkboxes */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries({
+                  civil: 'Cível',
+                  trabalhista: 'Trabalhista',
+                  contratos: 'Contratos',
+                  empresarial: 'Empresarial',
+                  penal: 'Penal',
+                  tributario: 'Tributário',
+                  administrativo: 'Administrativo',
+                  consumidor: 'Consumidor',
+                  previdenciario: 'Previdenciário',
+                  ambiental: 'Ambiental',
+                  imobiliario: 'Imobiliário',
+                  familia: 'Família',
+                  bancario: 'Bancário/Capital',
+                  compliance: 'Compliance',
+                  aduaneiro: 'Aduaneiro',
+                  eleitoral: 'Eleitoral'
+                }).map(([key, label]) => (
+                  <motion.label
+                    key={key}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                      chipJuridicoAreas[key]
+                        ? 'border-accent1 bg-accent1/10 dark:bg-accent1/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-accent1/50 dark:hover:border-accent1/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="chipJuridicoArea"
+                      checked={chipJuridicoAreas[key]}
+                      onChange={() => handleChipJuridicoAreaChange(key)}
+                      className="w-5 h-5 text-accent1 bg-neutral-100 border-neutral-300 focus:ring-accent1 dark:focus:ring-accent1 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
+                    />
+                    <span className={`text-sm font-medium ${
+                      chipJuridicoAreas[key]
+                        ? 'text-accent1 dark:text-accent1'
+                        : 'text-neutral-700 dark:text-neutral-300'
+                    }`}>
+                      {label}
+                    </span>
+                  </motion.label>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="flex items-center justify-between p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50">
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                {getSelectedAreas().length > 0 ? '1 área selecionada' : 'Nenhuma área selecionada'}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChipJuridicoModal(false)}
+                  className="px-4 py-2 bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    // Aqui você pode adicionar lógica para salvar as preferências
+                    toast.success('Preferências do Chip Jurídico salvas!');
+                    setShowChipJuridicoModal(false);
+                  }}
+                  className="px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Salvar Preferências
+                </button>
+              </div>
             </div>
           </motion.div>
         </motion.div>
