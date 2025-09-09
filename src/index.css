@@ -566,11 +566,13 @@
   .enhanced-select {
     font-size: 16px !important;
     -webkit-appearance: none;
+    appearance: none;
     border-radius: 8px;
   }
   
   .enhanced-reports-button {
     -webkit-appearance: none;
+    appearance: none;
     border-radius: 8px;
   }
 }
@@ -1976,6 +1978,7 @@
     
     .tab-button {
       -webkit-appearance: none;
+      appearance: none;
       border-radius: 12px;
     }
   }
