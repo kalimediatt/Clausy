@@ -338,6 +338,37 @@ const Sidebar = ({
               >
                 {currentUser.plan_id || 'Free Trial'}
               </div>
+              
+              {/* Botão de Upgrade - Aparece quando atinge 80% */}
+              {(() => {
+                const usagePercentage = Math.min(
+                  Math.max(
+                    ((usageStats?.queries_today || 0) / (currentUser.max_queries_per_hour || 100)) * 100,
+                    ((usageStats?.tokens_today || 0) / (currentUser.max_tokens_per_hour || 20000)) * 100
+                  ), 
+                  100
+                );
+                
+                return usagePercentage >= 80 ? (
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    onClick={() => {
+                      // Aqui você pode adicionar a lógica para abrir modal de upgrade
+                      console.log('Upgrade button clicked');
+                    }}
+                    style={{ 
+                      opacity: isOpen ? 1 : 0,
+                      width: isOpen ? 'auto' : 0,
+                      pointerEvents: isOpen ? 'auto' : 'none'
+                    }}
+                  >
+                    {isOpen ? '🔄 Upgrade Plano' : '🔄'}
+                  </motion.button>
+                ) : null;
+              })()}
             </div>
           )}
 
@@ -667,6 +698,37 @@ const Sidebar = ({
             </span>
           </div>
         ))}
+        
+        {/* Botão de Upgrade Mobile - Aparece quando atinge 80% */}
+        {currentUser && (() => {
+          const usagePercentage = Math.min(
+            Math.max(
+              ((usageStats?.queries_today || 0) / (currentUser.max_queries_per_hour || 100)) * 100,
+              ((usageStats?.tokens_today || 0) / (currentUser.max_tokens_per_hour || 20000)) * 100
+            ), 
+            100
+          );
+          
+          return usagePercentage >= 80 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              className="flex flex-col items-center p-2 rounded-lg cursor-pointer transition-all duration-300"
+              onClick={() => {
+                // Aqui você pode adicionar a lógica para abrir modal de upgrade
+                console.log('Mobile upgrade button clicked');
+              }}
+            >
+              <div className="text-lg mb-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg">
+                🔄
+              </div>
+              <span className="text-xs font-medium text-amber-400">
+                Upgrade
+              </span>
+            </motion.div>
+          ) : null;
+        })()}
         
         {/* Profile Button */}
         {currentUser && (
