@@ -1357,18 +1357,8 @@ const Home = () => {
         promptId = 2;
       } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
         promptId = 8;
-      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
+      } else if (labSelectedSetupState?.title === "Analisador de Qualidade Jurídica com Nota de Reputação") {
         promptId = 4;
-      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
-        promptId = 5;
-      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
-        promptId = 6;
-      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
-        promptId = 7;
-      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
-        promptId = 3;
-      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
-        promptId = 9;
       } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
         promptId = 1;
       } else {
