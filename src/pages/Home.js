@@ -400,7 +400,7 @@ const Home = () => {
   // Fechar menus quando clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-container') && !event.target.closest('.desktop-menu-container')) {
+      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-container') && !event.target.closest('.desktop-menu-container') && !event.target.closest('.tablet-menu-container')) {
         setIsMobileMenuOpen(false);
       }
       if (isJudgeMenuOpen && !event.target.closest('.judge-menu-container')) {
@@ -3991,46 +3991,46 @@ const Home = () => {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden mx-4 sm:mx-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Modal */}
-            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-neutral-200 dark:border-neutral-700">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
-                  <FaTags className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-secondary rounded-xl flex items-center justify-center">
+                  <FaTags className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                  <h2 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
                     Chip Jurídico
                   </h2>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
                     Selecione as áreas do direito para personalizar suas consultas
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowChipJuridicoModal(false)}
-                className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-lg"
+                className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-sm sm:text-lg"
               >
                 ×
               </button>
             </div>
 
             {/* Conteúdo do Modal */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
+            <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto">
               {/* Botão de ação rápida */}
-              <div className="flex gap-2 mb-6">
+              <div className="flex gap-2 mb-4 sm:mb-6">
                 <button
                   onClick={handleChipJuridicoClearAll}
-                  className="px-4 py-2 bg-neutral-500 hover:bg-neutral-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                  className="px-3 sm:px-4 py-2 bg-neutral-500 hover:bg-neutral-600 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200"
                 >
                   Limpar Todas
                 </button>
               </div>
 
               {/* Grid de checkboxes */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                 {Object.entries({
                   civil: 'Cível',
                   trabalhista: 'Trabalhista',
@@ -4053,7 +4053,7 @@ const Home = () => {
                     key={key}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                    className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                       chipJuridicoAreas[key]
                         ? 'border-accent1 bg-accent1/10 dark:bg-accent1/20'
                         : 'border-neutral-200 dark:border-neutral-600 hover:border-accent1/50 dark:hover:border-accent1/50'
@@ -4064,9 +4064,9 @@ const Home = () => {
                       name="chipJuridicoArea"
                       checked={chipJuridicoAreas[key]}
                       onChange={() => handleChipJuridicoAreaChange(key)}
-                      className="w-5 h-5 text-accent1 bg-neutral-100 border-neutral-300 focus:ring-accent1 dark:focus:ring-accent1 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-accent1 bg-neutral-100 border-neutral-300 focus:ring-accent1 dark:focus:ring-accent1 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
                     />
-                    <span className={`text-sm font-medium ${
+                    <span className={`text-xs sm:text-sm font-medium ${
                       chipJuridicoAreas[key]
                         ? 'text-accent1 dark:text-accent1'
                         : 'text-neutral-700 dark:text-neutral-300'
@@ -4080,14 +4080,14 @@ const Home = () => {
             </div>
 
             {/* Footer do Modal */}
-            <div className="flex items-center justify-between p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50">
-              <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                {getSelectedAreas().length > 0 ? '1 área selecionada' : 'Nenhuma área selecionada'}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 sm:p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50">
+              <div className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400">
+                {getSelectedAreas().length > 0 ? `${getSelectedAreas().length} área${getSelectedAreas().length > 1 ? 's' : ''} selecionada${getSelectedAreas().length > 1 ? 's' : ''}` : 'Nenhuma área selecionada'}
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setShowChipJuridicoModal(false)}
-                  className="px-4 py-2 bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-lg text-sm font-medium transition-colors duration-200"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200"
                 >
                   Cancelar
                 </button>
@@ -4097,7 +4097,7 @@ const Home = () => {
                     toast.success('Preferências do Chip Jurídico salvas!');
                     setShowChipJuridicoModal(false);
                   }}
-                  className="px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                  className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors duration-200"
                 >
                   Salvar Preferências
                 </button>
