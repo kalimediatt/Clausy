@@ -66,7 +66,7 @@
     "xss-clean": "^0.1.4"
   },
   "scripts": {
-    "start": "WDS_SOCKET_HOST=138.197.27.151 WDS_SOCKET_PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true HOST=138.197.27.151 PORT=3000 react-app-rewired start",
+    "start": "cross-env WDS_SOCKET_HOST=localhost WDS_SOCKET_PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true HOST=localhost PORT=3000 react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
