@@ -548,7 +548,8 @@ const Home = () => {
 
   // Função utilitária para obter a chave do chat
   const getCurrentLabChatKey = () => {
-    const key = labSelectedChatName || labSelectedConversation || 'default';
+    // 🔑 CORREÇÃO CRÍTICA: Priorizar chat_unique_id para permitir múltiplos chats com mesmo nome
+    const key = labSelectedChatUniqueId || labSelectedChatName || labSelectedConversation || 'default';
     
     return key;
   };
@@ -558,7 +559,7 @@ const Home = () => {
   const labChatContainerRef = useRef(null);
   
   // Auto-scroll inteligente
-  const chatScrollRef = useAutoScroll([safeGet(labMessagesByChat, labSelectedChatName || labSelectedConversation || 'default', [])]);
+  const chatScrollRef = useAutoScroll([safeGet(labMessagesByChat, getCurrentLabChatKey(), [])]);
   const aiScrollRef = useAutoScroll([messages]);
 
   // Função para fazer scroll do lab chat
@@ -715,7 +716,7 @@ const Home = () => {
     if (currentMessages.length > 0) {
       scrollToBottomMobile();
     }
-  }, [labMessagesByChat, labSelectedChatName, labSelectedConversation, scrollToBottomMobile]);
+  }, [labMessagesByChat, labSelectedChatName, labSelectedChatUniqueId, labSelectedConversation, scrollToBottomMobile]);
 
   // Função para limpar todo o cache de mensagens
   const clearMessageCache = useCallback(() => {
@@ -762,25 +763,33 @@ const Home = () => {
   // Efeito para recarregar mensagens quando o chat selecionado mudar
   useEffect(() => {
     if (labSelectedChatName && activeItem === 'laboratory') {
+      console.log('🔄 [FRONTEND] Mudança de chat detectada:', {
+        chat_name: labSelectedChatName,
+        chat_unique_id: labSelectedChatUniqueId
+      });
+      
+      // 🔑 CORREÇÃO: Usar chat_unique_id como chave do cache
+      const currentChatKey = labSelectedChatUniqueId || labSelectedChatName;
+      
       // Limpar cache antes de carregar mensagens
       setLabMessagesByChat(prev => {
         const newState = { ...prev };
         // Manter apenas o chat atual, limpar outros
-        const currentChatMessages = newState[labSelectedChatName] || [];
-        return { [labSelectedChatName]: currentChatMessages };
+        const currentChatMessages = newState[currentChatKey] || [];
+        return { [currentChatKey]: currentChatMessages };
       });
       
       setLabPendingMessagesByChat(prev => {
         const newState = { ...prev };
         // Manter apenas o chat atual, limpar outros
-        const currentPendingMessages = newState[labSelectedChatName] || [];
-        return { [labSelectedChatName]: currentPendingMessages };
+        const currentPendingMessages = newState[currentChatKey] || [];
+        return { [currentChatKey]: currentPendingMessages };
       });
       
 
       loadChatMessages(labSelectedChatName, true);
     }
-  }, [labSelectedChatName, activeItem]); // Mantidas apenas dependências essenciais
+  }, [labSelectedChatName, labSelectedChatUniqueId, activeItem]); // 🔑 ADICIONADO labSelectedChatUniqueId
 
   // Atalhos de teclado
   useKeyboardShortcuts({
@@ -1416,29 +1425,48 @@ const Home = () => {
       let session_id;
       let chat_name;
       
-      // Priorizar o chat_name do chat selecionado
+      // Priorizar o chat_unique_id para identificar o chat corretamente (permite nomes duplicados)
       if (labSelectedChatName) {
         chat_name = labSelectedChatName;
-        // Procurar o session_id correspondente no histórico
+        // Procurar o chat específico usando chat_unique_id (não apenas nome)
         if (labChatHistory && labChatHistory.length > 0) {
-          const selectedChat = labChatHistory.find(
-            c => c.chat_name === labSelectedChatName || c.name === labSelectedChatName
-          );
+          const selectedChat = labChatHistory.find(c => {
+            // Se temos chat_unique_id, usar ele para identificar (mais preciso)
+            if (labSelectedChatUniqueId && c.chat_unique_id) {
+              return c.chat_unique_id === labSelectedChatUniqueId;
+            }
+            // Fallback: buscar por nome (para chats antigos sem ID único)
+            return c.chat_name === labSelectedChatName || c.name === labSelectedChatName;
+          });
           if (selectedChat) {
             session_id = selectedChat.session_id || labSelectedConversation;
+            // Garantir que o chat_unique_id está sincronizado
+            if (selectedChat.chat_unique_id && selectedChat.chat_unique_id !== labSelectedChatUniqueId) {
+              setLabSelectedChatUniqueId(selectedChat.chat_unique_id);
+            }
           } else {
             session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
           }
         } else {
           session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         }
-      } else if (!labSelectedChatName) {
+      }
+      
+      // Variável local para armazenar o chat_unique_id (evita problemas de setState assíncrono)
+      let currentChatUniqueId;
+      
+      if (!labSelectedChatName) {
         // Criar novo chat com nome baseado na primeira mensagem do usuário
-        session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
+        session_id = getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         
-        // Gerar ID único que nunca se repete para este chat
-        const chatUniqueId = generateUniqueChatId();
-        setLabSelectedChatUniqueId(chatUniqueId);
+        // SEMPRE gerar novo ID único para chat novo (NUNCA reutilizar estado anterior)
+        currentChatUniqueId = generateUniqueChatId();
+        setLabSelectedChatUniqueId(currentChatUniqueId);
+        
+        console.log('✅ [FRONTEND] Criando NOVO chat - ID gerado:', {
+          chat_unique_id: currentChatUniqueId,
+          chat_name: 'será definido abaixo'
+        });
         
         // Usar a primeira mensagem do usuário como nome do chat
         if (labInput.trim()) {
@@ -1456,21 +1484,31 @@ const Home = () => {
         // Chat já existe, usar o nome e session_id existentes
         chat_name = labSelectedChatName;
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
-        // Se já existe um ID único, mantê-lo; caso contrário, gerar um novo (para chats antigos)
-        if (!labSelectedChatUniqueId) {
-          const chatUniqueId = generateUniqueChatId();
-          setLabSelectedChatUniqueId(chatUniqueId);
+        
+        // IMPORTANTE: Usar o ID único do chat selecionado (já está no estado)
+        currentChatUniqueId = labSelectedChatUniqueId;
+        
+        // Se não tiver ID, gerar um novo (para chats antigos sem ID)
+        if (!currentChatUniqueId) {
+          currentChatUniqueId = generateUniqueChatId();
+          setLabSelectedChatUniqueId(currentChatUniqueId);
+          console.log('⚠️ [FRONTEND] Chat existente sem ID único - ID gerado:', currentChatUniqueId);
+        } else {
+          console.log('✅ [FRONTEND] Usando ID do chat existente:', {
+            chat_name,
+            chat_unique_id: currentChatUniqueId
+          });
         }
       }
       
-      // Obter o ID único atual (já deve estar definido acima)
-      const currentChatUniqueId = labSelectedChatUniqueId || generateUniqueChatId();
+      // 🔑 CORREÇÃO CRÍTICA: Usar chat_unique_id como chatKey (permite múltiplos chats com mesmo nome)
+      chatKey = currentChatUniqueId;
       
-      // Atualizar chatKey se for um novo chat
-      if (!labSelectedChatName) {
-        chatKey = chat_name;
-  
-      }
+      console.log('🔑 [FRONTEND] Chave de cache para mensagem:', {
+        chatKey,
+        chat_name,
+        chat_unique_id: currentChatUniqueId
+      });
       
       // Adicionar mensagem do usuário ao chat correto
       setLabMessagesByChat(prev => {
@@ -1730,20 +1768,14 @@ const Home = () => {
           setLabSelectedConversation(session_id);
           setLabSelectedChatUniqueId(currentChatUniqueId);
           
-          // Limpar cache de mensagens para o novo chat
-          setLabMessagesByChat(prev => {
-            const newState = { ...prev };
-            delete newState[chatKey];
-            return newState;
-          });
+          // ✅ NÃO limpar cache - as mensagens já foram adicionadas corretamente acima
+          // O cache já contém a mensagem do usuário e a resposta da IA
           
-          // Limpar cache de mensagens pendentes
-          setLabPendingMessagesByChat(prev => {
-            const newState = { ...prev };
-            delete newState[chatKey];
-            return newState;
+          console.log('✅ [FRONTEND] Chat criado e mensagens armazenadas:', {
+            chatKey,
+            chat_name,
+            chat_unique_id: currentChatUniqueId
           });
-          
       
           showSuccessToast(`Chat "${chat_name}" criado com sucesso!`);
         } catch (error) {
@@ -2533,6 +2565,11 @@ const Home = () => {
   // [4] Atualize loadChatMessages para segmentar por chat
   const loadChatMessages = async (chatName, isSwitchingChat = false) => {
     try {
+      console.log('🔍 [FRONTEND] Iniciando loadChatMessages:', {
+        chat_name: chatName,
+        chat_unique_id: labSelectedChatUniqueId,
+        isSwitchingChat
+      });
       
       const response = await fetch('http://138.197.27.151:5000/api/lab-chats/messages', {
         method: 'POST',
@@ -2550,6 +2587,15 @@ const Home = () => {
       }
       const data = await response.json();
       
+      console.log('📦 [FRONTEND] Resposta recebida do backend:', {
+        success: data.success,
+        dataType: typeof data,
+        isArray: Array.isArray(data),
+        hasMessages: !!data.messages,
+        messagesLength: data.messages?.length || 0,
+        dataKeys: Object.keys(data)
+      });
+      
       let messages = [];
       if (Array.isArray(data)) {
         messages = data.map(item => ({
@@ -2566,8 +2612,17 @@ const Home = () => {
           timestamp: item.last_update || new Date().toISOString()
         }));
       }
-      // Merge inteligente: mantenha mensagens pendentes que não estão no histórico
-      const chatKey = chatName || labSelectedConversation || 'default';
+      
+      console.log(`✅ [FRONTEND] Total de mensagens processadas: ${messages.length}`);
+      
+      // 🔑 CORREÇÃO CRÍTICA: usar chat_unique_id como chave (permite múltiplos chats com mesmo nome)
+      const chatKey = labSelectedChatUniqueId || chatName || labSelectedConversation || 'default';
+      
+      console.log('🔑 [FRONTEND] Chave de cache utilizada:', {
+        chatKey,
+        chat_name: chatName,
+        chat_unique_id: labSelectedChatUniqueId
+      });
       let mergedMessages = messages;
       const pending = safeGet(labPendingMessagesByChat, chatKey, []);
       
@@ -2746,9 +2801,9 @@ const Home = () => {
                     ${isMobile ? 'gap-1 pr-1' : 'gap-0.5 pr-2'}`}>
                     {labChatHistory.map((session, idx) => (
                       <div
-                        key={session.session_id || session.id}
+                        key={session.chat_unique_id || session.session_id || session.id}
                         className={`relative cursor-pointer group flex items-center gap-3 transition-all duration-200 ${
-                          labSelectedConversation === (session.session_id || session.id) 
+                          labSelectedChatUniqueId === session.chat_unique_id
                             ? 'bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100' 
                             : 'hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
                         } ${isMobile ? 'rounded-lg p-2' : 'rounded-lg p-1 lg:p-1.5'}`}
@@ -3933,12 +3988,12 @@ const Home = () => {
                   className="space-y-3"
                 >
                   {labChatHistory.map((session, idx) => {
-                    const isActive = labSelectedConversation === (session.session_id || session.id);
+                    const isActive = labSelectedChatUniqueId === session.chat_unique_id;
                     const chatName = session.chat_name || session.session_id || session.name;
                     
                     return (
                       <motion.div
-                        key={session.session_id || session.id}
+                        key={session.chat_unique_id || session.session_id || session.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}

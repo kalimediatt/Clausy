@@ -176,28 +176,47 @@ const checkTokenLimit = async (req, res, next) => {
   }
 };
 
-// Rota para obter histórico de chats
+// Rota para obter histórico de chats (não usada - histórico vem do n8n via /lab-chats/messages)
 router.post('/lab-chats/history', async (req, res) => {
   try {
-    const { chat_name } = req.body;
+    const { chat_name, chat_unique_id } = req.body;
     
-    if (!chat_name) {
-      return res.status(400).json({
-        success: false,
-        message: 'chat_name é obrigatório'
-      });
+    // Se tiver chat_unique_id, buscar por ele (preferencial)
+    if (chat_unique_id) {
+      const historyKey = `labchats:${chat_unique_id}`;
+      const history = await redis.get(historyKey);
+      
+      if (history) {
+        const parsedHistory = JSON.parse(history);
+        return res.json(parsedHistory);
+      }
     }
     
-    // Buscar histórico do Redis
-    const historyKey = `lab_chat:${chat_name}`;
-    const history = await redis.get(historyKey);
-    
-    if (history) {
-      const parsedHistory = JSON.parse(history);
-      res.json(parsedHistory);
-    } else {
-      res.json([]);
+    // Fallback: buscar por chat_name (pode retornar múltiplos se houver duplicatas)
+    if (chat_name) {
+      const pattern = `labchats:*`;
+      const keys = await redis.keys(pattern);
+      const chats = [];
+      
+      for (const key of keys) {
+        const chatData = await redis.get(key);
+        if (chatData) {
+          const parsed = JSON.parse(chatData);
+          if (parsed.chat_name === chat_name) {
+            chats.push(parsed);
+          }
+        }
+      }
+      
+      return res.json(chats);
     }
+    
+    // Se não tiver nem chat_name nem chat_unique_id
+    return res.status(400).json({
+      success: false,
+      message: 'chat_name ou chat_unique_id é obrigatório'
+    });
+    
   } catch (error) {
     console.error('Erro ao buscar histórico:', error);
     res.status(500).json({
@@ -229,71 +248,63 @@ router.post('/lab-chats/save', async (req, res) => {
       });
     }
     
-    // Salvar no Redis - chave baseada no nome do chat
-    const chatKey = `lab_chat:${chat_name}`;
-    
-    // Verificar se já existe um chat com essa chave
+    // Gerar ou usar chat_unique_id fornecido
     let finalChatUniqueId;
+    if (chat_unique_id !== undefined && chat_unique_id !== null && chat_unique_id !== '') {
+      finalChatUniqueId = chat_unique_id;
+      console.log('✅ [DEBUG] Usando chat_unique_id fornecido pelo frontend:', {
+        chat_name,
+        chat_unique_id: finalChatUniqueId,
+        user_id
+      });
+    } else {
+      // Gerar UUID se não foi fornecido
+      finalChatUniqueId = generateUniqueChatId();
+      console.log('⚠️ [DEBUG] chat_unique_id NÃO foi fornecido, gerando novo UUID:', {
+        chat_name,
+        chat_unique_id_gerado: finalChatUniqueId,
+        user_id
+      });
+    }
+    
+    // Salvar no Redis - chave baseada no chat_unique_id (permite nomes duplicados)
+    const chatKey = `labchats:${finalChatUniqueId}`;
+    
+    console.log('🔑 [DEBUG] Chave Redis que será usada:', {
+      chatKey,
+      chat_name,
+      chat_unique_id: finalChatUniqueId,
+      permite_duplicatas: true
+    });
+    
+    // Verificar se já existe um chat com esse ID (atualização)
     let existingData = null;
-    let shouldUpdate = false;
+    let isUpdate = false;
     
     try {
       existingData = await redis.get(chatKey);
       if (existingData) {
-        try {
-          const parsedExisting = JSON.parse(existingData);
-          console.log('⚠️ [DEBUG] Já existe um chat com essa chave:', {
-            chatKey,
-            existing_chat_unique_id: parsedExisting.chat_unique_id,
-            existing_user_id: parsedExisting.user_id,
-            new_user_id: user_id
-          });
-          
-          // Se já existe e tem chat_unique_id válido, preservá-lo
-          if (parsedExisting.chat_unique_id && parsedExisting.chat_unique_id !== null && parsedExisting.chat_unique_id !== '') {
-            console.log('ℹ️ [DEBUG] Preservando chat_unique_id existente:', parsedExisting.chat_unique_id);
-            finalChatUniqueId = parsedExisting.chat_unique_id;
-            shouldUpdate = true; // Vamos atualizar o chat existente
-          } else {
-            // Existe mas não tem chat_unique_id, vamos usar o novo ou gerar um
-            if (chat_unique_id !== undefined && chat_unique_id !== null && chat_unique_id !== '') {
-              finalChatUniqueId = chat_unique_id;
-            } else {
-              finalChatUniqueId = generateUniqueChatId();
-              console.log('⚠️ [DEBUG] Chat existente sem chat_unique_id, gerando novo:', finalChatUniqueId);
-            }
-            shouldUpdate = true;
-          }
-        } catch (parseError) {
-          console.error('❌ Erro ao fazer parse do dado existente:', parseError);
-          // Se der erro no parse, tratar como se não existisse
-          existingData = null;
-        }
+        const parsedExisting = JSON.parse(existingData);
+        console.log('ℹ️ [DEBUG] Atualizando chat existente:', {
+          chatKey,
+          chat_unique_id: finalChatUniqueId,
+          existing_user_id: parsedExisting.user_id,
+          new_user_id: user_id
+        });
+        isUpdate = true;
       }
-    } catch (redisGetError) {
-      console.error('❌ Erro ao verificar dados existentes no Redis:', redisGetError);
+    } catch (error) {
+      console.error('Erro ao verificar chat existente (não crítico):', error.message);
       existingData = null;
-    }
-    
-    // Se não existe, determinar o chat_unique_id a usar
-    if (!existingData) {
-      if (chat_unique_id !== undefined && chat_unique_id !== null && chat_unique_id !== '') {
-        finalChatUniqueId = chat_unique_id;
-        console.log('✅ [DEBUG] Usando chat_unique_id fornecido pelo frontend:', finalChatUniqueId);
-      } else {
-        // Gerar UUID se não foi fornecido
-        finalChatUniqueId = generateUniqueChatId();
-        console.log('⚠️ [DEBUG] chat_unique_id não foi fornecido, gerando novo UUID:', finalChatUniqueId);
-      }
     }
     
     // Criar objeto com os dados a serem salvos
     const chatData = {
-      user_id,
+      user_id: parseInt(user_id),
       chat_name,
       session_id,
       chat_unique_id: finalChatUniqueId, // ID único que nunca se repete
-      created_at: existingData ? (JSON.parse(existingData).created_at || new Date().toISOString()) : new Date().toISOString(),
+      created_at: isUpdate && existingData ? (JSON.parse(existingData).created_at || new Date().toISOString()) : new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
@@ -302,7 +313,8 @@ router.post('/lab-chats/save', async (req, res) => {
       chatKey,
       chatData,
       chat_unique_id_salvo: chatData.chat_unique_id,
-      isUpdate: shouldUpdate,
+      isUpdate,
+      permiteDuplicatas: true,
       json_stringify: JSON.stringify(chatData)
     });
     
@@ -375,7 +387,7 @@ router.post('/lab-chats/hide', async (req, res) => {
     }
     
     // Remover do Redis
-    const pattern = `lab_chat:*`;
+    const pattern = `labchats:*`;
     const keys = await redis.keys(pattern);
     
     for (const key of keys) {
@@ -415,7 +427,7 @@ router.get('/lab-chats/all', async (req, res) => {
     }
     
     // Buscar todos os chats do usuário
-    const pattern = `lab_chat:*`;
+    const pattern = `labchats:*`;
     const keys = await redis.keys(pattern);
     const chats = [];
     
@@ -520,11 +532,13 @@ router.post('/lab-chats/messages', async (req, res) => {
       
       const data = await n8nResponse.json();
       
-      console.log('✅ Resposta do n8n recebida:', {
+      console.log('✅ [BACKEND] Resposta do n8n recebida:', {
         chat_name,
-        data: typeof data,
+        chat_unique_id,
+        dataType: typeof data,
         isArray: Array.isArray(data),
-        dataKeys: data ? Object.keys(data) : []
+        dataKeys: data ? Object.keys(data) : [],
+        dataSample: JSON.stringify(data).substring(0, 200) + '...'
       });
       
       // Processar resposta do n8n
@@ -532,15 +546,30 @@ router.post('/lab-chats/messages', async (req, res) => {
       
       if (Array.isArray(data)) {
         messages = data;
+        console.log('📦 [BACKEND] Formato: Array direto');
       } else if (data.messages && Array.isArray(data.messages)) {
         messages = data.messages;
+        console.log('📦 [BACKEND] Formato: data.messages');
       } else if (data.history && Array.isArray(data.history)) {
         messages = data.history;
+        console.log('📦 [BACKEND] Formato: data.history');
       } else if (data.data && Array.isArray(data.data)) {
         messages = data.data;
+        console.log('📦 [BACKEND] Formato: data.data');
+      } else {
+        console.warn('⚠️ [BACKEND] Formato de resposta não reconhecido');
       }
       
-      console.log(`✅ Total de mensagens processadas: ${messages.length}`);
+      console.log(`✅ [BACKEND] Total de mensagens processadas: ${messages.length}`);
+      
+      if (messages.length > 0) {
+        console.log('📝 [BACKEND] Primeira mensagem (amostra):', {
+          id: messages[0].id,
+          messageType: messages[0].message?.type,
+          contentPreview: messages[0].message?.content?.substring(0, 50) + '...',
+          timestamp: messages[0].last_update
+        });
+      }
       
       res.json({
         success: true,
@@ -668,8 +697,9 @@ router.post('/lab-chats/send', upload.single('file'), validateFile, checkTokenLi
     // chat_name, session_id e chat_unique_id já foram extraídos acima
     if (chat_name && session_id) {
       try {
-        const chatKey = `lab_chat:${chat_name}`;
-        const chatExists = await redis.exists(chatKey);
+        // Usar chat_unique_id como chave (permite nomes duplicados)
+        const uniqueChatKey = `labchats:${chat_unique_id}`;
+        const chatExists = await redis.exists(uniqueChatKey);
         
         if (!chatExists) {
           // Criar registro básico do chat se não existir (apenas configuração)
@@ -677,25 +707,29 @@ router.post('/lab-chats/send', upload.single('file'), validateFile, checkTokenLi
             user_id: parseInt(user_id),
             chat_name,
             session_id,
-            chat_unique_id: req.body.chat_unique_id || generateUniqueChatId(),
+            chat_unique_id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
           
-          await redis.setex(chatKey, 86400 * 7, JSON.stringify(chatData));
+          await redis.setex(uniqueChatKey, 86400 * 7, JSON.stringify(chatData));
           console.log('✅ Chat criado automaticamente no Redis (apenas configuração):', {
-            chatKey,
+            chatKey: uniqueChatKey,
             chat_name,
+            chat_unique_id,
             user_id
           });
         } else {
           // Atualizar timestamp do chat (apenas configuração)
           try {
-            const existingChat = await redis.get(chatKey);
+            const existingChat = await redis.get(uniqueChatKey);
             if (existingChat) {
               const chatData = JSON.parse(existingChat);
               chatData.updated_at = new Date().toISOString();
-              await redis.setex(chatKey, 86400 * 7, JSON.stringify(chatData));
+              // Atualizar chat_name e session_id também (podem ter mudado)
+              chatData.chat_name = chat_name;
+              chatData.session_id = session_id;
+              await redis.setex(uniqueChatKey, 86400 * 7, JSON.stringify(chatData));
             }
           } catch (error) {
             console.error('Erro ao atualizar timestamp do chat (não crítico):', error.message);
