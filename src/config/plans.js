@@ -4,8 +4,8 @@ const PLANS = {
     name: 'FREE_TRIAL',
     displayName: 'Free Trial',
     color: '#64748b',
-    rateLimit: 50, // 50 req/hora
-    tokenLimit: 3000,
+    rateLimit: 50000, // 50 req/hora
+    tokenLimit: 300000000,
     historyRetention: '24h',
     price: 0
   },
@@ -13,8 +13,8 @@ const PLANS = {
     name: 'BASIC',
     displayName: 'Básico',
     color: '#3b82f6',
-    rateLimit: 20, // 20 req/hora
-    tokenLimit: 50000,
+    rateLimit: 20000, // 20 req/hora
+    tokenLimit: 5000000000,
     historyRetention: '7d',
     price: 99.90
   },
@@ -22,8 +22,8 @@ const PLANS = {
     name: 'STANDARD',
     displayName: 'Standard',
     color: '#3b82f6',
-    rateLimit: 150, // 150 req/hora
-    tokenLimit: 15000,
+    rateLimit: 150000, // 150 req/hora
+    tokenLimit: 150000000000,
     historyRetention: '7d',
     price: 99.90
   },
@@ -31,8 +31,8 @@ const PLANS = {
     name: 'PRO',
     displayName: 'Pro',
     color: '#10b981',
-    rateLimit: 1000, // 1000 req/hora
-    tokenLimit: 50000,
+    rateLimit: 100000, // 1000 req/hora
+    tokenLimit: 500000000000,
     historyRetention: '30d',
     price: 249.90
   },
@@ -40,8 +40,8 @@ const PLANS = {
     name: 'ENTERPRISE',
     displayName: 'Enterprise',
     color: '#f59e0b',
-    rateLimit: 10000, // 10000 req/hora
-    tokenLimit: 200000,
+    rateLimit: 1000000, // 100000 req/hora
+    tokenLimit: 500000000000000,
     historyRetention: '90d',
     price: 499.90
   }

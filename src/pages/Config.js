@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FaSun, FaMoon, FaBell, FaSave, FaLanguage, FaCog, FaToggleOn, FaToggleOff, FaChevronDown } from "react-icons/fa";
 import { useAuth } from '../contexts/AuthContext';
 
+// ⚙️ CONFIGURAÇÃO RÁPIDA: Habilita/Desabilita o botão de Modo Escuro
+// Para BLOQUEAR: mude para false
+// Para HABILITAR: mude para true
+const ENABLE_THEME_TOGGLE = false;
+
 const Config = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const { currentUser } = useAuth();
@@ -95,15 +100,16 @@ const Config = () => {
     return languageOptions.find(option => option.value === language)?.label || '🇧🇷 Português';
   };
 
-  const ToggleButton = ({ isActive, onClick, label }) => (
-    <label className="relative inline-flex items-center cursor-pointer">
+  const ToggleButton = ({ isActive, onClick, label, disabled = false }) => (
+    <label className={`relative inline-flex items-center ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
       <input 
         type="checkbox" 
         checked={isActive}
         onChange={onClick}
+        disabled={disabled}
         className="sr-only peer" 
       />
-      <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600"></div>
+      <div className={`w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-amber-600 ${disabled ? 'opacity-50' : ''}`}></div>
     </label>
   );
 
@@ -203,6 +209,7 @@ const Config = () => {
                   isActive={theme === "dark"} 
                   onClick={toggleTheme}
                   label="Toggle dark mode"
+                  disabled={!ENABLE_THEME_TOGGLE}
                 />
               </div>
             </motion.div>

@@ -129,14 +129,14 @@ const SUBSCRIPTION_PLANS = {
   },
   ENTERPRISE: {
     name: 'Enterprise',
-    maxQueriesPerHour: 10000,
-    maxTokensPerHour: 200000,
+    maxQueriesPerHour: 100000,
+    maxTokensPerHour: 5000000000,
     historyRetention: 2160, // 90 dias
     price: 'R$ 499,90/mês',
     color: '#f59e0b', // Laranja
     features: [
-      'Até 10.000 consultas por hora',
-      'Limite de 200.000 tokens por hora',
+      'Até 100.000 consultas por hora',
+      'Limite de 5.000.000.000 tokens por hora',
       'Histórico de 90 dias',
       'Acesso prioritário a novos recursos',
       'Atendimento prioritário',

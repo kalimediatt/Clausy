@@ -152,6 +152,21 @@ const Button = styled.button`
 
 
 
+// Função para gerar UUID v4 único (código que nunca se repete)
+function generateUniqueChatId() {
+  // Usar crypto.randomUUID() se disponível (navegadores modernos)
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  
+  // Fallback: gerar UUID v4 manualmente
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Função para gerar session_id único por sessão de login
 function generateSessionId(userId) {
   const now = new Date();
@@ -218,24 +233,49 @@ async function fetchLabChatsFromBackend() {
 }
 
 // Função para salvar chat no Redis
-async function saveLabChatToRedis(userId, chatName, sessionId) {
+async function saveLabChatToRedis(userId, chatName, sessionId, chatUniqueId = null) {
   try {
+    // Log de debug antes de enviar
+    console.log('🔍 [DEBUG FRONTEND] Dados que serão enviados para salvar chat:', {
+      userId,
+      chatName,
+      sessionId,
+      chatUniqueId,
+      chatUniqueId_type: typeof chatUniqueId,
+      chatUniqueId_value: chatUniqueId,
+      chatUniqueId_isNull: chatUniqueId === null,
+      chatUniqueId_isUndefined: chatUniqueId === undefined
+    });
+    
+    const requestBody = {
+      user_id: userId,
+      chat_name: chatName,
+      session_id: sessionId,
+      chat_unique_id: chatUniqueId // ID único que nunca se repete
+    };
+    
+    console.log('📤 [DEBUG FRONTEND] Request body JSON:', JSON.stringify(requestBody, null, 2));
+    
     const response = await fetch('http://138.197.27.151:5000/api/lab-chats/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
       },
-      body: JSON.stringify({
-        user_id: userId,
-        chat_name: chatName,
-        session_id: sessionId
-      })
+      body: JSON.stringify(requestBody)
     });
+    
     const data = await response.json();
+    
+    console.log('📥 [DEBUG FRONTEND] Resposta do servidor:', {
+      success: data.success,
+      chat: data.chat,
+      chat_unique_id_retornado: data.chat?.chat_unique_id
+    });
+    
     return data.chats || [];
   } catch (err) {
-    console.error('Erro ao salvar chat no Redis:', err);
+    console.error('❌ Erro ao salvar chat no Redis:', err);
     return [];
   }
 }
@@ -464,6 +504,7 @@ const Home = () => {
   const [labChatHistory, setLabChatHistory] = useState([]);
   const [labSelectedConversation, setLabSelectedConversation] = useState(null);
   const [labSelectedChatName, setLabSelectedChatName] = useState(null);
+  const [labSelectedChatUniqueId, setLabSelectedChatUniqueId] = useState(null); // ID único que nunca se repete
   const [labHistoryLoading, setLabHistoryLoading] = useState(false);
   // [1] Adicione o estado para mensagens pendentes do laboratório
   const [labPendingMessages, setLabPendingMessages] = useState([]);
@@ -1356,7 +1397,7 @@ const Home = () => {
       } else if (labSelectedSetupState?.title === "Pesquisador de Jurisprudência Atualizada") {
         promptId = 2;
       } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
-        promptId = 8;
+        promptId = 3;
       } else if (labSelectedSetupState?.title === "Analisador de Qualidade Jurídica com Nota de Reputação") {
         promptId = 4;
       } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
@@ -1395,6 +1436,10 @@ const Home = () => {
         // Criar novo chat com nome baseado na primeira mensagem do usuário
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         
+        // Gerar ID único que nunca se repete para este chat
+        const chatUniqueId = generateUniqueChatId();
+        setLabSelectedChatUniqueId(chatUniqueId);
+        
         // Usar a primeira mensagem do usuário como nome do chat
         if (labInput.trim()) {
           // Pegar as primeiras palavras da mensagem (máximo 30 caracteres)
@@ -1411,7 +1456,15 @@ const Home = () => {
         // Chat já existe, usar o nome e session_id existentes
         chat_name = labSelectedChatName;
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
+        // Se já existe um ID único, mantê-lo; caso contrário, gerar um novo (para chats antigos)
+        if (!labSelectedChatUniqueId) {
+          const chatUniqueId = generateUniqueChatId();
+          setLabSelectedChatUniqueId(chatUniqueId);
+        }
       }
+      
+      // Obter o ID único atual (já deve estar definido acima)
+      const currentChatUniqueId = labSelectedChatUniqueId || generateUniqueChatId();
       
       // Atualizar chatKey se for um novo chat
       if (!labSelectedChatName) {
@@ -1442,6 +1495,7 @@ const Home = () => {
         formData.append('user_id', userId);
         formData.append('chat_name', chat_name);
         formData.append('session_id', session_id);
+        formData.append('chat_unique_id', currentChatUniqueId); // ID único que nunca se repete
         formData.append('file', labSelectedFile);
         
         // Adiciona o parâmetro mode do Chip Jurídico
@@ -1474,7 +1528,8 @@ const Home = () => {
           id: userId,
           user_id: userId,
           chat_name,
-          session_id
+          session_id,
+          chat_unique_id: currentChatUniqueId // ID único que nunca se repete
         };
         
         // Adiciona o parâmetro mode do Chip Jurídico
@@ -1649,6 +1704,7 @@ const Home = () => {
             session_id: session_id,
             chat_name: chat_name,
             name: chat_name,
+            chat_unique_id: currentChatUniqueId, // ID único que nunca se repete
             messages: [userMessage, labResponse],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -1657,9 +1713,22 @@ const Home = () => {
           // Adicionar ao histórico local
           setLabChatHistory(prev => [chatToSave, ...prev]);
           
+          // Salvar no Redis também
+          const userId = currentUser?.user_id || currentUser?.id;
+          if (userId) {
+            await saveLabChatToRedis(userId, chat_name, session_id, currentChatUniqueId);
+            
+            // Recarregar histórico do Redis para sincronizar
+            const updatedChats = await fetchLabChatsFromRedis(userId);
+            if (updatedChats.length > 0) {
+              setLabChatHistory(updatedChats);
+            }
+          }
+          
           // Definir como chat selecionado
           setLabSelectedChatName(chat_name);
           setLabSelectedConversation(session_id);
+          setLabSelectedChatUniqueId(currentChatUniqueId);
           
           // Limpar cache de mensagens para o novo chat
           setLabMessagesByChat(prev => {
@@ -2280,6 +2349,7 @@ const Home = () => {
     setLabMessages([]);
     setLabInput('');
     setLabSelectedChatName(null);
+    setLabSelectedChatUniqueId(null); // Limpar ID único ao limpar chat
     toast.success('Chat da Central Jurídica limpo com sucesso!');
   };
 
@@ -2308,6 +2378,8 @@ const Home = () => {
       // Gerar um novo sessionId único para cada novo chat
       const sessionId = generateSessionId(userId);
       
+      // Gerar ID único que nunca se repete para este chat
+      const chatUniqueId = generateUniqueChatId();
       
       // Limpar estados
       setLabMessages([]);
@@ -2315,6 +2387,7 @@ const Home = () => {
       setLabSelectedFile(null);
       setLabSelectedConversation(sessionId);
       setLabSelectedChatName(chatName);
+      setLabSelectedChatUniqueId(chatUniqueId);
       
       // Fechar modal e limpar nome
       setNewChatName('');
@@ -2324,7 +2397,7 @@ const Home = () => {
 
       // Salvar no Redis
       if (currentUser) {
-        await saveLabChatToRedis(userId, chatName, sessionId);
+        await saveLabChatToRedis(userId, chatName, sessionId, chatUniqueId);
         
         // Recarregar histórico
         const updatedChats = await fetchLabChatsFromRedis(userId);
@@ -2468,7 +2541,8 @@ const Home = () => {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
-          chat_name: chatName // sempre use o nome do chat
+          chat_name: chatName, // sempre use o nome do chat
+          chat_unique_id: labSelectedChatUniqueId || null // ID único que nunca se repete
         })
       });
       if (!response.ok) {
@@ -2681,11 +2755,13 @@ const Home = () => {
                         onClick={() => {
                           const chatName = session.chat_name || session.session_id || session.name;
                           const sessionId = session.session_id || session.id;
+                          const chatUniqueId = session.chat_unique_id || null;
                           
                   
                           
                           setLabSelectedConversation(sessionId);
                           setLabSelectedChatName(chatName);
+                          setLabSelectedChatUniqueId(chatUniqueId); // Restaurar ID único do chat
                           
                           // Buscar mensagens do chat específico da API externa
                           loadChatMessages(chatName, true); // use sempre o nome do chat
@@ -2701,6 +2777,11 @@ const Home = () => {
                             ${isMobile ? 'text-sm' : 'text-sm'}`}>
                                   {session.chat_name || session.session_id || session.name}
                                 </span>
+                                {session.chat_unique_id && (
+                                  <span className="block truncate text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 font-mono">
+                                    {session.chat_unique_id}
+                                  </span>
+                                )}
                           </div>
                           
                           {/* Botão de remover */}
@@ -3556,7 +3637,7 @@ const Home = () => {
 
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-800 dark:text-gray-200 transition-all duration-500">
+    <div className="flex h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:bg-[#cbdb47] transition-all duration-500">
       <Sidebar 
         isOpen={isOpen}
         setIsOpen={setIsOpen}
@@ -3871,9 +3952,11 @@ const Home = () => {
                         onClick={() => {
                           const chatName = session.chat_name || session.name;
                           const sessionId = session.session_id || session.id;
+                          const chatUniqueId = session.chat_unique_id || null;
                           
                           setLabSelectedConversation(sessionId);
                           setLabSelectedChatName(chatName);
+                          setLabSelectedChatUniqueId(chatUniqueId); // Restaurar ID único do chat
                           
                           // Buscar mensagens do chat específico da API externa
                           loadChatMessages(chatName, true);
@@ -3914,6 +3997,11 @@ const Home = () => {
                                   </motion.span>
                                 )}
                               </div>
+                              {session.chat_unique_id && (
+                                <p className="text-neutral-400 dark:text-neutral-500 text-xs font-mono truncate mb-1">
+                                  {session.chat_unique_id}
+                                </p>
+                              )}
                               <p className="text-neutral-500 dark:text-neutral-400 text-xs lg:text-sm">
                                 {isActive ? 'Conversa atual' : 'Clique para abrir'}
                               </p>

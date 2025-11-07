@@ -13,7 +13,7 @@ const dbConfig = {
 const redis = new Redis({
     host: 'localhost',
     port: 6379,
-    password: 'clausy123'
+    password: 'ClausyRedis2024!'
 });
 
 async function testPlans() {

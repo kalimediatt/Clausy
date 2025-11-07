@@ -184,7 +184,7 @@ const Sidebar = ({
       <div
         className={`
           ${isTablet ? 'w-24' : (isOpen ? 'w-64' : 'w-20')} 
-          bg-gradient-to-b from-neutral-900 via-neutral-800 to-neutral-900
+          bg-[#3c1c54]
           backdrop-blur-lg
           transition-all duration-500 ease-in-out
           flex flex-col

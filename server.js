@@ -330,7 +330,7 @@ app.post('/api/auth/login', async (req, res) => {
 // Get authentication logs
 app.get('/api/auth/logs', authenticateToken, async (req, res) => {
   try {
-    // Only allow admin and superadmin to access logs
+    // Apenas admin e superadmin podem acessar os logs
     if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({
         success: false,
@@ -339,7 +339,7 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
     }
 
     const page = parseInt(req.query.page) || 1;
-    const limit = 20; // Definido como número fixo
+    const limit = 20; // valor fixo
     const offset = (page - 1) * limit;
 
     let query = `
@@ -375,21 +375,14 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
       countParams.push(companyId);
     }
 
-    // Sanitize limit and offset
-    const limitNum = Math.max(1, Math.min(Number(limit), 100)); // limit between 1 and 100
+    // Sanitização de limit e offset
+    const limitNum = Math.max(1, Math.min(Number(limit), 100));
     const offsetNum = Math.max(0, Number(offset));
     query += ` ORDER BY al.timestamp DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
-    // Do NOT push limitNum and offsetNum to queryParams anymore
-    
+
+    // Executa as queries em paralelo
     let logs, totalCount;
     try {
-  
-        query,
-        queryParams,
-        countQuery,
-        countParams
-      });
-      
       [logs, totalCount] = await Promise.all([
         dbService.executeQuery(query, queryParams),
         dbService.executeQuery(countQuery, countParams)
@@ -398,19 +391,21 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
       console.error('Erro ao executar query:', error);
       throw error;
     }
-    
-    // Ensure logs is an array and handle empty results
-    const formattedLogs = Array.isArray(logs) ? logs.map(log => ({
-      id: log.id,
-      username: log.username,
-      ip_address: log.ip_address,
-      success: log.success,
-      status: log.success === 1 ? 'success' : 'failed',
-      timestamp: log.timestamp,
-      user_agent: log.user_agent,
-      additional_info: log.additional_info
-    })) : [];
-    
+
+    // Garante que logs é array e formata resultado
+    const formattedLogs = Array.isArray(logs)
+      ? logs.map(log => ({
+          id: log.id,
+          username: log.username,
+          ip_address: log.ip_address,
+          success: log.success,
+          status: log.success === 1 ? 'success' : 'failed',
+          timestamp: log.timestamp,
+          user_agent: log.user_agent,
+          additional_info: log.additional_info
+        }))
+      : [];
+
     const total = totalCount[0]?.total || 0;
     const totalPages = Math.ceil(total / limit);
 
@@ -432,6 +427,7 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
     });
   }
 });
+
 
 // Rota de logout
 app.post('/api/auth/logout', (req, res) => {
@@ -1566,7 +1562,17 @@ app.post('/api/upload',
 });
 
 // Monica AI API proxy
-app.use('/api/monica-ai', aiRateLimiter, createProxyMiddleware({
+app.use('/api/monica-ai', aiRateLimiter, (req, res, next) => {
+    // Validar API_KEY antes de fazer proxy
+    if (!process.env.API_KEY || process.env.API_KEY === '') {
+        return res.status(500).json({
+            success: false,
+            message: 'API_KEY não configurada. Configure a variável de ambiente API_KEY.',
+            error: 'API_KEY_MISSING'
+        });
+    }
+    next();
+}, createProxyMiddleware({
     target: 'https://openapi.monica.im',
     changeOrigin: true,
     pathRewrite: {
@@ -1574,16 +1580,51 @@ app.use('/api/monica-ai', aiRateLimiter, createProxyMiddleware({
     },
     onProxyReq: (proxyReq, req, res) => {
         // Add API key to the request
-        proxyReq.setHeader('Authorization', `Bearer ${process.env.API_KEY}`);
+        const apiKey = process.env.API_KEY;
+        if (apiKey) {
+            proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
+        }
+        // Adicionar timeout no header
+        proxyReq.setTimeout(300000); // 5 minutos
+    },
+    onProxyRes: (proxyRes, req, res) => {
+        // Log de erros de resposta da API
+        if (proxyRes.statusCode >= 400) {
+            console.error('⚠️ Erro na resposta do proxy da API Monica AI:', {
+                status: proxyRes.statusCode,
+                url: req.url,
+                method: req.method
+            });
+        }
     },
     onError: (err, req, res) => {
-        console.error('Proxy error:', err);
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao conectar com a API da Monica AI'
+        console.error('❌ Proxy error:', {
+            error: err.message,
+            code: err.code,
+            url: req.url,
+            method: req.method
         });
+        
+        let errorMessage = 'Erro ao conectar com a API da Monica AI';
+        let statusCode = 500;
+
+        if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+            errorMessage = 'Timeout ao conectar com a API da IA. A requisição demorou muito para responder.';
+            statusCode = 504; // Gateway Timeout
+        } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+            errorMessage = 'Não foi possível conectar com a API da IA. Verifique sua conexão.';
+            statusCode = 502; // Bad Gateway
+        }
+
+        if (!res.headersSent) {
+            res.status(statusCode).json({
+                success: false,
+                message: errorMessage,
+                error: err.code || 'PROXY_ERROR'
+            });
+        }
     },
-    proxyTimeout: 300000, // 300 segundos
+    proxyTimeout: 300000, // 300 segundos (5 minutos)
     timeout: 300000 // 300 segundos
 }));
 

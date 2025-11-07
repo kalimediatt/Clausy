@@ -1,0 +1,1218 @@
+[
+  {
+    "chat_name": "second_chat",
+    "session_id": "second_chat",
+    "created_at": "2025-07-05T23:33:51.961Z",
+    "user_id": 16,
+    "chat_unique_id": "8f8ee7f3-8570-42ef-b13e-49bf676564b7",
+    "updated_at": "2025-07-05T23:33:51.961Z"
+  },
+  {
+    "chat_name": "third_chat",
+    "session_id": "third_chat",
+    "created_at": "2025-07-05T23:34:49.248Z",
+    "user_id": 16,
+    "chat_unique_id": "2548359d-8c5a-4c76-bc21-f3699295e6a3",
+    "updated_at": "2025-07-05T23:34:49.248Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250802_0244_t31822v7x9p",
+    "created_at": "2025-08-02T02:45:12.011Z",
+    "user_id": 16,
+    "chat_unique_id": "e6dda7fd-d34c-4fe2-aa5e-35f593a8ed81",
+    "updated_at": "2025-08-02T02:45:12.011Z"
+  },
+  {
+    "chat_name": "mn",
+    "session_id": "user_16_session_20250802_0246_4ouzc80zcf5",
+    "created_at": "2025-08-02T02:47:22.128Z",
+    "user_id": 16,
+    "chat_unique_id": "50ac7290-a0f1-41e3-a8ce-14f58eeec39d",
+    "updated_at": "2025-08-02T02:47:22.128Z"
+  },
+  {
+    "chat_name": "test",
+    "session_id": "user_16_session_20250802_0247_ki7xc32h21a",
+    "created_at": "2025-08-02T02:48:18.666Z",
+    "user_id": 16,
+    "chat_unique_id": "f91daac9-890d-4278-8b9b-a91e00d62dce",
+    "updated_at": "2025-08-02T02:48:18.666Z"
+  },
+  {
+    "chat_name": "omanaka",
+    "session_id": "user_16_session_20250808_0200_wkkc5mlsus",
+    "created_at": "2025-08-08T02:00:17.583Z",
+    "user_id": 16,
+    "chat_unique_id": "2a094467-8732-48a1-8a7f-e6796c58b65a",
+    "updated_at": "2025-08-08T02:00:17.583Z"
+  },
+  {
+    "chat_name": "mais um chat de teste",
+    "session_id": "user_16_session_20250816_1647_c9qipfh055",
+    "created_at": "2025-08-16T18:31:21.533Z",
+    "user_id": 16,
+    "chat_unique_id": "a15f793a-6c77-423e-8e7f-f0379096f0de",
+    "updated_at": "2025-08-16T18:31:21.533Z"
+  },
+  {
+    "chat_name": "teste dia 17 de agosto 4:25",
+    "session_id": "user_16_session_20250817_1907_j8lyiz2s7s",
+    "created_at": "2025-08-17T19:25:45.654Z",
+    "user_id": 16,
+    "chat_unique_id": "0a87cfba-e7e7-43d1-97ce-6184747a8409",
+    "updated_at": "2025-08-17T19:25:45.654Z"
+  },
+  {
+    "chat_name": "algum teste serio",
+    "session_id": "user_16_session_20250819_1254_6zgrqhrki6h",
+    "created_at": "2025-08-19T13:59:34.913Z",
+    "user_id": 16,
+    "chat_unique_id": "6d14d0b7-98f2-401b-8270-995e2cb401c9",
+    "updated_at": "2025-08-19T13:59:34.913Z"
+  },
+  {
+    "chat_name": "teste aug 19",
+    "session_id": "user_16_session_20250819_1919_7qohesbeuae",
+    "created_at": "2025-08-19T20:23:58.509Z",
+    "user_id": 16,
+    "chat_unique_id": "dd3593f3-6e2a-42aa-9e11-211e3c5da268",
+    "updated_at": "2025-08-19T20:23:58.509Z"
+  },
+  {
+    "chat_name": "teeste de dragndrop",
+    "session_id": "user_16_session_20250819_2214_po3cvre56vf",
+    "created_at": "2025-08-19T22:30:03.680Z",
+    "user_id": 16,
+    "chat_unique_id": "f8f81459-d184-4eed-9a86-b1584ed00611",
+    "updated_at": "2025-08-19T22:30:03.680Z"
+  },
+  {
+    "chat_name": "teste stef",
+    "session_id": "user_16_session_20250825_1807_97eyo28hx4o",
+    "created_at": "2025-08-25T18:08:18.958Z",
+    "user_id": 16,
+    "chat_unique_id": "2cfc733f-d8d1-4a01-8de9-3dca49f8a7a0",
+    "updated_at": "2025-08-25T18:08:18.958Z"
+  },
+  {
+    "chat_name": "456",
+    "session_id": "user_16_session_20250826_0117_jpeljyzw0zd",
+    "created_at": "2025-08-26T01:22:32.918Z",
+    "user_id": 16,
+    "chat_unique_id": "fd70a7dc-b0c8-44b6-b6ca-9675db29810e",
+    "updated_at": "2025-08-26T01:22:32.918Z"
+  },
+  {
+    "chat_name": "teste1",
+    "session_id": "user_16_session_20250826_0123_083drhkjdano",
+    "created_at": "2025-08-26T01:23:57.246Z",
+    "user_id": 16,
+    "chat_unique_id": "d419128b-178f-4752-8959-ab1a39218a07",
+    "updated_at": "2025-08-26T01:23:57.246Z"
+  },
+  {
+    "chat_name": "45678",
+    "session_id": "user_16_session_20250826_0123_sapcgrl6va",
+    "created_at": "2025-08-26T01:29:21.475Z",
+    "user_id": 16,
+    "chat_unique_id": "d2258579-27b4-4b18-9e93-60dc10be1bb6",
+    "updated_at": "2025-08-26T01:29:21.475Z"
+  },
+  {
+    "chat_name": "1111",
+    "session_id": "user_16_session_20250826_1807_m7svfcpnnc",
+    "created_at": "2025-08-26T18:14:06.093Z",
+    "user_id": 16,
+    "chat_unique_id": "fb26bc7d-e9ed-4a82-bc1b-f60dccb431b6",
+    "updated_at": "2025-08-26T18:14:06.093Z"
+  },
+  {
+    "chat_name": "3333",
+    "session_id": "user_16_session_20250826_1815_bn7mjrv5qwf",
+    "created_at": "2025-08-26T18:16:14.958Z",
+    "user_id": 16,
+    "chat_unique_id": "7a823d62-886d-4fae-9968-a15cc189e56c",
+    "updated_at": "2025-08-26T18:16:14.958Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250826_1906_4l4qdbqq31x",
+    "created_at": "2025-08-26T19:07:08.410Z",
+    "user_id": 16,
+    "chat_unique_id": "04ed7584-4ef2-45b9-abcb-5418266d546d",
+    "updated_at": "2025-08-26T19:07:08.410Z"
+  },
+  {
+    "chat_name": "teste 1",
+    "session_id": "user_16_session_20250827_0118_3r1nco71lts",
+    "created_at": "2025-08-27T01:19:22.120Z",
+    "user_id": 16,
+    "chat_unique_id": "0a730ae1-da61-4e91-9a15-fcbbba70362e",
+    "updated_at": "2025-08-27T01:19:22.120Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250827_0201_flljr0ie4rb",
+    "created_at": "2025-08-27T02:01:17.319Z",
+    "user_id": 16,
+    "chat_unique_id": "757fd1b2-5c43-4313-8db0-892a1535a7f2",
+    "updated_at": "2025-08-27T02:01:17.319Z"
+  },
+  {
+    "chat_name": "vamos testar de novo",
+    "session_id": "user_16_session_20250827_0211_z5h85jknjgj",
+    "created_at": "2025-08-27T02:12:06.499Z",
+    "user_id": 16,
+    "chat_unique_id": "71b440b5-2b25-42c2-b7e4-8ebe24a96f80",
+    "updated_at": "2025-08-27T02:12:06.499Z"
+  },
+  {
+    "chat_name": "quero mais um chat",
+    "session_id": "user_16_session_20250827_0213_lwcmxdhyysl",
+    "created_at": "2025-08-27T02:15:40.111Z",
+    "user_id": 16,
+    "chat_unique_id": "0a197463-4765-4f1e-afb3-8bacbdfa486b",
+    "updated_at": "2025-08-27T02:15:40.111Z"
+  },
+  {
+    "chat_name": "fiill",
+    "session_id": "user_16_session_20250827_0229_x3unuwj2tqn",
+    "created_at": "2025-08-27T02:29:15.328Z",
+    "user_id": 16,
+    "chat_unique_id": "e4737a9b-485c-40b5-9c00-7c4472953396",
+    "updated_at": "2025-08-27T02:29:15.328Z"
+  },
+  {
+    "chat_name": "mais um testesssss",
+    "session_id": "user_16_session_20250827_0231_a07exwgone",
+    "created_at": "2025-08-27T02:31:58.197Z",
+    "user_id": 16,
+    "chat_unique_id": "0bab4a5f-c440-4444-bca8-c5cf9d0a3064",
+    "updated_at": "2025-08-27T02:31:58.197Z"
+  },
+  {
+    "chat_name": "testes123123123",
+    "session_id": "user_16_session_20250827_0232_503vlkahnrv",
+    "created_at": "2025-08-27T02:32:38.598Z",
+    "user_id": 16,
+    "chat_unique_id": "7e319895-090c-40a3-a6be-dccdfa8d5be7",
+    "updated_at": "2025-08-27T02:32:38.598Z"
+  },
+  {
+    "chat_name": "111122223333",
+    "session_id": "user_16_session_20250827_0235_rpuidzekt59",
+    "created_at": "2025-08-27T02:35:36.529Z",
+    "user_id": 16,
+    "chat_unique_id": "149d241e-6b00-4b0a-9228-b50a258b6466",
+    "updated_at": "2025-08-27T02:35:36.529Z"
+  },
+  {
+    "chat_name": "cu",
+    "session_id": "user_16_session_20250827_0235_1jxfip5ekol",
+    "created_at": "2025-08-27T02:35:59.409Z",
+    "user_id": 16,
+    "chat_unique_id": "eab45902-b17c-4401-aae6-4e0db6bc7200",
+    "updated_at": "2025-08-27T02:35:59.409Z"
+  },
+  {
+    "chat_name": "1334124124124",
+    "session_id": "user_16_session_20250827_0236_uh2iupa1b6q",
+    "created_at": "2025-08-27T02:36:44.131Z",
+    "user_id": 16,
+    "chat_unique_id": "1ae91add-4374-4d1c-ba68-4967748a68bc",
+    "updated_at": "2025-08-27T02:36:44.131Z"
+  },
+  {
+    "chat_name": "123123123",
+    "session_id": "user_16_session_20250827_0239_w6pk9wgthrp",
+    "created_at": "2025-08-27T02:39:33.698Z",
+    "user_id": 16,
+    "chat_unique_id": "009db3dd-940a-40a0-8589-9dd414882217",
+    "updated_at": "2025-08-27T02:39:33.698Z"
+  },
+  {
+    "chat_name": "123",
+    "session_id": "user_16_session_20250827_0242_1f8irhzzgoj",
+    "created_at": "2025-08-27T02:42:53.155Z",
+    "user_id": 16,
+    "chat_unique_id": "9cb2a621-1ad9-4f03-a6b3-10d798c670c4",
+    "updated_at": "2025-08-27T02:42:53.155Z"
+  },
+  {
+    "chat_name": "mais uma vez",
+    "session_id": "user_16_session_20250827_0242_4mlayu6n8j7",
+    "created_at": "2025-08-27T02:43:01.595Z",
+    "user_id": 16,
+    "chat_unique_id": "f8d8efd5-d09d-4f69-98aa-86c2f6e32bfa",
+    "updated_at": "2025-08-27T02:43:01.595Z"
+  },
+  {
+    "chat_name": "mais um teste",
+    "session_id": "user_16_session_20250827_0243_hazmuj1ohdo",
+    "created_at": "2025-08-27T02:43:11.690Z",
+    "user_id": 16,
+    "chat_unique_id": "6b24eded-0680-4bbb-b0b3-70555e9090bf",
+    "updated_at": "2025-08-27T02:43:11.690Z"
+  },
+  {
+    "chat_name": "me chama de teu pai",
+    "session_id": "user_16_session_20250827_0243_ygunz10p0dj",
+    "created_at": "2025-08-27T02:43:24.584Z",
+    "user_id": 16,
+    "chat_unique_id": "f56d40ed-89cf-42e8-819e-9a3895ab8582",
+    "updated_at": "2025-08-27T02:43:24.584Z"
+  },
+  {
+    "chat_name": "vamo la",
+    "session_id": "user_16_session_20250827_0243_0639w2xxd7ue",
+    "created_at": "2025-08-27T02:43:34.801Z",
+    "user_id": 16,
+    "chat_unique_id": "c9f525ad-753c-4546-a3cb-da3bfe240190",
+    "updated_at": "2025-08-27T02:43:34.801Z"
+  },
+  {
+    "chat_name": "saborea boga",
+    "session_id": "user_16_session_20250827_0243_xyjoiqcg5j",
+    "created_at": "2025-08-27T02:43:42.947Z",
+    "user_id": 16,
+    "chat_unique_id": "533fa443-2606-41c8-818e-6d0a1d444b09",
+    "updated_at": "2025-08-27T02:43:42.947Z"
+  },
+  {
+    "chat_name": "meimas",
+    "session_id": "user_16_session_20250827_0243_diuaxt66z1c",
+    "created_at": "2025-08-27T02:43:59.088Z",
+    "user_id": 16,
+    "chat_unique_id": "0532dca1-72a2-456c-97d3-ba33446a8f14",
+    "updated_at": "2025-08-27T02:43:59.088Z"
+  },
+  {
+    "chat_name": "rqwdqdq",
+    "session_id": "user_16_session_20250827_0245_yniewimgcqk",
+    "created_at": "2025-08-27T02:45:34.105Z",
+    "user_id": 16,
+    "chat_unique_id": "1086668b-97c1-4cfe-8a1d-ed2735382d53",
+    "updated_at": "2025-08-27T02:45:34.105Z"
+  },
+  {
+    "chat_name": "qwerqfqfqq",
+    "session_id": "user_16_session_20250827_0245_nw2scif69b",
+    "created_at": "2025-08-27T02:45:39.154Z",
+    "user_id": 16,
+    "chat_unique_id": "159f7bd6-a697-44f5-ab79-430029ebb4ac",
+    "updated_at": "2025-08-27T02:45:39.154Z"
+  },
+  {
+    "chat_name": "12349714717471471",
+    "session_id": "user_16_session_20250827_0245_akci4ukrwei",
+    "created_at": "2025-08-27T02:45:44.183Z",
+    "user_id": 16,
+    "chat_unique_id": "6671d8e6-6d24-4890-8aee-1dfc0d682394",
+    "updated_at": "2025-08-27T02:45:44.183Z"
+  },
+  {
+    "chat_name": "mais umtestettetet",
+    "session_id": "user_16_session_20250827_0246_itgfltakxzo",
+    "created_at": "2025-08-27T02:46:08.587Z",
+    "user_id": 16,
+    "chat_unique_id": "38cc150c-7aee-4c6b-a9b0-76d6636feea3",
+    "updated_at": "2025-08-27T02:46:08.587Z"
+  },
+  {
+    "chat_name": "Copiloto",
+    "session_id": "user_16_session_20250827_0324_i9ldyo8bhea",
+    "created_at": "2025-08-27T03:24:12.024Z",
+    "user_id": 16,
+    "chat_unique_id": "93f68b88-f7ab-4d91-83df-1576002eaf51",
+    "updated_at": "2025-08-27T03:24:12.024Z"
+  },
+  {
+    "chat_name": "Analisador",
+    "session_id": "user_16_session_20250827_0332_5yndoxslxh6",
+    "created_at": "2025-08-27T03:32:31.873Z",
+    "user_id": 16,
+    "chat_unique_id": "3c47f7e2-53c4-4787-8175-25e32b73fc60",
+    "updated_at": "2025-08-27T03:32:31.873Z"
+  },
+  {
+    "chat_name": "Adaptador",
+    "session_id": "user_16_session_20250827_0335_gnxublffo1",
+    "created_at": "2025-08-27T03:35:45.816Z",
+    "user_id": 16,
+    "chat_unique_id": "5dae6f22-6e78-4b88-8229-9b33a6408393",
+    "updated_at": "2025-08-27T03:35:45.816Z"
+  },
+  {
+    "chat_name": "Analisador de Erros",
+    "session_id": "user_16_session_20250827_1646_e5v35h0jwid",
+    "created_at": "2025-08-27T16:46:03.268Z",
+    "user_id": 16,
+    "chat_unique_id": "c6cd46f9-af82-4654-99ab-f50f99d4ec12",
+    "updated_at": "2025-08-27T16:46:03.268Z"
+  },
+  {
+    "chat_name": "Adapt -1",
+    "session_id": "user_16_session_20250827_1703_0ognr7khqqbf",
+    "created_at": "2025-08-27T17:03:17.990Z",
+    "user_id": 16,
+    "chat_unique_id": "9ca5fbdc-1d57-4c7e-81a2-fd3d341f00da",
+    "updated_at": "2025-08-27T17:03:17.990Z"
+  },
+  {
+    "chat_name": "esse é um teste",
+    "session_id": "user_16_session_20250827_1704_3xmpe79bbuy",
+    "created_at": "2025-08-27T17:04:46.876Z",
+    "user_id": 16,
+    "chat_unique_id": "4d39149e-fcf4-43fe-86f6-8d8bb4dd8abe",
+    "updated_at": "2025-08-27T17:04:46.876Z"
+  },
+  {
+    "chat_name": "GPT JURÍDICA",
+    "session_id": "user_16_session_20250827_1708_k9ldeeweshb",
+    "created_at": "2025-08-27T17:08:15.368Z",
+    "user_id": 16,
+    "chat_unique_id": "e5c68fac-1b24-46e7-8692-33f5d2cef105",
+    "updated_at": "2025-08-27T17:08:15.368Z"
+  },
+  {
+    "chat_name": "teste 1",
+    "session_id": "user_16_session_20250827_1843_nuinaam5tql",
+    "created_at": "2025-08-27T18:43:46.057Z",
+    "user_id": 16,
+    "chat_unique_id": "4b7213af-2938-45c7-a4fa-02a9bd489032",
+    "updated_at": "2025-08-27T18:43:46.057Z"
+  },
+  {
+    "chat_name": "novo chat",
+    "session_id": "user_16_session_20250827_1844_p2h356hlwx",
+    "created_at": "2025-08-27T18:44:03.039Z",
+    "user_id": 16,
+    "chat_unique_id": "924f522c-b86c-4e40-8ea2-46103a54d607",
+    "updated_at": "2025-08-27T18:44:03.039Z"
+  },
+  {
+    "chat_name": "teste gibran",
+    "session_id": "user_16_session_20250827_1844_okbrzkbmu5h",
+    "created_at": "2025-08-27T18:44:09.995Z",
+    "user_id": 16,
+    "chat_unique_id": "15cf6683-98b9-4744-984c-0d97c2116457",
+    "updated_at": "2025-08-27T18:44:09.995Z"
+  },
+  {
+    "chat_name": "teste 1",
+    "session_id": "user_16_session_20250827_1900_3fyunrmhns3",
+    "created_at": "2025-08-27T19:00:54.221Z",
+    "user_id": 16,
+    "chat_unique_id": "fb7478ff-e355-4bc2-91ed-d28c2ce1ca19",
+    "updated_at": "2025-08-27T19:00:54.221Z"
+  },
+  {
+    "chat_name": "gibran123",
+    "session_id": "user_16_session_20250827_1901_ti0wzbu8pn",
+    "created_at": "2025-08-27T19:01:20.405Z",
+    "user_id": 16,
+    "chat_unique_id": "a072de66-0dfe-4ee4-be93-bcc79c58a71d",
+    "updated_at": "2025-08-27T19:01:20.405Z"
+  },
+  {
+    "chat_name": "11",
+    "session_id": "user_16_session_20250827_1904_dj2ev3nv3io",
+    "created_at": "2025-08-27T19:04:59.108Z",
+    "user_id": 16,
+    "chat_unique_id": "dd678506-ec51-4863-bcd1-a1cd703c1426",
+    "updated_at": "2025-08-27T19:04:59.108Z"
+  },
+  {
+    "chat_name": "66",
+    "session_id": "user_16_session_20250827_1905_rw66qyi334m",
+    "created_at": "2025-08-27T19:05:22.755Z",
+    "user_id": 16,
+    "chat_unique_id": "22e0084c-00c2-4a09-8b57-35e53bfc48d9",
+    "updated_at": "2025-08-27T19:05:22.755Z"
+  },
+  {
+    "chat_name": "mentor juridico",
+    "session_id": "user_16_session_20250827_1907_aaw5qcuoh77",
+    "created_at": "2025-08-27T19:07:43.124Z",
+    "user_id": 16,
+    "chat_unique_id": "b70b278b-d31c-4a5c-afb3-78ae20ec1eba",
+    "updated_at": "2025-08-27T19:07:43.124Z"
+  },
+  {
+    "chat_name": "444444",
+    "session_id": "user_16_session_20250827_1929_driwwv3138t",
+    "created_at": "2025-08-27T19:29:57.646Z",
+    "user_id": 16,
+    "chat_unique_id": "63128d44-7830-4971-9a98-396b3be89b2f",
+    "updated_at": "2025-08-27T19:29:57.646Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250827_2248_v4ydx6xxxhi",
+    "created_at": "2025-08-27T22:48:32.868Z",
+    "user_id": 16,
+    "chat_unique_id": "c36eab4e-f7e9-4904-9d92-1c94edfba1fc",
+    "updated_at": "2025-08-27T22:48:32.868Z"
+  },
+  {
+    "chat_name": "cop",
+    "session_id": "user_16_session_20250828_0115_ib8chboa3i",
+    "created_at": "2025-08-28T01:15:44.163Z",
+    "user_id": 16,
+    "chat_unique_id": "97fb2de3-7523-41cd-9857-1967b3cbe8c1",
+    "updated_at": "2025-08-28T01:15:44.163Z"
+  },
+  {
+    "chat_name": "copi",
+    "session_id": "user_16_session_20250828_0123_7oq2zaic0a3",
+    "created_at": "2025-08-28T01:23:52.564Z",
+    "user_id": 16,
+    "chat_unique_id": "7e4c167b-e8b6-439b-814b-e63ee08f5250",
+    "updated_at": "2025-08-28T01:23:52.564Z"
+  },
+  {
+    "chat_name": "tes",
+    "session_id": "user_16_session_20250828_0130_sdj0pcdakin",
+    "created_at": "2025-08-28T01:30:06.836Z",
+    "user_id": 16,
+    "chat_unique_id": "f67b5a41-2e18-4c55-8039-299e2bdc6a5f",
+    "updated_at": "2025-08-28T01:30:06.836Z"
+  },
+  {
+    "chat_name": "gha",
+    "session_id": "user_16_session_20250828_0130_hhwmedt1k1r",
+    "created_at": "2025-08-28T01:30:18.900Z",
+    "user_id": 16,
+    "chat_unique_id": "f1223076-c54d-46d5-9bd9-bf70df17e5cf",
+    "updated_at": "2025-08-28T01:30:18.900Z"
+  },
+  {
+    "chat_name": "hj",
+    "session_id": "user_16_session_20250828_0159_x5dsvj729r",
+    "created_at": "2025-08-28T01:59:34.261Z",
+    "user_id": 16,
+    "chat_unique_id": "8d7569b0-568c-413b-b108-c0b57ad498ee",
+    "updated_at": "2025-08-28T01:59:34.261Z"
+  },
+  {
+    "chat_name": "gpt",
+    "session_id": "user_16_session_20250828_0213_4131ermwstb",
+    "created_at": "2025-08-28T02:13:55.587Z",
+    "user_id": 16,
+    "chat_unique_id": "1d74ae75-db30-436a-9b5c-3ba401232c02",
+    "updated_at": "2025-08-28T02:13:55.587Z"
+  },
+  {
+    "chat_name": "copilotttt",
+    "session_id": "user_16_session_20250828_0223_k1dfbh6z0af",
+    "created_at": "2025-08-28T02:23:21.212Z",
+    "user_id": 16,
+    "chat_unique_id": "e246d6af-15f6-4742-8345-09fc955763ec",
+    "updated_at": "2025-08-28T02:23:21.212Z"
+  },
+  {
+    "chat_name": "123qwe",
+    "session_id": "user_16_session_20250828_1419_idi4v5amosg",
+    "created_at": "2025-08-28T14:19:10.784Z",
+    "user_id": 16,
+    "chat_unique_id": "124b7049-74d9-4741-95b9-0586ad9af6a6",
+    "updated_at": "2025-08-28T14:19:10.784Z"
+  },
+  {
+    "chat_name": "maisdnaoivbwruobv",
+    "session_id": "user_16_session_20250828_1908_4xifggfwf7",
+    "created_at": "2025-08-28T19:08:19.895Z",
+    "user_id": 16,
+    "chat_unique_id": "f176ecab-8594-445e-aaca-117e5dc7c4d7",
+    "updated_at": "2025-08-28T19:08:19.895Z"
+  },
+  {
+    "chat_name": "realizando teste de mobile",
+    "session_id": "user_16_session_20250828_2150_bisbtiu6f7",
+    "created_at": "2025-08-28T21:50:07.311Z",
+    "user_id": 16,
+    "chat_unique_id": "6471a521-658e-43d1-8814-f7477c42925b",
+    "updated_at": "2025-08-28T21:50:07.311Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250829_0050_ngqbyfkilt",
+    "created_at": "2025-08-29T00:50:24.587Z",
+    "user_id": 16,
+    "chat_unique_id": "a4079392-cf11-4ca8-a74a-0fdf60ba1511",
+    "updated_at": "2025-08-29T00:50:24.587Z"
+  },
+  {
+    "chat_name": "vou criar mais um chat",
+    "session_id": "user_16_session_20250829_0050_pq05w6z089r",
+    "created_at": "2025-08-29T00:50:34.627Z",
+    "user_id": 16,
+    "chat_unique_id": "cbe36149-16e4-4f84-a683-c0b76fe1f469",
+    "updated_at": "2025-08-29T00:50:34.627Z"
+  },
+  {
+    "chat_name": "lk",
+    "session_id": "user_16_session_20250829_0211_16zuwjdoiemj",
+    "created_at": "2025-08-29T02:11:20.526Z",
+    "user_id": 16,
+    "chat_unique_id": "3db103e7-3587-44ff-846a-8072ef0206ef",
+    "updated_at": "2025-08-29T02:11:20.526Z"
+  },
+  {
+    "chat_name": "123",
+    "session_id": "user_16_session_20250902_1848_9a85ujo7qta",
+    "created_at": "2025-09-02T18:48:30.530Z",
+    "user_id": 16,
+    "chat_unique_id": "973607b3-cc64-47b8-9d82-1fc80232c4f9",
+    "updated_at": "2025-09-02T18:48:30.530Z"
+  },
+  {
+    "chat_name": "teste123",
+    "session_id": "user_16_session_20250903_1328_o9idaeachrl",
+    "created_at": "2025-09-03T13:28:58.057Z",
+    "user_id": 16,
+    "chat_unique_id": "5338a9d1-00ef-4b7f-94c1-b04c9535ffb0",
+    "updated_at": "2025-09-03T13:28:58.057Z"
+  },
+  {
+    "chat_name": "teste tributario",
+    "session_id": "user_16_session_20250904_0229_2z5anu5vxne",
+    "created_at": "2025-09-04T02:29:32.573Z",
+    "user_id": 16,
+    "chat_unique_id": "626a8217-a21a-4adf-8a5d-12075b6619d7",
+    "updated_at": "2025-09-04T02:29:32.573Z"
+  },
+  {
+    "chat_name": "trib",
+    "session_id": "user_16_session_20250904_0230_suj71amj4nf",
+    "created_at": "2025-09-04T02:30:40.419Z",
+    "user_id": 16,
+    "chat_unique_id": "c341be9e-27b0-416c-a8a7-01458f5d01e1",
+    "updated_at": "2025-09-04T02:30:40.419Z"
+  },
+  {
+    "chat_name": "teeste de dragndrop",
+    "session_id": "user_16_session_20250905_0114_5llvxsgiq4f",
+    "created_at": "2025-09-05T01:14:24.847Z",
+    "user_id": 16,
+    "chat_unique_id": "e58cf271-f8ed-4e03-badd-a536fb13b0b5",
+    "updated_at": "2025-09-05T01:14:24.847Z"
+  },
+  {
+    "chat_name": "teeste de dragndrop",
+    "session_id": "user_16_session_20250905_0115_d8iwrs54ym",
+    "created_at": "2025-09-05T01:15:40.500Z",
+    "user_id": 16,
+    "chat_unique_id": "58d816bf-5939-4fd8-a300-92f654ed1c47",
+    "updated_at": "2025-09-05T01:15:40.500Z"
+  },
+  {
+    "chat_name": "call 11",
+    "session_id": "user_16_session_20250905_0133_nj5g9mspu2",
+    "created_at": "2025-09-05T01:33:18.353Z",
+    "user_id": 16,
+    "chat_unique_id": "d5c16d3a-c51f-4c39-a8c6-94880dea199e",
+    "updated_at": "2025-09-05T01:33:18.353Z"
+  },
+  {
+    "chat_name": "int",
+    "session_id": "user_16_session_20250905_0135_bfbdc1lxx08",
+    "created_at": "2025-09-05T01:35:37.707Z",
+    "user_id": 16,
+    "chat_unique_id": "dc8d76c3-91ed-4107-ace6-0fcf91452468",
+    "updated_at": "2025-09-05T01:35:37.707Z"
+  },
+  {
+    "chat_name": "abnt",
+    "session_id": "user_16_session_20250907_0012_xvf79ulqjnk",
+    "created_at": "2025-09-07T00:12:29.316Z",
+    "user_id": 16,
+    "chat_unique_id": "bb024e59-b08c-450e-85a1-131fcb224efd",
+    "updated_at": "2025-09-07T00:12:29.316Z"
+  },
+  {
+    "chat_name": "check_copiloto",
+    "session_id": "user_16_session_20250907_1742_y11w38hgfdm",
+    "created_at": "2025-09-07T17:42:53.330Z",
+    "user_id": 16,
+    "chat_unique_id": "3af5415c-2d4c-4412-91f1-77b6fc36b130",
+    "updated_at": "2025-09-07T17:42:53.330Z"
+  },
+  {
+    "chat_name": "check_jurisprudÊncia",
+    "session_id": "user_16_session_20250907_1756_m50i379bhc",
+    "created_at": "2025-09-07T17:56:05.541Z",
+    "user_id": 16,
+    "chat_unique_id": "fb13c824-a362-407f-9a35-5cf967a085f2",
+    "updated_at": "2025-09-07T17:56:05.541Z"
+  },
+  {
+    "chat_name": "check_blocos_adapt",
+    "session_id": "user_16_session_20250907_1813_v0sstqnc6td",
+    "created_at": "2025-09-07T18:13:11.277Z",
+    "user_id": 16,
+    "chat_unique_id": "28f14f34-ce94-4037-8286-b39d43e94e4c",
+    "updated_at": "2025-09-07T18:13:11.277Z"
+  },
+  {
+    "chat_name": "new_check_bloco_adapt",
+    "session_id": "user_16_session_20250907_1841_kw42xrd71o8",
+    "created_at": "2025-09-07T18:41:31.118Z",
+    "user_id": 16,
+    "chat_unique_id": "e72b9995-45f9-4205-b82f-5c0ca1becff9",
+    "updated_at": "2025-09-07T18:41:31.118Z"
+  },
+  {
+    "chat_name": "teste stefano 8set",
+    "session_id": "user_16_session_20250908_2125_i12v8q3ef3l",
+    "created_at": "2025-09-08T21:25:23.403Z",
+    "user_id": 16,
+    "chat_unique_id": "d0d250a4-db18-457e-8aeb-fafba2a29059",
+    "updated_at": "2025-09-08T21:25:23.403Z"
+  },
+  {
+    "chat_name": "123",
+    "session_id": "user_16_session_20250909_0107_vwfhv3vxihd",
+    "created_at": "2025-09-09T01:07:11.620Z",
+    "user_id": 16,
+    "chat_unique_id": "82634f02-70b3-4390-bcf7-6f35eae168c2",
+    "updated_at": "2025-09-09T01:07:11.620Z"
+  },
+  {
+    "chat_name": "teste",
+    "session_id": "user_16_session_20250909_0107_m9w99t7mell",
+    "created_at": "2025-09-09T01:07:15.065Z",
+    "user_id": 16,
+    "chat_unique_id": "4103e5b7-1c41-4a77-9bcb-4c54ac7d4680",
+    "updated_at": "2025-09-09T01:07:15.065Z"
+  },
+  {
+    "chat_name": "11111",
+    "session_id": "user_16_session_20250909_2235_txeuctk04zb",
+    "created_at": "2025-09-09T22:35:40.916Z",
+    "user_id": 16,
+    "chat_unique_id": "195ceafc-376f-4768-8063-7914f30c3dc3",
+    "updated_at": "2025-09-09T22:35:40.916Z"
+  },
+  {
+    "chat_name": "122121",
+    "session_id": "user_16_session_20250909_2237_qwtsixi3io",
+    "created_at": "2025-09-09T22:37:58.924Z",
+    "user_id": 16,
+    "chat_unique_id": "f9e0face-d43f-46f6-93a5-dde92f2b1cf9",
+    "updated_at": "2025-09-09T22:37:58.924Z"
+  },
+  {
+    "chat_name": "12313131",
+    "session_id": "user_16_session_20250909_2245_19w7out62kr",
+    "created_at": "2025-09-09T22:45:28.830Z",
+    "user_id": 16,
+    "chat_unique_id": "da9e0f05-e5ba-4550-818c-72e27f078cfb",
+    "updated_at": "2025-09-09T22:45:28.830Z"
+  },
+  {
+    "chat_name": "teste redator",
+    "session_id": "user_16_session_20250910_0152_6xp5cpsnc4",
+    "created_at": "2025-09-10T01:52:24.020Z",
+    "user_id": 16,
+    "chat_unique_id": "3470f605-36dd-48a1-bdc0-f9cddb4d4ec5",
+    "updated_at": "2025-09-10T01:52:24.020Z"
+  },
+  {
+    "chat_name": "teste corre",
+    "session_id": "user_16_session_20250910_0215_lud4b53n5x",
+    "created_at": "2025-09-10T02:15:06.072Z",
+    "user_id": 16,
+    "chat_unique_id": "b420d3a8-4069-4a84-8f01-015c70965141",
+    "updated_at": "2025-09-10T02:15:06.072Z"
+  },
+  {
+    "chat_name": "peça1111",
+    "session_id": "user_16_session_20250910_2042_us0wt0uj0bd",
+    "created_at": "2025-09-10T20:42:59.455Z",
+    "user_id": 16,
+    "chat_unique_id": "b74a52dc-3b14-45a8-91fa-df46ac493a29",
+    "updated_at": "2025-09-10T20:42:59.455Z"
+  },
+  {
+    "chat_name": "jurisprudencia att",
+    "session_id": "user_16_session_20250911_0017_rnar18xb2rn",
+    "created_at": "2025-09-11T00:17:00.157Z",
+    "user_id": 16,
+    "chat_unique_id": "f1633389-824a-4a20-921a-732576cd2b7b",
+    "updated_at": "2025-09-11T00:17:00.157Z"
+  },
+  {
+    "chat_name": "1223",
+    "session_id": "user_16_session_20250911_0025_qc0bhiewa0m",
+    "created_at": "2025-09-11T00:25:48.662Z",
+    "user_id": 16,
+    "chat_unique_id": "bf133e18-0e02-4950-a84b-dd5fa9513f1b",
+    "updated_at": "2025-09-11T00:25:48.662Z"
+  },
+  {
+    "chat_name": "filipe_Juris",
+    "session_id": "user_16_session_20250911_0120_kkow5qzoex",
+    "created_at": "2025-09-11T01:20:32.088Z",
+    "user_id": 16,
+    "chat_unique_id": "b5c5ec36-2e8f-40ae-ae80-c60bf5a23d4d",
+    "updated_at": "2025-09-11T01:20:32.088Z"
+  },
+  {
+    "chat_name": "filipe_redator",
+    "session_id": "user_16_session_20250911_0203_eypg5fwjif8",
+    "created_at": "2025-09-11T02:03:54.016Z",
+    "user_id": 16,
+    "chat_unique_id": "9d2d55e7-2c47-40c6-9a17-ff508d15921b",
+    "updated_at": "2025-09-11T02:03:54.016Z"
+  },
+  {
+    "chat_name": "filipe_analisar",
+    "session_id": "user_16_session_20250911_0321_66kho0ky7rv",
+    "created_at": "2025-09-11T03:21:17.658Z",
+    "user_id": 16,
+    "chat_unique_id": "c243b571-6907-4b78-a89c-4918867fcd60",
+    "updated_at": "2025-09-11T03:21:17.658Z"
+  },
+  {
+    "chat_name": "filipe_copiloto",
+    "session_id": "user_16_session_20250911_0335_24pe3qfwz9z",
+    "created_at": "2025-09-11T03:35:20.594Z",
+    "user_id": 16,
+    "chat_unique_id": "7840ea6c-a8a0-4521-b882-4d6463c0e951",
+    "updated_at": "2025-09-11T03:35:20.594Z"
+  },
+  {
+    "chat_name": "filipe_clausyAI",
+    "session_id": "user_16_session_20250911_0346_a8zalsa37uo",
+    "created_at": "2025-09-11T03:46:26.349Z",
+    "user_id": 16,
+    "chat_unique_id": "dd307a56-3cb1-4457-bbae-bee248767ac4",
+    "updated_at": "2025-09-11T03:46:26.349Z"
+  },
+  {
+    "chat_name": "5555555",
+    "session_id": "user_16_session_20250912_1711_8a5u7auf3q",
+    "created_at": "2025-09-12T17:11:04.874Z",
+    "user_id": 16,
+    "chat_unique_id": "90d5cc3a-32e5-44bc-95be-0f1f21c02e56",
+    "updated_at": "2025-09-12T17:11:04.874Z"
+  },
+  {
+    "chat_name": "teste_doc",
+    "session_id": "user_16_session_20250918_0131_xukqr45485r",
+    "created_at": "2025-09-18T01:31:55.692Z",
+    "user_id": 16,
+    "chat_unique_id": "6a9152ea-0361-4d31-81a8-b14fe9fc3540",
+    "updated_at": "2025-09-18T01:31:55.692Z"
+  },
+  {
+    "chat_name": "tes_2209",
+    "session_id": "user_16_session_20250923_0123_q112pige7ta",
+    "created_at": "2025-09-23T01:23:05.660Z",
+    "user_id": 16,
+    "chat_unique_id": "4f079d9d-f45d-47d0-a85d-edcd0a84f920",
+    "updated_at": "2025-09-23T01:23:05.660Z"
+  },
+  {
+    "chat_name": "2209",
+    "session_id": "user_16_session_20250923_0124_tewf3jbgnii",
+    "created_at": "2025-09-23T01:24:52.407Z",
+    "user_id": 16,
+    "chat_unique_id": "ef8b09f2-df6f-4c2a-bc76-218bb6a3a9e5",
+    "updated_at": "2025-09-23T01:24:52.407Z"
+  },
+  {
+    "chat_name": "tttt",
+    "session_id": "user_16_session_20250924_1813_0iqgw6rg4hoc",
+    "created_at": "2025-09-24T18:13:35.992Z",
+    "user_id": 16,
+    "chat_unique_id": "87001286-6855-408d-a73d-59bbe83c2992",
+    "updated_at": "2025-09-24T18:13:35.992Z"
+  },
+  {
+    "chat_name": "27_10_25 2216",
+    "session_id": "user_16_session_20251028_0116_fo3wm3ck1oi",
+    "created_at": "2025-10-28T01:16:51.059Z",
+    "user_id": 16,
+    "chat_unique_id": "6ea54bfe-9292-4f82-95f9-27e7939ae04b",
+    "updated_at": "2025-10-28T01:16:51.059Z"
+  },
+  {
+    "chat_name": "999392932",
+    "session_id": "user_16_session_20251028_2333_xeaicodiarq",
+    "created_at": "2025-10-28T23:33:06.985Z",
+    "user_id": 16,
+    "chat_unique_id": "ff75b0f0-c650-4476-b4ef-fc38169a6759",
+    "updated_at": "2025-10-28T23:33:06.985Z"
+  },
+  {
+    "chat_name": "2222232",
+    "session_id": "user_16_session_20251028_2340_hwg3xsvkzk",
+    "created_at": "2025-10-28T23:40:20.530Z",
+    "user_id": 16,
+    "chat_unique_id": "2cc6f3a4-4f24-4bb4-803b-a4868e9e0a48",
+    "updated_at": "2025-10-28T23:40:20.530Z"
+  },
+  {
+    "chat_name": "112323",
+    "session_id": "user_16_session_20251028_2340_jsp88afqj8l",
+    "created_at": "2025-10-28T23:40:51.298Z",
+    "user_id": 16,
+    "chat_unique_id": "b98b1d96-09c0-419d-af38-72d528e28cdf",
+    "updated_at": "2025-10-28T23:40:51.298Z"
+  },
+  {
+    "chat_name": "123123",
+    "session_id": "user_16_session_20251028_2341_oeou52eqaa",
+    "created_at": "2025-10-28T23:41:47.089Z",
+    "user_id": 16,
+    "chat_unique_id": "b3fa3145-ca9f-46b2-97cb-9c58fc053ff6",
+    "updated_at": "2025-10-28T23:41:47.089Z"
+  },
+  {
+    "chat_name": "jamanta",
+    "session_id": "user_16_session_20251029_0147_8x6l8jdpcyu",
+    "created_at": "2025-10-29T01:47:14.285Z",
+    "user_id": 16,
+    "chat_unique_id": "c4d50664-31e7-4a1c-a314-3b4b847f38d1",
+    "updated_at": "2025-10-29T01:47:14.285Z"
+  },
+  {
+    "chat_name": "28--25",
+    "session_id": "user_16_session_20251029_0157_usj3246ic2m",
+    "created_at": "2025-10-29T01:57:54.490Z",
+    "user_id": 16,
+    "chat_unique_id": "52c7c2a3-8a4f-4026-87a4-26aabfb53b2e",
+    "updated_at": "2025-10-29T01:57:54.490Z"
+  },
+  {
+    "chat_name": "petição inicial",
+    "session_id": "user_16_session_20251102_0134_4fxknf4uxwe",
+    "created_at": "2025-11-02T01:34:21.252Z",
+    "user_id": 16,
+    "chat_unique_id": "c1be4fc5-52af-4944-ab37-288feac72df9",
+    "updated_at": "2025-11-02T01:34:21.252Z"
+  },
+  {
+    "chat_name": "Embargos",
+    "session_id": "user_16_session_20251102_0145_go2tymrkuir",
+    "created_at": "2025-11-02T01:45:46.703Z",
+    "user_id": 16,
+    "chat_unique_id": "5f2420b8-2424-4163-bdc6-aea6c283c8fa",
+    "updated_at": "2025-11-02T01:45:46.703Z"
+  },
+  {
+    "chat_name": "impugnado",
+    "session_id": "user_16_session_20251102_0252_2h4sp480esr",
+    "created_at": "2025-11-02T02:52:48.176Z",
+    "user_id": 16,
+    "chat_unique_id": "f352b5bf-4687-4036-bb86-fab28c86cc87",
+    "updated_at": "2025-11-02T02:52:48.176Z"
+  },
+  {
+    "chat_name": "Impugnação",
+    "session_id": "user_16_session_20251102_0256_iesnd6tpu",
+    "created_at": "2025-11-02T02:56:30.094Z",
+    "user_id": 16,
+    "chat_unique_id": "0cfafa57-d2f3-4fa9-aac1-1636bbc10314",
+    "updated_at": "2025-11-02T02:56:30.094Z"
+  },
+  {
+    "chat_name": "team_teste",
+    "session_id": "user_16_session_20251102_0301_67b3h77hrgf",
+    "created_at": "2025-11-02T03:01:17.586Z",
+    "user_id": 16,
+    "chat_unique_id": "37c495eb-ea9e-4b00-b607-d12e1af6489a",
+    "updated_at": "2025-11-02T03:01:17.586Z"
+  },
+  {
+    "chat_name": "teste_team",
+    "session_id": "user_16_session_20251102_0303_d5dwdqt5h2q",
+    "created_at": "2025-11-02T03:03:24.165Z",
+    "user_id": 16,
+    "chat_unique_id": "e5e962b7-6267-4de5-bf60-03d6f13b5055",
+    "updated_at": "2025-11-02T03:03:24.165Z"
+  },
+  {
+    "chat_name": "query-dist",
+    "session_id": "user_16_session_20251102_0328_luipt464e49",
+    "created_at": "2025-11-02T03:29:09.316Z",
+    "user_id": 16,
+    "chat_unique_id": "27546edd-eee4-4277-a31c-58d97df20e27",
+    "updated_at": "2025-11-02T03:29:09.316Z"
+  },
+  {
+    "chat_name": "logs_page",
+    "session_id": "user_16_session_20251102_0334_84jvutv48nd",
+    "created_at": "2025-11-02T03:34:33.721Z",
+    "user_id": 16,
+    "chat_unique_id": "b2905e01-b43c-44b4-b844-e0a70a3be444",
+    "updated_at": "2025-11-02T03:34:33.721Z"
+  },
+  {
+    "chat_name": "tasks_query",
+    "session_id": "user_16_session_20251102_0342_3o4zoydmwl2",
+    "created_at": "2025-11-02T03:43:08.201Z",
+    "user_id": 16,
+    "chat_unique_id": "65b13f0d-1bc4-42f4-9bbf-0273fa32c6d7",
+    "updated_at": "2025-11-02T03:43:08.201Z"
+  },
+  {
+    "chat_name": "warm",
+    "session_id": "user_16_session_20251102_0353_174cw0uevry",
+    "created_at": "2025-11-02T03:53:20.062Z",
+    "user_id": 16,
+    "chat_unique_id": "090baf0b-7fe2-45f1-a76d-ebd343e4b8f9",
+    "updated_at": "2025-11-02T03:53:20.062Z"
+  },
+  {
+    "chat_name": "central",
+    "session_id": "user_16_session_20251102_0358_k4e2we56bu",
+    "created_at": "2025-11-02T03:59:08.451Z",
+    "user_id": 16,
+    "chat_unique_id": "7fbab1d2-7601-48e3-b6a8-8dcb939df34a",
+    "updated_at": "2025-11-02T03:59:08.451Z"
+  },
+  {
+    "chat_name": "select",
+    "session_id": "user_16_session_20251102_0402_g91sqewjhe9",
+    "created_at": "2025-11-02T04:02:15.630Z",
+    "user_id": 16,
+    "chat_unique_id": "7bde1596-b5b6-4a2f-b883-6fab90f275fe",
+    "updated_at": "2025-11-02T04:02:15.630Z"
+  },
+  {
+    "chat_name": "central",
+    "session_id": "user_16_session_20251104_0044_ol5u3xcamr8",
+    "created_at": "2025-11-04T00:44:47.030Z",
+    "user_id": 16,
+    "chat_unique_id": "9d83ffcb-72b1-41a1-affe-2054d7019719",
+    "updated_at": "2025-11-04T00:44:47.030Z"
+  },
+  {
+    "chat_name": "juris_central",
+    "session_id": "user_16_session_20251104_0047_5wa76lh0uy",
+    "created_at": "2025-11-04T00:47:18.797Z",
+    "user_id": 16,
+    "chat_unique_id": "60071db3-78b4-4133-8004-97b2b0d99e34",
+    "updated_at": "2025-11-04T00:47:18.797Z"
+  },
+  {
+    "chat_name": "new_cent",
+    "session_id": "user_16_session_20251104_0049_hdedxbfve4s",
+    "created_at": "2025-11-04T00:50:15.338Z",
+    "user_id": 16,
+    "chat_unique_id": "9aa2f893-0003-4e95-9450-be4f80b25b40",
+    "updated_at": "2025-11-04T00:50:15.338Z"
+  },
+  {
+    "chat_name": "new_juris",
+    "session_id": "user_16_session_20251104_0055_3h3gb0uxrh",
+    "created_at": "2025-11-04T00:56:00.956Z",
+    "user_id": 16,
+    "chat_unique_id": "8116591b-9fca-451c-a7c1-03720ddfb6d4",
+    "updated_at": "2025-11-04T00:56:00.956Z"
+  },
+  {
+    "chat_name": "false_true",
+    "session_id": "user_16_session_20251104_0059_r557dg94umn",
+    "created_at": "2025-11-04T01:00:07.614Z",
+    "user_id": 16,
+    "chat_unique_id": "52c5ee26-3492-4b4c-bf36-20859ac4d1c1",
+    "updated_at": "2025-11-04T01:00:07.614Z"
+  },
+  {
+    "chat_name": "true_false",
+    "session_id": "user_16_session_20251104_0103_pkaxo42thoh",
+    "created_at": "2025-11-04T01:03:58.156Z",
+    "user_id": 16,
+    "chat_unique_id": "a58fe1aa-3af0-41d7-8189-eba6a0101ad8",
+    "updated_at": "2025-11-04T01:03:58.156Z"
+  },
+  {
+    "chat_name": "sell_mode",
+    "session_id": "user_16_session_20251104_0109_1amakqo4bj2j",
+    "created_at": "2025-11-04T01:09:27.929Z",
+    "user_id": 16,
+    "chat_unique_id": "1628c507-92d0-4b65-8205-893ecd4b1817",
+    "updated_at": "2025-11-04T01:09:27.929Z"
+  },
+  {
+    "chat_name": "nome_chat_new",
+    "session_id": "user_16_session_20251104_0111_0gwkaqverg4o",
+    "created_at": "2025-11-04T01:11:54.965Z",
+    "user_id": 16,
+    "chat_unique_id": "a6acbcc0-8eb2-4876-b956-29c6549a9406",
+    "updated_at": "2025-11-04T01:11:54.965Z"
+  },
+  {
+    "chat_name": "preserve_log",
+    "session_id": "user_16_session_20251104_0120_8p5gglsrr35",
+    "created_at": "2025-11-04T01:20:23.763Z",
+    "user_id": 16,
+    "chat_unique_id": "00781e9d-d41d-4f7e-b271-5c4e7a4ac66b",
+    "updated_at": "2025-11-04T01:20:23.763Z"
+  },
+  {
+    "chat_name": "hide_name",
+    "session_id": "user_16_session_20251104_0122_cuvtdgwgrji",
+    "created_at": "2025-11-04T01:22:44.269Z",
+    "user_id": 16,
+    "chat_unique_id": "245221b8-d403-4309-b3bd-8236ff6d2238",
+    "updated_at": "2025-11-04T01:22:44.269Z"
+  },
+  {
+    "chat_name": "judge",
+    "session_id": "user_16_session_20251105_0129_d9zgx1cie5l",
+    "created_at": "2025-11-05T01:29:46.546Z",
+    "user_id": 16,
+    "chat_unique_id": "fbcd10ab-b556-4544-97b9-3a0d198b2115",
+    "updated_at": "2025-11-05T01:29:46.546Z"
+  },
+  {
+    "chat_name": "chat_judge",
+    "session_id": "user_16_session_20251105_0138_57l9iu89mub",
+    "created_at": "2025-11-05T01:38:19.506Z",
+    "user_id": 16,
+    "chat_unique_id": "2e84a120-4c8d-4573-acd4-5c198e8736dd",
+    "updated_at": "2025-11-05T01:38:19.506Z"
+  },
+  {
+    "chat_name": "cria_jud",
+    "session_id": "user_16_session_20251105_0147_m99979xzw6",
+    "created_at": "2025-11-05T01:47:37.469Z",
+    "user_id": 16,
+    "chat_unique_id": "8caab32b-a7f9-46ea-a725-4da726d6d7ca",
+    "updated_at": "2025-11-05T01:47:37.469Z"
+  },
+  {
+    "chat_name": "chat_jud",
+    "session_id": "user_16_session_20251105_0148_apth5cof5qk",
+    "created_at": "2025-11-05T01:48:10.381Z",
+    "user_id": 16,
+    "chat_unique_id": "ce686e75-7a7d-4fcb-89d3-7cfb4d92b73c",
+    "updated_at": "2025-11-05T01:48:10.381Z"
+  },
+  {
+    "chat_name": "copilota",
+    "session_id": "user_16_session_20251105_0151_zeelwexzmfr",
+    "created_at": "2025-11-05T01:51:57.993Z",
+    "user_id": 16,
+    "chat_unique_id": "a3059f0d-d820-4381-9e5a-7f76fd347af0",
+    "updated_at": "2025-11-05T01:51:57.993Z"
+  },
+  {
+    "chat_name": "hist_teste",
+    "session_id": "user_16_session_20251105_0159_09or2baxjx9x",
+    "created_at": "2025-11-05T01:59:07.142Z",
+    "user_id": 16,
+    "chat_unique_id": "d5b6ee88-5a50-4903-a518-53763b3de837",
+    "updated_at": "2025-11-05T01:59:07.142Z"
+  },
+  {
+    "chat_name": "chat_new",
+    "session_id": "user_16_session_20251105_0215_5e5gpqg12ya",
+    "created_at": "2025-11-05T02:15:35.948Z",
+    "user_id": 16,
+    "chat_unique_id": "6bf193c3-5359-453b-a52f-2d99483545ac",
+    "updated_at": "2025-11-05T02:15:35.948Z"
+  },
+  {
+    "chat_name": "dropwon",
+    "session_id": "user_16_session_20251105_0220_0slryrnwri9",
+    "created_at": "2025-11-05T02:20:23.835Z",
+    "user_id": 16,
+    "chat_unique_id": "2d4347f5-9c84-4d85-9818-3c31a9f95611",
+    "updated_at": "2025-11-05T02:20:23.835Z"
+  },
+  {
+    "chat_name": "pec_int",
+    "session_id": "user_16_session_20251105_0224_226yth8pzsk",
+    "created_at": "2025-11-05T02:24:55.666Z",
+    "user_id": 16,
+    "chat_unique_id": "3ace759a-83a3-4ee8-ad39-af55ec89b477",
+    "updated_at": "2025-11-05T02:24:55.666Z"
+  },
+  {
+    "chat_name": "elements",
+    "session_id": "user_16_session_20251105_0228_3c0xpravk5r",
+    "created_at": "2025-11-05T02:28:53.161Z",
+    "user_id": 16,
+    "chat_unique_id": "9d6faeab-b879-4322-8691-3a181da99935",
+    "updated_at": "2025-11-05T02:28:53.161Z"
+  },
+  {
+    "chat_name": "juhj",
+    "session_id": "user_16_session_20251105_0230_kc9b9q17lha",
+    "created_at": "2025-11-05T02:30:58.257Z",
+    "user_id": 16,
+    "chat_unique_id": "89c9d698-9c02-485a-b747-81d216ff5cd8",
+    "updated_at": "2025-11-05T02:30:58.257Z"
+  },
+  {
+    "chat_name": "total_hand",
+    "session_id": "user_16_session_20251105_1321_x73p3y8rz8",
+    "created_at": "2025-11-05T13:21:26.622Z",
+    "user_id": 16,
+    "chat_unique_id": "de282d8a-ec5a-423a-8293-fc23033558c9",
+    "updated_at": "2025-11-05T13:21:26.622Z"
+  },
+  {
+    "chat_name": "hand_total",
+    "session_id": "user_16_session_20251105_1335_hh6sj9wizcd",
+    "created_at": "2025-11-05T13:35:55.608Z",
+    "user_id": 16,
+    "chat_unique_id": "ec662785-1ba2-4f65-b783-43a6c8c7cb09",
+    "updated_at": "2025-11-05T13:35:55.608Z"
+  },
+  {
+    "chat_name": "toll_hand",
+    "session_id": "user_16_session_20251105_1416_xx5ngd35lx",
+    "created_at": "2025-11-05T14:16:55.212Z",
+    "user_id": 16,
+    "chat_unique_id": "85fc2293-d8a6-4a4f-981c-ddbae1a1e13d",
+    "updated_at": "2025-11-05T14:16:55.212Z"
+  },
+  {
+    "chat_name": "noo_test",
+    "session_id": "user_16_session_20251105_1419_ksw5hfq0r2l",
+    "created_at": "2025-11-05T14:19:24.437Z",
+    "user_id": 16,
+    "chat_unique_id": "d1c4cfd0-6e16-4f5f-ab25-44d40784f0f0",
+    "updated_at": "2025-11-05T14:19:24.437Z"
+  },
+  {
+    "chat_name": "think_out",
+    "session_id": "user_16_session_20251105_1423_71do0tbgl5v",
+    "created_at": "2025-11-05T14:23:50.269Z",
+    "user_id": 16,
+    "chat_unique_id": "3265857d-6067-424e-82a3-320963b9db73",
+    "updated_at": "2025-11-05T14:23:50.269Z"
+  },
+  {
+    "chat_name": "long_away",
+    "session_id": "user_16_session_20251105_1427_ewaclcx1jk8",
+    "created_at": "2025-11-05T14:27:01.000Z",
+    "user_id": 16,
+    "chat_unique_id": "ec95f95f-0af3-4ead-a0ff-0d9060a7a5e5",
+    "updated_at": "2025-11-05T14:27:01.000Z"
+  },
+  {
+    "user_id": 16,
+    "chat_name": "third_away",
+    "session_id": "user_16_session_20251105_1428_7ioyw70065d",
+    "chat_unique_id": "a7d083d1-487f-45ee-a236-1b5c11521493",
+    "created_at": "2025-11-05T14:28:34.557Z",
+    "updated_at": "2025-11-05T14:28:34.557Z"
+  },
+  {
+    "user_id": 16,
+    "chat_name": "teste_novo_teste",
+    "session_id": "user_16_session_20251105_1430_oko9a0j01t",
+    "chat_unique_id": "08c98bb4-3779-41af-b01b-d44fb27613b1",
+    "created_at": "2025-11-05T14:30:44.170Z",
+    "updated_at": "2025-11-05T14:30:44.170Z"
+  }
+]
