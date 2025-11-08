@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 const ENABLE_THEME_TOGGLE = false;
 
 const Config = () => {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const [theme, setTheme] = useState("light");
   const { currentUser } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -44,15 +44,18 @@ const Config = () => {
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    // Force light mode; ignore dark mode
+    setTheme("light");
+    localStorage.setItem("theme", "light");
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove("dark");
+    }
   };
 
   useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
+    // Always enforce light
+    localStorage.setItem("theme", "light");
+    if (typeof document !== 'undefined') {
       document.documentElement.classList.remove("dark");
     }
   }, [theme]);

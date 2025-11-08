@@ -82,14 +82,20 @@ useEffect(() => {
   };
 
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    // Force light mode; disable dark mode toggle
+    setTheme("light");
+    localStorage.setItem("theme", "light");
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove("dark");
+    }
   };
 
   useEffect(() => {
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
+    // Always enforce light mode
+    localStorage.setItem("theme", "light");
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.remove("dark");
+    }
   }, [theme]);
 
   return (

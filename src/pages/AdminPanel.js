@@ -99,8 +99,17 @@ const AdminPanel = () => {
 
   // Aplicar tema
   useEffect(() => {
-    if (theme === "dark") document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
+    // Always enforce light mode
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('theme', 'light');
+      }
+      if (typeof document !== 'undefined') {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (_) {
+      // ignore
+    }
   }, [theme]);
 
   // Inicialização

@@ -21,6 +21,18 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+// Force light mode globally
+try {
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark');
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('theme', 'light');
+  }
+} catch (_) {
+  // ignore
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
