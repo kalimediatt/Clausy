@@ -21,7 +21,14 @@ import {
   FaTrash,
   FaFileAlt,
   FaShieldAlt,
-  FaChevronDown
+  FaChevronDown,
+  FaEllipsisV,
+  FaUserTie,
+  FaUsers,
+  FaTags,
+  FaFileWord,
+  FaFilePdf,
+  FaDownload
 } from 'react-icons/fa';
 import {
   Chart as ChartJS,
@@ -34,6 +41,8 @@ import {
   Legend,
 } from 'chart.js';
 import { toast } from 'react-hot-toast';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, WidthType } from 'docx';
+import jsPDF from 'jspdf';
 
 import SecurityPanel from './SecurityPanel';
 import Sidebar from '../components/Sidebar';
@@ -337,6 +346,10 @@ const Home = () => {
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isJudgeMenuOpen, setIsJudgeMenuOpen] = useState(false);
+  const [selectedJudge, setSelectedJudge] = useState('Todos os Juízes');
 
   const [fileContent, setFileContent] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -372,15 +385,34 @@ const Home = () => {
   
   // Hook para detectar tamanho da tela
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width <= 1024);
     };
     
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
+
+  // Fechar menus quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isMobileMenuOpen && !event.target.closest('.mobile-menu-container') && !event.target.closest('.desktop-menu-container')) {
+        setIsMobileMenuOpen(false);
+      }
+      if (isJudgeMenuOpen && !event.target.closest('.judge-menu-container')) {
+        setIsJudgeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen, isJudgeMenuOpen]);
   
 
   
@@ -393,6 +425,27 @@ const Home = () => {
     }
   }, [labShowNewChatModal]);
   const [labShowInitialChatModal, setLabShowInitialChatModal] = useState(true);
+  const [showChipJuridicoModal, setShowChipJuridicoModal] = useState(false);
+  
+  // Estados para Chip Jurídico - áreas do direito
+  const [chipJuridicoAreas, setChipJuridicoAreas] = useState({
+    civil: false,
+    trabalhista: false,
+    contratos: false,
+    empresarial: false,
+    penal: false,
+    tributario: false,
+    administrativo: false,
+    consumidor: false,
+    previdenciario: false,
+    ambiental: false,
+    imobiliario: false,
+    familia: false,
+    bancario: false,
+    compliance: false,
+    aduaneiro: false,
+    eleitoral: false
+  });
   const [initialChatName, setInitialChatName] = useState('');
   const [labKeepFileAttached, setLabKeepFileAttached] = useState(false);
   const [labShowHistorySidebar, setLabShowHistorySidebar] = useState(false);
@@ -780,8 +833,339 @@ const Home = () => {
     }
   }, [chatHistory]);
 
+  // Funções para Chip Jurídico
+  const handleChipJuridicoAreaChange = (area) => {
+    // Limpar todas as seleções e marcar apenas a área clicada
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    newState[area] = true;
+    setChipJuridicoAreas(newState);
+  };
 
 
+  const handleChipJuridicoClearAll = () => {
+    const newState = {};
+    Object.keys(chipJuridicoAreas).forEach(key => {
+      newState[key] = false;
+    });
+    setChipJuridicoAreas(newState);
+  };
+
+  const getSelectedAreas = () => {
+    return Object.entries(chipJuridicoAreas)
+      .filter(([_, selected]) => selected)
+      .map(([area, _]) => area);
+  };
+
+  const getSelectedAreasDisplay = () => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    
+    return getSelectedAreas().map(area => areaNames[area]).join(', ');
+  };
+
+  const getSelectedChipJuridicoMode = () => {
+    const selectedAreas = getSelectedAreas();
+    return selectedAreas.length > 0 ? selectedAreas[0] : null;
+  };
+
+  // Funções de Exportação
+  const getAreaName = (areaKey) => {
+    const areaNames = {
+      civil: 'Cível',
+      trabalhista: 'Trabalhista',
+      contratos: 'Contratos',
+      empresarial: 'Empresarial',
+      penal: 'Penal',
+      tributario: 'Tributário',
+      administrativo: 'Administrativo',
+      consumidor: 'Consumidor',
+      previdenciario: 'Previdenciário',
+      ambiental: 'Ambiental',
+      imobiliario: 'Imobiliário',
+      familia: 'Família',
+      bancario: 'Bancário/Capital',
+      compliance: 'Compliance',
+      aduaneiro: 'Aduaneiro',
+      eleitoral: 'Eleitoral'
+    };
+    return areaNames[areaKey] || 'Não especificada';
+  };
+
+  const exportToWord = async () => {
+    try {
+      console.log('Iniciando exportação para Word...');
+      
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      console.log('Chat key:', currentChatKey);
+      console.log('Mensagens encontradas:', messages.length);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      console.log('Criando documento Word...');
+      
+      // Criar documento Word com estrutura mais simples e robusta
+      const doc = new Document({
+        sections: [{
+          properties: {},
+          children: [
+            // Cabeçalho
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "CONVERSA - CENTRAL JURÍDICA CLAUSY",
+                  bold: true,
+                  size: 32
+                })
+              ],
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 400 }
+            }),
+            
+            // Metadados
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Chat: ${currentChatKey}`,
+                  bold: true,
+                  size: 24
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Data: ${new Date().toLocaleDateString('pt-BR')}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 200 }
+            }),
+            
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Área Jurídica: ${areaName}`,
+                  size: 20
+                })
+              ],
+              spacing: { after: 400 }
+            }),
+
+            // Mensagens
+            ...messages.map((message, index) => {
+              const isUser = message.role === 'user';
+              const isError = message.role === 'error';
+              
+              // Limpar conteúdo da mensagem para evitar caracteres problemáticos
+              const cleanContent = message.content ? message.content.toString().replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') : '';
+              
+              return new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `${isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA'}: `,
+                    bold: true,
+                    size: 22
+                  }),
+                  new TextRun({
+                    text: cleanContent,
+                    size: 20
+                  })
+                ],
+                spacing: { 
+                  after: 300,
+                  before: index === 0 ? 0 : 200
+                }
+              });
+            })
+          ]
+        }]
+      });
+
+      console.log('Gerando blob do documento...');
+      
+      // Gerar blob diretamente (compatível com navegador)
+      const blob = await Packer.toBlob(doc);
+      
+      console.log('Blob gerado, tamanho:', blob.size);
+      
+      // Criar URL e fazer download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.docx`;
+      link.style.display = 'none';
+      
+      document.body.appendChild(link);
+      link.click();
+      
+      // Limpar
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log('Download iniciado com sucesso!');
+      toast.success('Conversa exportada para Word com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para Word:', error);
+      console.error('Stack trace:', error.stack);
+      toast.error(`Erro ao exportar para Word: ${error.message}`);
+    }
+  };
+
+  const exportToPDF = async () => {
+    try {
+      const currentChatKey = getCurrentLabChatKey();
+      const messages = safeGet(labMessagesByChat, currentChatKey, []);
+      
+      if (messages.length === 0) {
+        toast.error('Nenhuma mensagem para exportar');
+        return;
+      }
+
+      const selectedMode = getSelectedChipJuridicoMode();
+      const areaName = getAreaName(selectedMode);
+      
+      // Criar PDF
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let yPosition = 20;
+      const lineHeight = 7;
+      const margin = 20;
+      const maxWidth = pageWidth - (margin * 2);
+
+      // Função para adicionar nova página se necessário
+      const checkNewPage = (requiredSpace) => {
+        if (yPosition + requiredSpace > pageHeight - margin) {
+          pdf.addPage();
+          yPosition = 20;
+          return true;
+        }
+        return false;
+      };
+
+      // Cabeçalho
+      pdf.setFontSize(18);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('CONVERSA - CENTRAL JURÍDICA CLAUSY', pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 15;
+
+      // Metadados
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Chat: ${currentChatKey}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Modo: ${labSelectedSetupState?.title || 'Não selecionado'}`, margin, yPosition);
+      yPosition += lineHeight;
+      
+      pdf.text(`Área Jurídica: ${areaName}`, margin, yPosition);
+      yPosition += 15;
+
+      // Linha separadora
+      pdf.setDrawColor(200, 200, 200);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 10;
+
+      // Mensagens
+      messages.forEach((message, index) => {
+        const isUser = message.role === 'user';
+        const isError = message.role === 'error';
+        
+        // Verificar se precisa de nova página
+        checkNewPage(20);
+
+        // Cabeçalho da mensagem
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        const roleText = isUser ? 'USUÁRIO' : isError ? 'ERRO' : 'CLAUSY - IA';
+        const roleColor = isUser ? [37, 99, 235] : isError ? [220, 38, 38] : [5, 150, 105];
+        
+        pdf.setTextColor(roleColor[0], roleColor[1], roleColor[2]);
+        pdf.text(`${roleText}:`, margin, yPosition);
+        yPosition += lineHeight;
+
+        // Conteúdo da mensagem
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(55, 65, 81);
+        
+        // Quebrar texto em linhas
+        const content = message.content;
+        const lines = pdf.splitTextToSize(content, maxWidth);
+        
+        lines.forEach(line => {
+          checkNewPage(lineHeight);
+          pdf.text(line, margin, yPosition);
+          yPosition += lineHeight;
+        });
+
+        // Espaçamento entre mensagens
+        yPosition += 8;
+        
+        // Linha separadora sutil
+        if (index < messages.length - 1) {
+          checkNewPage(5);
+          pdf.setDrawColor(240, 240, 240);
+          pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+          yPosition += 5;
+        }
+      });
+
+      // Baixar arquivo
+      const fileName = `conversa-clausy-${currentChatKey}-${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(fileName);
+      
+      toast.success('Conversa exportada para PDF com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar para PDF:', error);
+      toast.error('Erro ao exportar para PDF');
+    }
+  };
 
 
 
@@ -970,25 +1354,25 @@ const Home = () => {
       if (labSelectedSetupState?.title === "IA Clausy") {
         promptId = 0;
       } else if (labSelectedSetupState?.title === "Pesquisador de Jurisprudência Atualizada") {
-        promptId = 1;
-      } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
         promptId = 2;
-      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
-        promptId = 3;
-      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
-        promptId = 4;
-      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
-        promptId = 5;
-      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
-        promptId = 6;
-      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
-        promptId = 7;
-      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
+      } else if (labSelectedSetupState?.title === "Redator Jurídico Técnico") {
         promptId = 8;
-      } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
+      } else if (labSelectedSetupState?.title === "Avaliador Técnico-Jurídico") {
+        promptId = 4;
+      } else if (labSelectedSetupState?.title === "Mentor Jurídico Educacional") {
+        promptId = 5;
+      } else if (labSelectedSetupState?.title === "Analisador de Erros Repetitivos") {
+        promptId = 6;
+      } else if (labSelectedSetupState?.title === "Transcritor Jurídico Inteligente") {
+        promptId = 7;
+      } else if (labSelectedSetupState?.title === "Adaptador de Textos Jurídicos") {
+        promptId = 3;
+      } else if (labSelectedSetupState?.title === "Analisador de Conformidade e Risco") {
         promptId = 9;
+      } else if (labSelectedSetupState?.title === "Copiloto Jurídico Avançado") {
+        promptId = 1;
       } else {
-        promptId = 1; // Fallback padrão
+        promptId = 0; // Fallback padrão
       }
       const conteudo = userMessage.content;
   
@@ -1017,7 +1401,7 @@ const Home = () => {
         } else {
           session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         }
-      } else {
+      } else if (!labSelectedChatName) {
         // Criar novo chat com nome baseado na primeira mensagem do usuário
         session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
         
@@ -1033,6 +1417,10 @@ const Home = () => {
           // Fallback para data
           chat_name = `Chat ${new Date().toLocaleDateString('pt-BR')}`;
         }
+      } else {
+        // Chat já existe, usar o nome e session_id existentes
+        chat_name = labSelectedChatName;
+        session_id = labSelectedConversation || getCurrentSessionId(currentUser?.user_id || currentUser?.id || '');
       }
       
       // Atualizar chatKey se for um novo chat
@@ -1065,6 +1453,12 @@ const Home = () => {
         formData.append('chat_name', chat_name);
         formData.append('session_id', session_id);
         formData.append('file', labSelectedFile);
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          formData.append('mode', selectedMode);
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1092,6 +1486,12 @@ const Home = () => {
           chat_name,
           session_id
         };
+        
+        // Adiciona o parâmetro mode do Chip Jurídico
+        const selectedMode = getSelectedChipJuridicoMode();
+        if (selectedMode) {
+          body.mode = selectedMode;
+        }
 
         // Timeout de 30 segundos para evitar espera infinita
         const controller = new AbortController();
@@ -1350,6 +1750,12 @@ const Home = () => {
           formData.append('maxTokens', 64000);
           formData.append('file', selectedFile);
           formData.append('setup', JSON.stringify(selectedSetup));
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            formData.append('mode', selectedMode);
+          }
 
 
 
@@ -1363,17 +1769,25 @@ const Home = () => {
         } else {
 
           // Envia como JSON se não houver arquivo
+          const requestBody = {
+            prompt: chatInput.trim(),
+            maxTokens: 64000,
+            setup: selectedSetup
+          };
+          
+          // Adiciona o parâmetro mode do Chip Jurídico
+          const selectedMode = getSelectedChipJuridicoMode();
+          if (selectedMode) {
+            requestBody.mode = selectedMode;
+          }
+          
           response = await fetch('/api/ai/query', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              prompt: chatInput.trim(),
-              maxTokens: 64000,
-              setup: selectedSetup
-            })
+            body: JSON.stringify(requestBody)
           });
         }
 
@@ -2178,9 +2592,9 @@ const Home = () => {
       <div className={`flex flex-col lg:flex-row h-full bg-white/40 dark:bg-neutral-900/40 backdrop-blur-sm border border-neutral-200 dark:border-neutral-700 shadow-xl overflow-hidden transition-all duration-500
         ${isMobile ? 'home-mobile-optimized' : ''}`}>
         {/* Sidebar de sessões - Apenas Desktop */}
-        {!isMobile && (
+        {!isMobile && !isTablet && (
           <div className="w-52 !bg-gradient-to-b !from-white/60 !via-white/50 !to-white/40 dark:!from-neutral-800/60 dark:!via-neutral-800/50 dark:!to-neutral-800/40 !text-neutral-900 dark:!text-white !border-b lg: lg:!border-b-0 !border-1 !border-gradient-to-b !from-amber-200/30 !to-amber-300/30 dark:!from-amber-700/30 dark:!to-amber-600/30 flex flex-col items-stretch min-h-0 lg:min-h-full box-border backdrop-blur-md shadow-inner p-3 lg:p-5 gap-3 lg:gap-5">
-          {!isMobile && (
+          {!isMobile && !isTablet && (
             <div className="flex flex-col items-center">
             <button
                 className="bg-gradient-to-r from-accent1 to-accent1 hover:bg-accent1/80 text-white border-0 rounded-xl cursor-pointer transition-all duration-300 flex items-center justify-center gap-2 font-medium shadow-lg w-full max-w-xs mx-auto py-2 lg:py-2.5 px-3 lg:px-4 mb-4 lg:mb-6 text-sm"
@@ -2212,8 +2626,8 @@ const Home = () => {
 
           
           <div className="flex-1 overflow-hidden">
-            {isMobile ? (
-              // Espaço vazio para mobile (dropdown movido para fora)
+            {(isMobile || isTablet) ? (
+              // Espaço vazio para mobile e tablet (dropdown movido para fora)
               <div className="h-full"></div>
             ) : (
               // Layout original para desktop
@@ -2365,7 +2779,7 @@ const Home = () => {
               
               <div className="flex flex-col h-full min-h-0 gap-3">
                 {/* Header para desktop */}
-                {!isMobile && (
+                {!isMobile && !isTablet && (
                   <div className={`flex justify-between items-start border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm
                     ${isMobile ? 'p-2' : 'p-3 lg:p-5'}`}>
                     <div className="flex flex-col gap-1">
@@ -2382,78 +2796,332 @@ const Home = () => {
                     </div>
                     
                     <div className="flex gap-2 mt-1">
-                      <button 
-                        onClick={() => setLabShowSetupModal(true)}
-                        className="bg-accent1 hover:bg-accent1/90 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-1 lg:gap-2 font-medium shadow-sm hover:shadow-md px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm"
-                      >
-                        <FaCog className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
-                        <span className="hidden sm:inline">Alterar Modo</span>
-                      </button>
-                      <button 
-                        onClick={handleLabClearChat}
-                        className={`bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-1 lg:gap-2 font-medium hover:shadow-md
-                          ${isMobile ? 'px-2 py-1.5 text-xs' : 'px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm'}`}
-                      >
-                        <FaTrash className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
-                        <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Limpar Chat</span>
-                      </button>
+                      {/* Menu dropdown de juízes */}
+                      <div className="relative judge-menu-container">
+                        <button 
+                          onClick={() => setIsJudgeMenuOpen(!isJudgeMenuOpen)}
+                          className="bg-white dark:bg-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-2 font-medium shadow-sm hover:shadow-md px-3 py-2 text-sm"
+                        >
+                          <FaUserTie className="w-4 h-4 text-accent1" />
+                          <span>{selectedJudge}</span>
+                          <FaChevronDown className={`w-3 h-3 transition-transform duration-200 ${isJudgeMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {/* Menu dropdown */}
+                        {isJudgeMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[200px]">
+                            <div className="p-2">
+                              <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2 px-2">Selecionar Juiz</div>
+                              
+                              <button 
+                                onClick={() => {
+                                  setSelectedJudge('Todos os Juízes');
+                                  setIsJudgeMenuOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
+                                  selectedJudge === 'Todos os Juízes' 
+                                    ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' 
+                                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                                }`}
+                              >
+                                <div className="w-6 h-6 bg-accent1 rounded-full flex items-center justify-center">
+                                  <FaUsers className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="text-sm font-medium">Todos os Juízes</span>
+                              </button>
+                              
+                              <button 
+                                onClick={() => {
+                                  setSelectedJudge('Dr. Silva');
+                                  setIsJudgeMenuOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
+                                  selectedJudge === 'Dr. Silva' 
+                                    ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' 
+                                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                                }`}
+                              >
+                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <FaUserTie className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="text-sm font-medium">Dr. Silva</span>
+                              </button>
+                              
+                              <button 
+                                onClick={() => {
+                                  setSelectedJudge('Dra. Santos');
+                                  setIsJudgeMenuOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
+                                  selectedJudge === 'Dra. Santos' 
+                                    ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' 
+                                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                                }`}
+                              >
+                                <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                                  <FaUserTie className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="text-sm font-medium">Dra. Santos</span>
+                              </button>
+                              
+                              <button 
+                                onClick={() => {
+                                  setSelectedJudge('Dr. Oliveira');
+                                  setIsJudgeMenuOpen(false);
+                                }}
+                                className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${
+                                  selectedJudge === 'Dr. Oliveira' 
+                                    ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' 
+                                    : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                                }`}
+                              >
+                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                                  <FaUserTie className="w-3 h-3 text-white" />
+                                </div>
+                                <span className="text-sm font-medium">Dr. Oliveira</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                                             {/* Menu dropdown de 3 pontos para desktop */}
+                       <div className="relative desktop-menu-container">
+                         <button 
+                           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                           className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center hover:shadow-md w-10 h-10 min-w-[40px]"
+                           title="Menu"
+                         >
+                           <FaEllipsisV className="w-4 h-4" /> 
+                         </button>
+                         
+                         {/* Menu dropdown */}
+                         {isMobileMenuOpen && (
+                           <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[180px]">
+                             <button 
+                               onClick={() => {
+                                 setShowHistoryModal(true);
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-t-lg"
+                             >
+                               <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center">
+                                 <FaHistory className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Histórico</span>
+                             </button>
+                             
+                             <button 
+                               onClick={() => {
+                                 setLabShowSetupModal(true);
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200"
+                             >
+                               <div className="w-7 h-7 bg-accent1 rounded flex items-center justify-center">
+                                 <FaCog className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Alterar Modo</span>
+                             </button>
+                             
+                             <button 
+                               onClick={() => {
+                                 setShowChipJuridicoModal(true);
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200"
+                             >
+                               <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center">
+                                 <FaTags className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Chip Jurídico</span>
+                             </button>
+                             
+                             <button 
+                               onClick={() => {
+                                 handleLabClearChat();
+                                 setIsMobileMenuOpen(false);
+                               }}
+                               className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg"
+                             >
+                               <div className="w-7 h-7 bg-neutral-500 rounded flex items-center justify-center">
+                                 <FaTrash className="w-4 h-4 text-white" />
+                               </div>
+                               <span className="text-sm font-medium">Limpar Chat</span>
+                             </button>
+                           </div>
+                         )}
+                       </div>
                     </div>
                   </div>
                 )}
                 
                 {/* Header completo para mobile */}
                 {isMobile && (
-                  <div className="flex justify-between items-center p-3 border-b border-neutral-200 dark:border-neutral-700 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-md flex-shrink-0 sticky top-0 z-20">
-                    <div className="flex flex-col gap-1 flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-200 m-0 truncate">Chat da Central Jurídica</h3>
+                  <div className="flex justify-between items-start border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm p-3">
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-neutral-800 dark:text-neutral-200 font-semibold m-0 text-base">Chat da Central Jurídica</h3>
                       <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
-                        <FaCog className="text-accent1 w-3 h-3 flex-shrink-0" />
-                        <span className="font-medium truncate">
-                          Modo: {labSelectedSetupState?.title || 'Não selecionado'}
-                        </span>
+                        <FaCog className="w-3 h-3" />
+                        <span>Modo: Não selecionado</span>
                       </div>
                     </div>
-                    
-                    <div className="flex gap-1.5 ml-3 flex-shrink-0">
-                      <button 
-                        onClick={() => setLabShowNewChatModal(true)}
-                        className="bg-accent2 hover:bg-accent2/90 active:bg-accent2/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
-                        title="Nova Peça"
-                      >
-                        <FaPlus className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={() => setShowHistoryModal(true)}
-                        className="bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
-                        title="Histórico"
-                      >
-                        <FaHistory className="w-3 h-3" />
-                      </button>
-                      <button 
-                        onClick={() => setLabShowSetupModal(true)}
-                        className="bg-accent1 hover:bg-accent1/90 active:bg-accent1/80 text-white border-0 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md w-8 h-8 min-w-[32px]"
-                        title="Alterar Modo"
-                      >
-                        <FaCog className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        onClick={handleLabClearChat}
-                        className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center hover:shadow-md w-8 h-8 min-w-[32px]"
-                        title="Limpar Chat"
-                      >
-                        <FaTrash className="w-3 h-3" /> 
-                      </button>
+                    <div className="flex gap-2">
+                      {/* Menu dropdown de juízes para mobile */}
+                      <div className="relative judge-menu-container">
+                        <button
+                          onClick={() => setIsJudgeMenuOpen(!isJudgeMenuOpen)}
+                          className="bg-white dark:bg-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-1 font-medium shadow-sm hover:shadow-md px-2 py-1.5 text-xs"
+                        >
+                          <FaUserTie className="w-3 h-3 text-accent1" />
+                          <span className="truncate max-w-[80px]">{selectedJudge}</span>
+                          <FaChevronDown className={`w-2 h-2 transition-transform duration-200 ${isJudgeMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isJudgeMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[160px]">
+                            <div className="p-2">
+                              <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2 px-2">Selecionar Juiz</div>
+                              <button onClick={() => { setSelectedJudge('Todos os Juízes'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Todos os Juízes' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-5 h-5 bg-accent1 rounded-full flex items-center justify-center"><FaUsers className="w-2.5 h-2.5 text-white" /></div>
+                                <span className="text-xs font-medium">Todos os Juízes</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dr. Silva'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dr. Silva' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center"><FaUserTie className="w-2.5 h-2.5 text-white" /></div>
+                                <span className="text-xs font-medium">Dr. Silva</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dra. Santos'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dra. Santos' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center"><FaUserTie className="w-2.5 h-2.5 text-white" /></div>
+                                <span className="text-xs font-medium">Dra. Santos</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dr. Oliveira'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dr. Oliveira' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center"><FaUserTie className="w-2.5 h-2.5 text-white" /></div>
+                                <span className="text-xs font-medium">Dr. Oliveira</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* Menu dropdown de 3 pontos para mobile */}
+                      <div className="relative mobile-menu-container">
+                        <button
+                          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                          className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center hover:shadow-md w-8 h-8 min-w-[32px]"
+                          title="Menu"
+                        >
+                          <FaEllipsisV className="w-3 h-3" />
+                        </button>
+                        {isMobileMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[160px]">
+                            <button onClick={() => { setShowHistoryModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-t-lg">
+                              <div className="w-6 h-6 bg-secondary rounded flex items-center justify-center"><FaHistory className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Histórico</span>
+                            </button>
+                            <button onClick={() => { setLabShowSetupModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-6 h-6 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Alterar Modo</span>
+                            </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-6 h-6 bg-secondary rounded flex items-center justify-center"><FaTags className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
+                            </button>
+                            <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
+                              <div className="w-6 h-6 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-3 h-3 text-white" /></div>
+                              <span className="text-sm font-medium">Limpar Chat</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
+
+                {/* Header para tablet */}
+                {isTablet && (
+                  <div className="flex justify-between items-start border-b border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 rounded-t-xl flex-shrink-0 sticky top-0 z-10 backdrop-blur-sm p-4">
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-neutral-800 dark:text-neutral-200 font-semibold m-0 text-lg">Chat da Central Jurídica</h3>
+                      <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                        <FaCog className="w-3 h-3" />
+                        <span>Modo: Não selecionado</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {/* Menu dropdown de juízes para tablet */}
+                      <div className="relative judge-menu-container">
+                        <button
+                          onClick={() => setIsJudgeMenuOpen(!isJudgeMenuOpen)}
+                          className="bg-white dark:bg-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-600 text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center gap-2 font-medium shadow-sm hover:shadow-md px-3 py-2 text-sm"
+                        >
+                          <FaUserTie className="w-4 h-4 text-accent1" />
+                          <span className="truncate max-w-[100px]">{selectedJudge}</span>
+                          <FaChevronDown className={`w-3 h-3 transition-transform duration-200 ${isJudgeMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isJudgeMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[180px]">
+                            <div className="p-2">
+                              <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2 px-2">Selecionar Juiz</div>
+                              <button onClick={() => { setSelectedJudge('Todos os Juízes'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Todos os Juízes' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-6 h-6 bg-accent1 rounded-full flex items-center justify-center"><FaUsers className="w-3 h-3 text-white" /></div>
+                                <span className="text-sm font-medium">Todos os Juízes</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dr. Silva'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dr. Silva' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"><FaUserTie className="w-3 h-3 text-white" /></div>
+                                <span className="text-sm font-medium">Dr. Silva</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dra. Santos'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dra. Santos' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center"><FaUserTie className="w-3 h-3 text-white" /></div>
+                                <span className="text-sm font-medium">Dra. Santos</span>
+                              </button>
+                              <button onClick={() => { setSelectedJudge('Dr. Oliveira'); setIsJudgeMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-md transition-colors duration-200 ${ selectedJudge === 'Dr. Oliveira' ? 'bg-accent1/10 text-accent1 dark:bg-accent1/20' : 'hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300' }`}>
+                                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"><FaUserTie className="w-3 h-3 text-white" /></div>
+                                <span className="text-sm font-medium">Dr. Oliveira</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {/* Menu dropdown de 3 pontos para tablet */}
+                      <div className="relative tablet-menu-container">
+                        <button
+                          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                          className="bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-600 rounded-lg cursor-pointer transition-all duration-200 flex items-center justify-center hover:shadow-md w-10 h-10 min-w-[40px]"
+                          title="Menu"
+                        >
+                          <FaEllipsisV className="w-4 h-4" />
+                        </button>
+                        {isMobileMenuOpen && (
+                          <div className="absolute top-full right-0 mt-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg shadow-lg z-50 min-w-[180px]">
+                            <button onClick={() => { setShowHistoryModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-t-lg">
+                              <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center"><FaHistory className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Histórico</span>
+                            </button>
+                            <button onClick={() => { setLabShowSetupModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-7 h-7 bg-accent1 rounded flex items-center justify-center"><FaCog className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Alterar Modo</span>
+                            </button>
+                            <button onClick={() => { setShowChipJuridicoModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200">
+                              <div className="w-7 h-7 bg-secondary rounded flex items-center justify-center"><FaTags className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Chip Jurídico</span>
+                            </button>
+                            <button onClick={() => { handleLabClearChat(); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 transition-colors duration-200 rounded-b-lg">
+                              <div className="w-7 h-7 bg-neutral-500 rounded flex items-center justify-center"><FaTrash className="w-4 h-4 text-white" /></div>
+                              <span className="text-sm font-medium">Limpar Chat</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div ref={labChatContainerRef} className={`chat-messages flex-1 overflow-y-auto flex flex-col gap-4 lg:gap-6 min-h-0 scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-neutral-600 scrollbar-track-transparent overscroll-contain
-                  ${isMobile ? 'p-3 gap-3 pb-36 mb-[env(safe-area-inset-bottom)] scroll-smooth' : 'p-3 lg:p-6'}`}>
+                  ${isMobile ? 'p-3 gap-3 pb-36 mb-[env(safe-area-inset-bottom)] scroll-smooth min-h-[65vh] max-h-[65vh]' : isTablet ? 'p-4 gap-4 scroll-smooth' : 'p-3 lg:p-6'}`}>
                   {(safeGet(labMessagesByChat, getCurrentLabChatKey(), [])).map((message, index) => (
                     <div 
                       key={`${message.role}-${index}-${message.timestamp}`}
                       className={`flex flex-col w-full group ${
                         message.role === 'user' ? 'items-end' : 'items-start'
-                      } fade-in ${isMobile ? 'mb-2' : 'mb-3 lg:mb-4'}`}
+                      } fade-in ${isMobile ? 'mb-2' : isTablet ? 'mb-3' : 'mb-3 lg:mb-4'}`}
                     >
                       <div className={`relative max-w-[85%] lg:max-w-[80%] rounded-2xl shadow-md backdrop-blur-sm transition-all duration-300 hover:shadow-lg active:scale-[0.99]
                         ${
@@ -2462,7 +3130,7 @@ const Home = () => {
                           : message.role === 'error'
                           ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
                           : 'bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-600'
-                      } ${isMobile ? 'p-2 max-w-[95%]' : 'p-3 lg:p-4 md:max-w-[90%] sm:max-w-[95%]'}`}>
+                      } ${isMobile ? 'p-2 max-w-[95%]' : isTablet ? 'p-3 max-w-[90%]' : 'p-3 lg:p-4 md:max-w-[90%] sm:max-w-[95%]'}`}>
                         {renderMessageWithFile(message.content)}
                         <div className={`text-xs opacity-60 mt-2 ${
                           message.role === 'user' 
@@ -2483,13 +3151,38 @@ const Home = () => {
                           <FaCopy className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
                           <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Copiar</span>
                         </button>
+                        
+                        {/* Botões de exportação - apenas para respostas da IA */}
+                        {message.role === 'assistant' && (
+                          <>
+                            <button 
+                              onClick={exportToWord}
+                              title="Exportar conversa para Word"
+                              className={`bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 border-0 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFileWord className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>Word</span>
+                            </button>
+                            
+                            <button 
+                              onClick={exportToPDF}
+                              title="Exportar conversa para PDF"
+                              className={`bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 border-0 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 cursor-pointer rounded-lg text-xs flex items-center gap-1 transition-all duration-200
+                                ${isMobile ? 'p-1.5' : 'p-1.5 lg:p-2'}`}
+                            >
+                              <FaFilePdf className={`${isMobile ? 'w-2.5 h-2.5' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} /> 
+                              <span className={`${isMobile ? 'hidden' : 'hidden sm:inline'}`}>PDF</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
                   {isLabTyping && (
-                    <div className={`flex flex-col w-full items-start ${isMobile ? 'mb-2' : 'mb-3 lg:mb-4'}`}>
+                    <div className={`flex flex-col w-full items-start ${isMobile ? 'mb-2' : isTablet ? 'mb-3' : 'mb-3 lg:mb-4'}`}>
                       <div className={`relative max-w-[85%] lg:max-w-[80%] rounded-2xl shadow-md backdrop-blur-sm border bg-white/80 dark:bg-neutral-700/80 text-neutral-800 dark:text-neutral-200 border-neutral-200 dark:border-neutral-600 transition-all duration-300
-                        ${isMobile ? 'p-2 max-w-[95%]' : 'p-2 lg:p-2'}`}>
+                        ${isMobile ? 'p-2 max-w-[95%]' : isTablet ? 'p-3 max-w-[90%]' : 'p-2 lg:p-2'}`}>
                         <div className="flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
                           <div className="flex items-center gap-1">
                             <div className={`bg-accent1 rounded-full animate-bounce ${isMobile ? 'w-1.5 h-1.5' : 'w-1.5 h-1.5 lg:w-2 lg:h-2'}`} style={{animationDelay: '0s'}}></div>
@@ -2506,32 +3199,32 @@ const Home = () => {
                 
                 {/* Indicador de arquivo anexado */}
                 {labSelectedFile && (
-                  <div className="px-3 lg:px-4 py-2 bg-accent1/5 dark:bg-accent1/90/20 border-t border-accent1/20 dark:border-accent1">
+                  <div className={`${isTablet ? 'px-4 py-3' : 'px-3 lg:px-4 py-2'} bg-accent1/5 dark:bg-accent1/90/20 border-t border-accent1/20 dark:border-accent1`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 lg:gap-3">
-                        <div className="w-6 h-6 lg:w-8 lg:h-8 bg-accent1/10 dark:bg-accent1/80 rounded-lg flex items-center justify-center">
-                          <FaFileAlt className="w-3 h-3 lg:w-4 lg:h-4 text-accent1 dark:text-accent1/80" />
+                      <div className={`flex items-center ${isTablet ? 'gap-3' : 'gap-2 lg:gap-3'}`}>
+                        <div className={`${isTablet ? 'w-8 h-8' : 'w-6 h-6 lg:w-8 lg:h-8'} bg-accent1/10 dark:bg-accent1/80 rounded-lg flex items-center justify-center`}>
+                          <FaFileAlt className={`${isTablet ? 'w-4 h-4' : 'w-3 h-3 lg:w-4 lg:h-4'} text-accent1 dark:text-accent1/80`} />
                         </div>
                         <div>
-                          <p className="text-xs lg:text-sm font-medium text-accent1 dark:text-accent1/80">
+                          <p className={`${isTablet ? 'text-sm' : 'text-xs lg:text-sm'} font-medium text-accent1 dark:text-accent1/80`}>
                             {labSelectedFile.name}
                           </p>
-                          <p className="text-xs text-accent1 dark:text-accent1">
+                          <p className={`${isTablet ? 'text-xs' : 'text-xs'} text-accent1 dark:text-accent1`}>
                             {(labSelectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
                       </div>
                       <button
                         onClick={() => setLabSelectedFile(null)}
-                        className="w-5 h-5 lg:w-6 lg:h-6 bg-accent1/20 dark:bg-amber-700 hover:bg-accent1/30 dark:hover:bg-accent1/80 rounded-full flex items-center justify-center text-amber-700 dark:text-accent1/80 transition-all duration-200"
+                        className={`${isTablet ? 'w-6 h-6' : 'w-5 h-5 lg:w-6 lg:h-6'} bg-accent1/20 dark:bg-amber-700 hover:bg-accent1/30 dark:hover:bg-accent1/80 rounded-full flex items-center justify-center text-amber-700 dark:text-accent1/80 transition-all duration-200`}
                       >
-                        <FaTimes className="w-2.5 h-2.5 lg:w-3 lg:h-3" />
+                        <FaTimes className={`${isTablet ? 'w-3 h-3' : 'w-2.5 h-2.5 lg:w-3 lg:h-3'}`} />
                       </button>
                     </div>
                   </div>
                 )}
                 
-                {isMobile ? (
+                {(isMobile || isTablet) ? (
                 <div className="flex items-center gap-3 flex-shrink-0 sticky bottom-0 transition-all duration-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] bg-white/80 dark:bg-neutral-800/80 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-700 fixed inset-x-0 z-50">
                   {/* Container do input estilo desktop */}
                   <div className="flex-1 relative flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-3xl border border-neutral-200 dark:border-neutral-600 shadow-sm hover:shadow-md transition-all duration-200">
@@ -3280,6 +3973,135 @@ const Home = () => {
                   </motion.div>
                 </motion.div>
               )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
+      {/* Modal do Chip Jurídico */}
+      {showChipJuridicoModal && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4"
+          onClick={() => setShowChipJuridicoModal(false)}
+        >
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
+                  <FaTags className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
+                    Chip Jurídico
+                  </h2>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    Selecione as áreas do direito para personalizar suas consultas
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowChipJuridicoModal(false)}
+                className="w-8 h-8 bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-xl cursor-pointer transition-all duration-200 flex items-center justify-center font-semibold text-lg"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              {/* Botão de ação rápida */}
+              <div className="flex gap-2 mb-6">
+                <button
+                  onClick={handleChipJuridicoClearAll}
+                  className="px-4 py-2 bg-neutral-500 hover:bg-neutral-600 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Limpar Todas
+                </button>
+              </div>
+
+              {/* Grid de checkboxes */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries({
+                  civil: 'Cível',
+                  trabalhista: 'Trabalhista',
+                  contratos: 'Contratos',
+                  empresarial: 'Empresarial',
+                  penal: 'Penal',
+                  tributario: 'Tributário',
+                  administrativo: 'Administrativo',
+                  consumidor: 'Consumidor',
+                  previdenciario: 'Previdenciário',
+                  ambiental: 'Ambiental',
+                  imobiliario: 'Imobiliário',
+                  familia: 'Família',
+                  bancario: 'Bancário/Capital',
+                  compliance: 'Compliance',
+                  aduaneiro: 'Aduaneiro',
+                  eleitoral: 'Eleitoral'
+                }).map(([key, label]) => (
+                  <motion.label
+                    key={key}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                      chipJuridicoAreas[key]
+                        ? 'border-accent1 bg-accent1/10 dark:bg-accent1/20'
+                        : 'border-neutral-200 dark:border-neutral-600 hover:border-accent1/50 dark:hover:border-accent1/50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="chipJuridicoArea"
+                      checked={chipJuridicoAreas[key]}
+                      onChange={() => handleChipJuridicoAreaChange(key)}
+                      className="w-5 h-5 text-accent1 bg-neutral-100 border-neutral-300 focus:ring-accent1 dark:focus:ring-accent1 dark:ring-offset-neutral-800 focus:ring-2 dark:bg-neutral-700 dark:border-neutral-600"
+                    />
+                    <span className={`text-sm font-medium ${
+                      chipJuridicoAreas[key]
+                        ? 'text-accent1 dark:text-accent1'
+                        : 'text-neutral-700 dark:text-neutral-300'
+                    }`}>
+                      {label}
+                    </span>
+                  </motion.label>
+                ))}
+              </div>
+
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="flex items-center justify-between p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700/50">
+              <div className="text-sm text-neutral-600 dark:text-neutral-400">
+                {getSelectedAreas().length > 0 ? '1 área selecionada' : 'Nenhuma área selecionada'}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowChipJuridicoModal(false)}
+                  className="px-4 py-2 bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 text-neutral-700 dark:text-neutral-300 rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    // Aqui você pode adicionar lógica para salvar as preferências
+                    toast.success('Preferências do Chip Jurídico salvas!');
+                    setShowChipJuridicoModal(false);
+                  }}
+                  className="px-4 py-2 bg-accent1 hover:bg-accent1/90 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                >
+                  Salvar Preferências
+                </button>
+              </div>
             </div>
           </motion.div>
         </motion.div>

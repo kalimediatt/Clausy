@@ -20,17 +20,20 @@ const Profile = () => {
   // Estado local
   const [theme] = useState(localStorage.getItem("theme") || "light");
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
   // Hook para detectar tamanho da tela
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const checkDeviceType = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 640);
+      setIsTablet(width >= 640 && width <= 1024);
     };
     
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
+    checkDeviceType();
+    window.addEventListener('resize', checkDeviceType);
     
-    return () => window.removeEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkDeviceType);
   }, []);
 
   // Efeito para verificar autenticação na montagem se necessário
@@ -173,7 +176,7 @@ const Profile = () => {
       </motion.header>
 
       {/* Main */}
-      <main className={`relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-6 pb-16 pt-12 lg:grid-cols-2
+      <main className={`relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 px-6 ${isTablet ? 'pb-0' : 'pb-16'} pt-12 lg:grid-cols-2
         ${isMobile ? 'min-h-auto profile-main-mobile gap-6 px-4 pb-8 pt-8' : 'min-h-screen'}`}>
         
         {/* Profile Info Card */}
