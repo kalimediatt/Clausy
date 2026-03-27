@@ -309,7 +309,7 @@ app.use((err, req, res, next) => {
 });
 
 // Health check endpoint (mover para antes da rota catch-all)
-app.get('/test', (req, res) => {
+app.get('/api/test', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Backend is running' });
 });
 
