@@ -9,9 +9,11 @@ const MAX_LOG_SIZE = '20M';
 const MAX_LOG_FILES = 14;
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 
-// Criar diretório de logs se não existir
+const isVercel = process.env.VERCEL === '1';
+
+// Criar diretório de logs se não existir apenas se não estiver na Vercel
 const fs = require('fs');
-if (!fs.existsSync(LOG_DIR)) {
+if (!isVercel && !fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
@@ -34,8 +36,8 @@ const formats = {
     )
 };
 
-// Configurar streams de arquivo
-const streams = {
+// Configurar streams de arquivo (apenas se não estiver na Vercel)
+const streams = isVercel ? {} : {
     error: createStream('error.log', {
         interval: '1d',
         path: LOG_DIR,
@@ -67,26 +69,28 @@ const streams = {
 
 // Configurar transportes
 const transports = [
-    // Console para desenvolvimento
+    // Console para todos os ambientes
     new winston.transports.Console({
         format: formats.console,
         level: LOG_LEVEL
-    }),
-    
-    // Arquivo de erros
-    new winston.transports.Stream({
-        stream: streams.error,
-        format: formats.file,
-        level: 'error'
-    }),
-    
-    // Arquivo combinado
-    new winston.transports.Stream({
-        stream: streams.combined,
-        format: formats.file,
-        level: LOG_LEVEL
     })
 ];
+
+if (!isVercel) {
+    // Adicionar transportes de arquivo apenas localmente
+    transports.push(
+        new winston.transports.Stream({
+            stream: streams.error,
+            format: formats.file,
+            level: 'error'
+        }),
+        new winston.transports.Stream({
+            stream: streams.combined,
+            format: formats.file,
+            level: LOG_LEVEL
+        })
+    );
+}
 
 // Criar logger
 const logger = winston.createLogger({
@@ -102,21 +106,23 @@ const logger = winston.createLogger({
     exitOnError: false
 });
 
-// Adicionar handler para erros não capturados
-logger.exceptions.handle(
-    new winston.transports.Stream({
-        stream: streams.error,
-        format: formats.file
-    })
-);
+if (!isVercel) {
+    // Adicionar handler para erros não capturados apenas localmente
+    logger.exceptions.handle(
+        new winston.transports.Stream({
+            stream: streams.error,
+            format: formats.file
+        })
+    );
 
-// Adicionar handler para rejeições não capturadas
-logger.rejections.handle(
-    new winston.transports.Stream({
-        stream: streams.error,
-        format: formats.file
-    })
-);
+    // Adicionar handler para rejeições não capturadas apenas localmente
+    logger.rejections.handle(
+        new winston.transports.Stream({
+            stream: streams.error,
+            format: formats.file
+        })
+    );
+}
 
 // Funções de log com contexto
 const logWithContext = (level, message, context = {}) => {
