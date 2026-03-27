@@ -8,6 +8,7 @@ const redisConfig = {
   port: process.env.REDIS_PORT || 6379,
   password: process.env.REDIS_PASSWORD,
   db: process.env.REDIS_DB || 0,
+  tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
