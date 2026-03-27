@@ -1,14 +1,23 @@
 {
   "version": 2,
-  "buildCommand": "CI=false npm run build",
-  "outputDirectory": "build",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ],
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 60,
-      "includeFiles": "src/**"
+  "builds": [
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "outputDirectory": "build"
+      }
     }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ],
+  "env": {
+    "CI": "false"
   }
 }
