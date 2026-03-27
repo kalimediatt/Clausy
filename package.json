@@ -69,6 +69,7 @@
   "scripts": {
     "start": "cross-env WDS_SOCKET_HOST=localhost WDS_SOCKET_PORT=3000 DANGEROUSLY_DISABLE_HOST_CHECK=true HOST=localhost PORT=3000 react-app-rewired start",
     "build": "react-app-rewired build",
+    "vercel-build": "CI=false react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject",
     "server": "nodemon server.js",
