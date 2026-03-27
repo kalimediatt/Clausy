@@ -13,6 +13,10 @@ const DB_CONFIG = {
     database: process.env.DB_NAME || 'clausy',
     password: process.env.DB_PASSWORD || '@N4td55k7%+[',
     port: process.env.DB_PORT || 3306,
+    ssl: {
+        minVersion: 'TLSv1.2',
+        rejectUnauthorized: true
+    },
     waitForConnections: true,
     connectionLimit: 20,
     queueLimit: 0,
