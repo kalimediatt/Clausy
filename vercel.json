@@ -3,12 +3,12 @@
   "buildCommand": "CI=false npm run build",
   "outputDirectory": "build",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api" }
   ],
   "functions": {
     "api/index.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "src/**"
     }
   }
 }
