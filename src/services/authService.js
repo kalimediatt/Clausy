@@ -259,7 +259,7 @@ async function login(email, password, req) {
 
     } catch (error) {
         console.error('Erro no processo de login:', error);
-        return { success: false, message: `Erro interno no servidor: ${error.message}` };
+        return { success: false, message: 'Erro interno no servidor' };
     } finally {
         // Registrar o log de autenticação uma única vez
         if (connection) {
