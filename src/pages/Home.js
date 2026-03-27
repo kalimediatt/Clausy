@@ -185,7 +185,7 @@ function generateSessionName() {
 async function fetchLabChatsFromBackend() {
   try {
     // Buscar históricos através do backend (proxy)
-    const response = await fetch('http://138.197.27.151:5000/api/lab-chats/history', {
+    const response = await fetch('/api/lab-chats/history', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ async function fetchLabChatsFromBackend() {
 // Função para salvar chat no Redis
 async function saveLabChatToRedis(userId, chatName, sessionId) {
   try {
-    const response = await fetch('http://138.197.27.151:5000/api/lab-chats/save', {
+    const response = await fetch('/api/lab-chats/save', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -243,7 +243,7 @@ async function saveLabChatToRedis(userId, chatName, sessionId) {
 // Função para ocultar chat do Redis
 async function hideLabChat(userId, sessionId) {
   try {
-    const response = await fetch('http://138.197.27.151:5000/api/lab-chats/hide', {
+    const response = await fetch('/api/lab-chats/hide', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -267,7 +267,7 @@ async function fetchLabChatsFromRedis(userId) {
   try {
     // Buscar todos os chats do usuário (incluindo sessões anteriores)
     const currentSessionId = getCurrentSessionId(userId);
-    const response = await fetch(`http://138.197.27.151:5000/api/lab-chats/all?user_id=${userId}`, {
+    const response = await fetch(`/api/lab-chats/all?user_id=${userId}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -1464,7 +1464,7 @@ const Home = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        response = await fetch('http://138.197.27.151:5000/api/lab-chats/send', {
+        response = await fetch('/api/lab-chats/send', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
@@ -1497,7 +1497,7 @@ const Home = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        response = await fetch('http://138.197.27.151:5000/api/lab-chats/send', {
+        response = await fetch('/api/lab-chats/send', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2471,7 +2471,7 @@ const Home = () => {
   const loadChatMessages = async (chatName, isSwitchingChat = false) => {
     try {
       
-      const response = await fetch('http://138.197.27.151:5000/api/lab-chats/messages', {
+      const response = await fetch('/api/lab-chats/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

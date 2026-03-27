@@ -2,7 +2,7 @@
  * Serviço frontend para buscar informações do usuário após login
  */
 
-const API_BASE_URL = 'http://138.197.27.151:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 /**
  * Busca informações completas do usuário após login

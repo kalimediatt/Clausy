@@ -70,7 +70,7 @@ app.set('trust proxy', '127.0.0.1');  // Apenas confiar no proxy local
 
 // Configurar stream de logs
 const LOG_DIR = path.join(__dirname, 'logs');
-if (!fs.existsSync(LOG_DIR)) {
+if (!process.env.VERCEL && !fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
@@ -149,12 +149,21 @@ app.get('/favicon.ico', (req, res) => {
 // CORS configuration
 app.use(cors({
   credentials: true,
-  origin: [
-    'http://138.197.27.151:5000',
-    'http://localhost:5000',
-    'http://138.197.27.151:3000',
-    'http://localhost:3000'
-  ],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      'http://138.197.27.151:5000',
+      'http://localhost:5000',
+      'http://138.197.27.151:3000',
+      'http://localhost:3000'
+    ];
+    // Allow requests with no origin (mobile apps, curl, serverless)
+    if (!origin) return callback(null, true);
+    // Allow any .vercel.app domain
+    if (origin.endsWith('.vercel.app') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(null, false);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Forwarded-For', 'X-Forwarded-Proto', 'Accept', 'X-Current-Session-Id'],
   exposedHeaders: ['Authorization'],
@@ -1687,15 +1696,17 @@ process.on('SIGTERM', () => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Servidor rodando em http://${HOST}:${PORT}`);
-});
+// Start server (skip in Vercel serverless environment)
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, HOST, () => {
+    console.log(`Servidor rodando em http://${HOST}:${PORT}`);
+  });
 
-// Configurar timeout do servidor
-server.timeout = 300000; // 300 segundos
-server.keepAliveTimeout = 300000; // 300 segundos
-server.headersTimeout = 300000; // 300 segundos
+  // Configurar timeout do servidor
+  server.timeout = 300000; // 300 segundos
+  server.keepAliveTimeout = 300000; // 300 segundos
+  server.headersTimeout = 300000; // 300 segundos
+}
 
 // Rotas para visualização de logs (apenas para admin e superadmin)
 app.get('/api/logs/recent', authenticateToken, async (req, res) => {
@@ -2382,3 +2393,6 @@ app.get('/api/report/top-users', authenticateToken, async (req, res) => {
 
 app.use('/api', labChatsRouter);
 app.use('/api', authenticateToken, chatHistoryRouter);
+
+// Export app for Vercel serverless function
+module.exports = app;

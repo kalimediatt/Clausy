@@ -176,7 +176,7 @@ const TokenHistoryDashboard = ({ layout }) => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://138.197.27.151:5000/api/report/token-history', {
+      const response = await axios.get('/api/report/token-history', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         }
