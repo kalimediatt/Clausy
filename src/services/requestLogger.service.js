@@ -3,19 +3,25 @@ const path = require('path');
 const { createStream } = require('rotating-file-stream');
 const os = require('os');
 
-// Configurar diretório de logs
-const LOG_DIR = path.join(__dirname, '../../logs');
-if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-}
+// Na Vercel, o sistema de arquivos é read-only, então não podemos criar logs em arquivo
+const isVercel = process.env.VERCEL === '1';
+let requestLogStream = null;
 
-// Configurar stream de logs de requisições
-const requestLogStream = createStream('requests.log', {
-    interval: '1d',
-    path: LOG_DIR,
-    maxSize: '20M',
-    maxFiles: 14
-});
+if (!isVercel) {
+    // Configurar diretório de logs apenas se não estiver na Vercel
+    const LOG_DIR = path.join(__dirname, '../../logs');
+    if (!fs.existsSync(LOG_DIR)) {
+        fs.mkdirSync(LOG_DIR, { recursive: true });
+    }
+
+    // Configurar stream de logs de requisições
+    requestLogStream = createStream('requests.log', {
+        interval: '1d',
+        path: LOG_DIR,
+        maxSize: '20M',
+        maxFiles: 14
+    });
+}
 
 // Função para obter informações do sistema
 const getSystemInfo = () => {
@@ -81,7 +87,9 @@ const logRequest = (req, res, next) => {
     };
 
     // Log para arquivo
-    requestLogStream.write(JSON.stringify(logEntry) + '\n');
+    if (requestLogStream) {
+        requestLogStream.write(JSON.stringify(logEntry) + '\n');
+    }
 
     // Log para console em desenvolvimento
     if (process.env.NODE_ENV !== 'production') {
@@ -113,7 +121,9 @@ const logRequest = (req, res, next) => {
         };
 
         // Log de performance para arquivo
-        requestLogStream.write(JSON.stringify(performanceLog) + '\n');
+        if (requestLogStream) {
+            requestLogStream.write(JSON.stringify(performanceLog) + '\n');
+        }
 
         // Log de performance para console em desenvolvimento
         if (process.env.NODE_ENV !== 'production') {
