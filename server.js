@@ -392,13 +392,6 @@ app.get('/api/auth/logs', authenticateToken, async (req, res) => {
     
     let logs, totalCount;
     try {
-  
-        query,
-        queryParams,
-        countQuery,
-        countParams
-      });
-      
       [logs, totalCount] = await Promise.all([
         dbService.executeQuery(query, queryParams),
         dbService.executeQuery(countQuery, countParams)
